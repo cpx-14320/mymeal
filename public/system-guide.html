@@ -1,0 +1,1005 @@
+<title>MyMeal 系統手冊</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --page: #faf8f5;
+    --surface: #ffffff;
+    --surface-2: #f4f0ea;
+    --surface-3: #ece5d8;
+    --ink: #1c1a17;
+    --muted: #6b6459;
+    --faint: #a39c8d;
+    --line: #e7e1d8;
+    --line-strong: #d8cfc0;
+    --brand: #b5730f;
+    --brand-fg: #ffffff;
+    --brand-soft: #fdf3e0;
+    --positive: #1f7a4d;
+    --positive-soft: #e6f3ec;
+    --warning: #9a6a12;
+    --warning-soft: #fbf0dc;
+    --danger: #b23c2e;
+    --danger-soft: #fbe9e6;
+    --code-bg: #f1ece1;
+    --shadow: 0 1px 2px rgba(28,26,23,.04), 0 8px 24px -12px rgba(28,26,23,.12);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #14120f;
+      --surface: #1b1916;
+      --surface-2: #232019;
+      --surface-3: #2b271d;
+      --ink: #ece7de;
+      --muted: #a79f8f;
+      --faint: #766f61;
+      --line: #322c22;
+      --line-strong: #3d3527;
+      --brand: #e0a63e;
+      --brand-fg: #241a08;
+      --brand-soft: #2a2213;
+      --positive: #6fce9c;
+      --positive-soft: #16261f;
+      --warning: #e0b45e;
+      --warning-soft: #2a2314;
+      --danger: #ef9587;
+      --danger-soft: #2c1a17;
+      --code-bg: #241f16;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #14120f;
+    --surface: #1b1916;
+    --surface-2: #232019;
+    --surface-3: #2b271d;
+    --ink: #ece7de;
+    --muted: #a79f8f;
+    --faint: #766f61;
+    --line: #322c22;
+    --line-strong: #3d3527;
+    --brand: #e0a63e;
+    --brand-fg: #241a08;
+    --brand-soft: #2a2213;
+    --positive: #6fce9c;
+    --positive-soft: #16261f;
+    --warning: #e0b45e;
+    --warning-soft: #2a2314;
+    --danger: #ef9587;
+    --danger-soft: #2c1a17;
+    --code-bg: #241f16;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  code, .mono, .kv-name, .kv-type, .route-path, .fn-name {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  h1, h2, h3, h4 { text-wrap: balance; line-height: 1.35; margin: 0; }
+  a { color: var(--brand); }
+  img { max-width: 100%; }
+
+  /* ── 版面骨架：仿本產品自身的側欄結構 ── */
+  .shell {
+    display: grid;
+    grid-template-columns: 272px minmax(0, 1fr);
+    min-height: 100vh;
+  }
+  .toc {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--line);
+    background: var(--surface);
+    padding: 20px 14px 40px;
+  }
+  .toc-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 10px 16px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 14px;
+  }
+  .toc-brand .mark {
+    font-weight: 900;
+    font-size: 19px;
+    color: var(--brand);
+  }
+  .toc-brand .tag {
+    font-size: 11px;
+    color: var(--faint);
+    letter-spacing: .04em;
+  }
+  .toc-group { margin-bottom: 4px; }
+  .toc-group-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: 12px 10px 6px;
+  }
+  .toc a {
+    display: block;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    color: var(--ink);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .toc a:hover { background: var(--surface-2); }
+  .toc a.current { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+
+  main { min-width: 0; padding: 44px clamp(20px, 4vw, 64px) 120px; }
+  .doc-header { max-width: 760px; margin-bottom: 56px; }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--brand);
+    background: var(--brand-soft);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+  .doc-header h1 {
+    font-size: clamp(28px, 4vw, 38px);
+    font-weight: 900;
+    letter-spacing: -.01em;
+  }
+  .doc-header .sub {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 15.5px;
+    max-width: 62ch;
+  }
+  .doc-meta {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .meta-pill {
+    font-size: 12.5px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 5px 11px;
+    border-radius: 999px;
+  }
+
+  section { max-width: 980px; margin-bottom: 68px; scroll-margin-top: 24px; }
+  section > h2 {
+    font-size: 22px;
+    font-weight: 800;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+    border-bottom: 2px solid var(--line-strong);
+  }
+  section > h2 .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brand);
+    background: var(--brand-soft);
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  h3 { font-size: 16.5px; font-weight: 700; margin: 30px 0 12px; }
+  h3:first-child { margin-top: 0; }
+  h4 { font-size: 14px; font-weight: 700; margin: 20px 0 8px; color: var(--muted); }
+  p { margin: 0 0 12px; max-width: 68ch; }
+  p:last-child { margin-bottom: 0; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; max-width: 66ch; }
+  li { margin-bottom: 6px; }
+  li:last-child { margin-bottom: 0; }
+  strong { font-weight: 700; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 22px 24px;
+    margin-bottom: 16px;
+  }
+  .callout {
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin: 16px 0;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    max-width: 66ch;
+  }
+  .callout.warn { background: var(--warning-soft); border-color: color-mix(in srgb, var(--warning) 35%, var(--line)); }
+  .callout.danger { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
+  .callout.good { background: var(--positive-soft); border-color: color-mix(in srgb, var(--positive) 35%, var(--line)); }
+  .callout p { margin: 0; }
+  .callout .lbl {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    color: var(--muted);
+  }
+  .callout.warn .lbl { color: var(--warning); }
+  .callout.danger .lbl { color: var(--danger); }
+  .callout.good .lbl { color: var(--positive); }
+
+  /* ── 表格 ── */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; margin: 14px 0 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: var(--surface); }
+  th {
+    text-align: left;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--muted);
+    background: var(--surface-2);
+    padding: 10px 14px;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--line);
+  }
+  td {
+    padding: 10px 14px;
+    border-top: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tr:first-child td { border-top: none; }
+  td.mono, .kv-name { color: var(--ink); font-weight: 600; }
+  td.type, .kv-type { color: var(--brand); white-space: nowrap; }
+  td.desc { color: var(--muted); }
+  td.route-path { white-space: nowrap; color: var(--ink); font-weight: 600; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.auth { background: var(--warning-soft); color: var(--warning); }
+  .badge.noauth { background: var(--surface-3); color: var(--muted); }
+  .badge.admin { background: var(--danger-soft); color: var(--danger); }
+  .badge.derived { background: var(--surface-3); color: var(--muted); font-style: normal; }
+
+  /* ── schema 卡片（details） ── */
+  .schema-entry {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .schema-entry > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface-2);
+  }
+  .schema-entry > summary::-webkit-details-marker { display: none; }
+  .schema-entry > summary::before {
+    content: "▸";
+    color: var(--faint);
+    font-size: 12px;
+    transition: transform .15s;
+    flex-shrink: 0;
+  }
+  .schema-entry[open] > summary::before { transform: rotate(90deg); }
+  .schema-entry .s-title { font-weight: 700; font-size: 14.5px; }
+  .schema-entry .s-cn { color: var(--muted); font-weight: 400; font-size: 13px; }
+  .schema-entry .s-body { padding: 4px 18px 18px; }
+  .schema-entry .s-note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+
+  .toolbar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+  .toolbar button {
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .toolbar button:hover { color: var(--ink); background: var(--surface-2); }
+
+  /* ── 流程步驟 ── */
+  .flow { counter-reset: step; margin: 18px 0; }
+  .flow-step {
+    counter-increment: step;
+    position: relative;
+    padding: 2px 0 22px 40px;
+    border-left: 2px solid var(--line);
+    margin-left: 15px;
+  }
+  .flow-step:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .flow-step::before {
+    content: counter(step);
+    position: absolute;
+    left: -15px;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: var(--brand-fg);
+    font-weight: 700;
+    font-size: 13px;
+    display: grid;
+    place-items: center;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .flow-step .ft { font-weight: 700; margin-bottom: 3px; }
+  .flow-step .fd { color: var(--muted); font-size: 13.5px; max-width: 60ch; }
+  .flow-step .fd code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
+
+  /* ── 前後對照 ── */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  @media (max-width: 720px) { .compare { grid-template-columns: 1fr; } }
+  .compare .col {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+    background: var(--surface);
+  }
+  .compare .col.guest { border-top: 3px solid var(--faint); }
+  .compare .col.authed { border-top: 3px solid var(--brand); }
+  .compare .col h4 { margin-top: 0; color: var(--ink); font-size: 15px; }
+  .compare .col ul { padding-left: 18px; }
+  .compare .col li { font-size: 13.5px; color: var(--muted); }
+
+  code.inline { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; font-size: 12.8px; color: var(--ink); }
+
+  .rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; margin: 16px 0; }
+  .rec-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px;
+    background: var(--surface);
+  }
+  .rec-card .pri {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .pri.p0 { background: var(--danger-soft); color: var(--danger); }
+  .pri.p1 { background: var(--warning-soft); color: var(--warning); }
+  .pri.p2 { background: var(--surface-3); color: var(--muted); }
+  .rec-card h4 { margin: 0 0 6px; color: var(--ink); font-size: 14px; }
+  .rec-card p { font-size: 13px; color: var(--muted); margin: 0; }
+
+  footer.doc-footer {
+    max-width: 760px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    color: var(--faint);
+    font-size: 12.5px;
+  }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); }
+  }
+</style>
+
+<div class="shell">
+  <nav class="toc" id="toc">
+    <div class="toc-brand"><span class="mark">MyMeal</span><span class="tag">系統手冊</span></div>
+
+    <div class="toc-group">
+      <a href="#overview">一、系統概觀</a>
+      <a href="#front-map">二、前台功能地圖</a>
+      <a href="#admin-map">三、後台功能地圖</a>
+      <a href="#flows">四、實際操作流程</a>
+      <a href="#auth-diff">五、登入前後的差異</a>
+      <a href="#schema">六、資料表規劃</a>
+      <a href="#helpers">七、共用查詢函式</a>
+      <a href="#recommendations">八、建議調整與方向</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="doc-header">
+      <span class="eyebrow">內部工程文件 · 2026/09/12</span>
+      <h1>MyMeal 系統手冊</h1>
+      <p class="sub">
+        給接手開發、測試或規劃下一階段的人看的完整說明：前後台有哪些頁面與功能、實際操作流程長什麼樣子、
+        會員登入前後差在哪裡、目前介面預覽用的資料結構要怎麼對應到未來的資料庫欄位，以及接下來建議往哪個方向調整。
+      </p>
+      <div class="doc-meta">
+        <span class="meta-pill">Next.js 16 · App Router · TypeScript</span>
+        <span class="meta-pill">46 個頁面路由</span>
+        <span class="meta-pill">20 組資料結構</span>
+        <span class="meta-pill">目前狀態：介面預覽（無後端／無資料庫／無登入）</span>
+      </div>
+    </div>
+
+    <!-- ══════════════ 一、系統概觀 ══════════════ -->
+    <section id="overview">
+      <h2><span class="num">01</span>系統概觀</h2>
+
+      <p>
+        MyMeal 是公司內部的 B2E 訂餐系統重製版（原系統為 PHP + MySQL + Vue），目前這個版本是用 Next.js 重寫的
+        <strong>介面預覽（UI-only mock）</strong>：所有畫面、表格、篩選、分頁、彈窗都做出來了，但資料全部來自
+        <code class="inline">lib/mock.ts</code> 裡寫死或用規則產生的假資料，還沒有接資料庫、沒有真的登入系統、
+        後台大部分「儲存 / 刪除 / 送出」按鈕也還沒串接。這點會影響下面每一節的閱讀方式——本文件同時扮演
+        「現在畫面長怎樣」的操作手冊，以及「將來要接後端時，這些畫面背後應該對應什麼資料」的資料表規劃。
+      </p>
+
+      <div class="callout warn">
+        <span class="lbl">目前最重要的限制</span>
+        <p>
+          <code class="inline">components/layout/app-shell.tsx</code> 裡的 <code class="inline">previewMode</code>
+          寫死為 <code class="inline">true</code>：不管有沒有登入，所有前台頁面都能自由瀏覽，側欄不鎖權限、不顯示鎖頭。
+          真正的權限判斷邏輯（<code class="inline">isAuthed</code> / <code class="inline">isAdmin</code> /
+          <code class="inline">resolveHref()</code>）其實都已經寫好、可以運作，只是目前沒有被打開。
+          唯一有實際「登入狀態」效果的地方是 Header 頭像按鈕的<strong>預覽用登入切換</strong>（存在瀏覽器
+          localStorage，跟真正的帳號系統無關）——詳見第五節。
+        </p>
+      </div>
+
+      <h3>核心資料模型（兩條主線）</h3>
+      <p><strong>訂餐內容這條線</strong>——四層由粗到細：</p>
+      <ul>
+        <li><strong>訂餐專區</strong>（前台一個頁面，例如「本週便當」）→ N:N 對應多個</li>
+        <li><strong>模板</strong>（例如「標準便當週」）→ 底下分自由命名的</li>
+        <li><strong>分類</strong>（例如「星期一」「飲料 / 點心」，不綁死星期幾）→ 裡面放實際的</li>
+        <li><strong>品項</strong>（品項總表裡的一筆資料，名稱／價格全站只有一份，改了就所有引用同步）</li>
+      </ul>
+      <p>
+        店家（供應商）跟品項類別、標籤都<strong>不是這條鏈的一層</strong>，而是掛在品項或模板上的平面標籤——
+        同一個模板底下的品項可以來自不同店家。
+      </p>
+
+      <p><strong>會員與權限這條線</strong>：</p>
+      <ul>
+        <li><strong>會員</strong>（Member）——一個真人帳號</li>
+        <li><strong>組別</strong>（MemberGroup，後台頁面標題顯示為「會員權限」）——一包權限鍵的組合，例如「餐飲管理員」</li>
+        <li><strong>權限鍵</strong>（PermissionGroup，例如 <code class="inline">finance.topup.*</code>）——最小可控制的功能單位，三種等級：無 / 僅限自己 / 具備</li>
+      </ul>
+      <p>會員的 <code class="inline">role</code> 欄位是組別名稱字串，跟 <code class="inline">memberGroups</code> 動態同步，不會各自漂移。</p>
+    </section>
+
+    <!-- ══════════════ 二、前台功能地圖 ══════════════ -->
+    <section id="front-map">
+      <h2><span class="num">02</span>前台功能地圖</h2>
+      <p>依側欄「主導覽」（<code class="inline">primaryNav</code>）的順序列出，每一項標示是否需要登入（目前 previewMode 開啟時此限制暫時不生效，但畫面邏輯已經寫好）。</p>
+
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>路由</th><th>頁面</th><th>登入</th><th>功能說明</th></tr></thead>
+          <tbody>
+            <tr><td class="route-path">/</td><td>首頁</td><td><span class="badge noauth">免登入</span></td><td class="desc">行銷型登陸頁：產品介紹、「如何運作」四步驟、菜色預覽、登入／申請帳號 CTA。</td></tr>
+            <tr><td class="route-path">/menu</td><td>本週餐點</td><td><span class="badge noauth">免登入</span></td><td class="desc">依「標準便當週」模板，用星期幾分類呈現便當品項（一列四欄）；飲料頁籤顯示進行中的飲料團 + 可開的飲料模板。</td></tr>
+            <tr><td class="route-path">/catalog</td><td>所有品項</td><td><span class="badge noauth">免登入</span></td><td class="desc">全部 132 項品項瀏覽頁。上方「熱門品項」輪播（依訂購數量排序，含評分／評論數，可「查看更多」開全清單彈窗）；下方全部／餐點／飲料／點心頁籤 + 收藏愛心 + 「評論（N）」彈窗（會員／星等／內容／完整時間）+ 分頁。</td></tr>
+            <tr><td class="route-path">/group-orders</td><td>開團訂餐</td><td><span class="badge auth">需登入</span></td><td class="desc">團訂列表（26 團假資料）。全部／便當／飲料・下午茶／開放中／我開的團篩選 tabs 已可實際篩選，含分頁與每頁筆數切換。</td></tr>
+            <tr><td class="route-path">/group-orders/new</td><td>開團</td><td><span class="badge auth">需登入</span></td><td class="desc">3 步驟精靈：選模板 → 調整品項 → 設定（取餐時間、成團門檻等）。</td></tr>
+            <tr><td class="route-path">/group-orders/[id]</td><td>團訂明細</td><td><span class="badge auth">需登入</span></td><td class="desc"><strong>實際的「加入我的訂單」入口</strong>：頁面內建點餐區（品項數量 ± 按鈕、備註欄、送出我的訂單），下方是目前所有同事的訂購清單與合計。</td></tr>
+            <tr><td class="route-path">/orders</td><td>我的訂單</td><td><span class="badge auth">需登入</span></td><td class="desc">進行中訂單（可修改／取消）+ 歷史紀錄（已補到 26 筆，獨立分頁 + 每頁筆數選單）。</td></tr>
+            <tr><td class="route-path">/favorites</td><td>我的收藏</td><td><span class="badge auth">需登入</span></td><td class="desc">收藏品項卡片（一列四欄），可取消收藏、開「查看評論」彈窗看其他會員怎麼說。</td></tr>
+            <tr><td class="route-path">/wallet</td><td>錢包 / 儲值</td><td><span class="badge auth">需登入</span></td><td class="desc">餘額 / 本月儲值 / 本月消費統計 + 交易明細／儲值申請進度雙頁籤（各自分頁、可切換每頁筆數，申請進度已改為表格）。</td></tr>
+            <tr><td class="route-path">/wallet/topup</td><td>申請儲值</td><td><span class="badge auth">需登入</span></td><td class="desc">填金額、付款方式，送出等後台審核。</td></tr>
+            <tr><td class="route-path">/account</td><td>會員中心</td><td><span class="badge auth">需登入</span></td><td class="desc">個人資料、等級與經驗值進度。</td></tr>
+            <tr><td class="route-path">/about /help /faq /feedback</td><td>頁尾靜態頁</td><td><span class="badge noauth">免登入</span></td><td class="desc">關於 MyMeal、使用說明、常見問題、意見回饋。</td></tr>
+            <tr><td class="route-path">/login /register</td><td>登入 / 申請帳號</td><td><span class="badge noauth">免登入</span></td><td class="desc">表單目前為靜態預覽，尚未串接驗證邏輯。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════════ 三、後台功能地圖 ══════════════ -->
+    <section id="admin-map">
+      <h2><span class="num">03</span>後台功能地圖</h2>
+      <p>依側欄六個分組（可各自收合，收合狀態記在 localStorage）列出，每組列出頁面與該頁已經做到的互動效果。</p>
+
+      <h3>總覽</h3>
+      <div class="tablewrap"><table>
+        <tbody>
+          <tr><td class="route-path">/admin</td><td class="desc">今日團數 / 訂餐份數 / 金額 / 待審儲值統計卡；待審儲值迷你表（含申請人單位、完整時間）；今日成團狀況；近期稽核。</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>菜單與訂餐</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>路由</th><th>頁面</th><th>已具備的操作</th></tr></thead>
+        <tbody>
+          <tr><td class="route-path">/admin/zones</td><td>訂餐專區</td><td class="desc">全選、啟用選取／停用選取／刪除選取；<code class="inline">/new</code> 建立頁、<code class="inline">/[id]</code> 編輯頁。</td></tr>
+          <tr><td class="route-path">/admin/templates</td><td>模板</td><td class="desc">卡片已改表格，保留分類 chip 視覺；全選、啟用／停用／刪除選取；<code class="inline">/[id]</code> 編輯模板分類與品項。</td></tr>
+          <tr><td class="route-path">/admin/suppliers</td><td>店家</td><td class="desc">全選、啟用選取／停用選取／刪除選取。「新增店家」按鈕仍為裝飾性。</td></tr>
+          <tr><td class="route-path">/admin/items/categories</td><td>品項分類</td><td class="desc">獨立頁面（原本是品項頁裡的一個區塊）。</td></tr>
+          <tr><td class="route-path">/admin/items/tags</td><td>品項標籤</td><td class="desc">獨立頁面（原「標籤群組」，改名並拆出來）。</td></tr>
+          <tr><td class="route-path">/admin/items</td><td>品項</td><td class="desc">全部／餐點／飲料／點心篩選；全選、啟用選取／停用選取／刪除選取；每列「編輯」+ 即時「啟用／停用」切換；<code class="inline">/new</code>、<code class="inline">/[id]</code>。</td></tr>
+          <tr><td class="route-path">/admin/group-orders</td><td>團訂</td><td class="desc">全選、匯出選取／開放選取／截止選取／完成選取／刪除選取。</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>財務</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>路由</th><th>頁面</th><th>已具備的操作</th></tr></thead>
+        <tbody>
+          <tr><td class="route-path">/admin/topups</td><td>儲值審核</td><td class="desc">待審核／已核准／已退件／全部 四個頁籤；申請人＋部門欄；時間精確到秒。</td></tr>
+          <tr><td class="route-path">/admin/wallets</td><td>錢包與交易</td><td class="desc">會員餘額／最近交易頁籤；最近交易新增「調整」動作（寫入抵銷用的手動調整紀錄，不竄改歷史）。</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>會員與權限</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>路由</th><th>頁面</th><th>已具備的操作</th></tr></thead>
+        <tbody>
+          <tr><td class="route-path">/admin/members</td><td>會員列表</td><td class="desc">全選、啟用選取／停用選取／刪除選取；即時切換；<code class="inline">/new</code>（頭像、員工編號、公司 Email、部門、單位、修改帳號、修改密碼、權限、狀態）、<code class="inline">/[id]</code>（動態標題帶會員姓名）。</td></tr>
+          <tr><td class="route-path">/admin/members/insights</td><td>會員洞察</td><td class="desc">列表：姓名／帳號／訂單數／便當數／收藏／評論／評分／剩餘儲值 + 查看按鈕。詳情頁見下方說明。</td></tr>
+          <tr><td class="route-path">/admin/roles</td><td>會員權限</td><td class="desc">組別卡片（動態算權限數／套用人數）+ 權限矩陣；<code class="inline">/new</code> 新增組別、<code class="inline">/[key]</code> 編輯權限（12 條權限鍵 × 無／僅限自己／具備）。</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="callout good" style="margin-top:0">
+        <span class="lbl">會員洞察詳情頁 /admin/members/insights/[id] 特別說明</span>
+        <p>
+          上方 6 個統計方塊（訂單數／便當數／收藏／評論／評分／剩餘儲值）+ 一句「推測偏好」（自動算出這位會員最常點的類型與品項）。
+          下方 5 個頁籤各自分頁：<strong>訂餐紀錄</strong>（依品項彙總——品項／分類／標籤／總訂購數量／訂單次數，一眼看出偏飯還是麵、偏哪種肉）、
+          <strong>儲值紀錄</strong>（儲值＋消費合併的流水帳，含剩餘金額與刪除操作）、<strong>收藏的品項</strong>（品項／分類／主食／肉類／收藏時間）、
+          <strong>評論留言</strong>、<strong>評分</strong>。這是目前後台資訊密度最高的一個頁面。
+        </p>
+      </div>
+
+      <h3>互動與行銷</h3>
+      <div class="tablewrap"><table>
+        <tbody>
+          <tr><td class="route-path">/admin/tasks</td><td class="desc">任務與經驗（遊戲化：每日任務、經驗規則、等級）。</td></tr>
+          <tr><td class="route-path">/admin/promos</td><td class="desc">蓋台廣告：<code class="inline">/new</code>、<code class="inline">/[id]</code>；前台由 <code class="inline">activeInterstitial()</code> 依時間 / 頻率規則決定是否顯示。</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>系統</h3>
+      <div class="tablewrap"><table>
+        <tbody>
+          <tr><td class="route-path">/admin/item-stats</td><td class="desc"><strong>餐點統計</strong>：列表（品項／價格／總訂購數量／被訂購次數／平均評分／評論數）+「查看」進入單一品項詳情頁（4 個統計方塊 + 可分頁的評論留言表，含星等）。</td></tr>
+          <tr><td class="route-path">/admin/reports</td><td class="desc">訂單與金流報表（每日訂單數、依類型 / 依店家統計）。</td></tr>
+          <tr><td class="route-path">/admin/audit</td><td class="desc">稽核：所有後台操作與金流異動紀錄，只新增、不可刪改。</td></tr>
+          <tr><td class="route-path">/admin/settings</td><td class="desc">系統設定：訂餐規則、帳號、清單維護。</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ══════════════ 四、實際操作流程 ══════════════ -->
+    <section id="flows">
+      <h2><span class="num">04</span>實際操作流程</h2>
+      <p>把上面的頁面串成幾條完整的使用情境，每一步都對應到真的按鈕或欄位。</p>
+
+      <h3>情境 A — 會員加入同事的團訂餐</h3>
+      <div class="flow">
+        <div class="flow-step"><div class="ft">開啟開團訂餐列表</div><div class="fd">前往 <code>/group-orders</code>，用「開放中」篩選只看還能加入的團。</div></div>
+        <div class="flow-step"><div class="ft">點「查看 / 加入」</div><div class="fd">進入 <code>/group-orders/[id]</code> 團訂明細，看到截止時間、目前份數、取餐地點。</div></div>
+        <div class="flow-step"><div class="ft">點餐</div><div class="fd">在「我的餐點」區塊用 + / − 選數量、填備註，按「送出我的訂單」。</div></div>
+        <div class="flow-step"><div class="ft">確認訂單</div><div class="fd">回到 <code>/orders</code>「進行中」可看到剛加入的這筆，取消 / 修改也在這裡。</div></div>
+      </div>
+
+      <h3>情境 B — 開一個新團</h3>
+      <div class="flow">
+        <div class="flow-step"><div class="ft">從任一入口點「開團」</div><div class="fd"><code>/group-orders</code> 或 <code>/menu</code> 頁面右上角都有這顆按鈕，連到 <code>/group-orders/new</code>。</div></div>
+        <div class="flow-step"><div class="ft">選模板</div><div class="fd">挑一個已存在的模板（例如「標準便當週 / 星期三」）。</div></div>
+        <div class="flow-step"><div class="ft">調整品項</div><div class="fd">從品項總表挑要開放的品項（可增減，不影響模板本身）。</div></div>
+        <div class="flow-step"><div class="ft">設定成團條件</div><div class="fd">取餐時間、截止時間、成團門檻。送出後這團就會出現在 <code>/group-orders</code> 列表。</div></div>
+      </div>
+
+      <h3>情境 C — 儲值與後台審核</h3>
+      <div class="flow">
+        <div class="flow-step"><div class="ft">會員申請儲值</div><div class="fd"><code>/wallet/topup</code> 填金額與付款方式送出，狀態顯示在 <code>/wallet</code>「儲值申請進度」。</div></div>
+        <div class="flow-step"><div class="ft">後台審核人員處理</div><div class="fd"><code>/admin/topups</code>「待審核」頁籤逐筆核准或退件；核准後金額才計入餘額。</div></div>
+        <div class="flow-step"><div class="ft">寫入交易明細</div><div class="fd">核准後應同步出現在 <code>/admin/wallets</code>「最近交易」與會員自己的 <code>/wallet</code>「交易明細」。</div></div>
+        <div class="flow-step"><div class="ft">事後調整（例外情況）</div><div class="fd">金額算錯時，在 <code>/admin/wallets</code> 最近交易對該筆按「調整」，寫入一筆新的抵銷紀錄，不竄改原始交易。</div></div>
+      </div>
+
+      <h3>情境 D — 後台維運「菜單」內容（由上而下）</h3>
+      <div class="flow">
+        <div class="flow-step"><div class="ft">建立 / 確認品項</div><div class="fd"><code>/admin/items</code> 是唯一的品項來源；分類跟標籤分別在 <code>/admin/items/categories</code>、<code>/admin/items/tags</code> 先建好。</div></div>
+        <div class="flow-step"><div class="ft">組成模板</div><div class="fd"><code>/admin/templates</code> 建立分類（例如星期幾），從品項總表勾選品項放進去。</div></div>
+        <div class="flow-step"><div class="ft">串成訂餐專區</div><div class="fd"><code>/admin/zones</code> 把一個或多個模板包成一個前台頁面（例如「本週便當」）。（規劃中：建立專區後應自動出現在前台左側導覽，見第八節）</div></div>
+        <div class="flow-step"><div class="ft">開放品項才會被看到</div><div class="fd">品項 / 模板 / 專區任一層被停用，底下的內容就不會出現在前台。</div></div>
+      </div>
+
+      <h3>情境 E — 指派會員權限</h3>
+      <div class="flow">
+        <div class="flow-step"><div class="ft">確認 / 調整組別權限</div><div class="fd"><code>/admin/roles</code> 選一個組別按「編輯權限」，逐條權限鍵設定無／僅限自己／具備。</div></div>
+        <div class="flow-step"><div class="ft">建立或編輯會員</div><div class="fd"><code>/admin/members/new</code> 或 <code>/admin/members/[id]</code>，「權限」欄位選一個組別。</div></div>
+        <div class="flow-step"><div class="ft">確認生效範圍</div><div class="fd">同一個組別可以套用在多個會員身上；改組別權限會影響所有套用該組別的人。</div></div>
+      </div>
+    </section>
+
+    <!-- ══════════════ 五、登入前後的差異 ══════════════ -->
+    <section id="auth-diff">
+      <h2><span class="num">05</span>會員登入前後的差異</h2>
+
+      <p>
+        因為 <code class="inline">previewMode</code> 目前鎖 <code class="inline">true</code>，「需要登入」目前<strong>不會真的擋人</strong>——
+        訪客一樣能點進 <code class="inline">/wallet</code>、<code class="inline">/orders</code> 這些頁面。真正能在瀏覽器上看到差異的，
+        是 Header 右上角頭像按鈕做的<strong>登入狀態預覽切換</strong>（存在 <code class="inline">localStorage</code> 的
+        <code class="inline">mymeal-demo-authed</code>）：
+      </p>
+
+      <div class="compare">
+        <div class="col guest">
+          <h4>訪客（未切換 / 未登入）</h4>
+          <ul>
+            <li>Header 右上角顯示「登入」「申請帳號」兩顆連結</li>
+            <li>沒有通知鈴鐺、沒有頭像</li>
+            <li>側欄<strong>沒有</strong>「會員錢包」區塊</li>
+            <li><code>previewMode=false</code> 時（尚未啟用）：側欄會出現「訪客瀏覽中」提示，需要登入的項目點了會被導去 <code>/login</code>，且項目旁會顯示鎖頭圖示</li>
+          </ul>
+        </div>
+        <div class="col authed">
+          <h4>已登入（預覽狀態）</h4>
+          <ul>
+            <li>Header 顯示通知鈴鐺（含未讀紅點，點開下拉清單）+ 圓形頭像</li>
+            <li>點頭像＝預覽用「登出」，切回訪客畫面</li>
+            <li>側欄最上方新增「會員錢包」卡片，顯示目前餘額，點擊連到 <code>/wallet</code></li>
+            <li><code>previewMode=false</code> 時（尚未啟用）：需要登入的項目才能正常進入、不再顯示鎖頭</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="lbl">怎麼測試</span>
+        <p>打開任一前台頁面，點右上角圓形人像圖示即可在兩種狀態間切換；狀態存在瀏覽器本機，重新整理不會消失，但只是預覽用，跟真正的帳號驗證無關。</p>
+      </div>
+
+      <div class="callout warn">
+        <span class="lbl">跟真正上線時的落差</span>
+        <p>
+          目前的「已登入」預覽是全站共用同一個開關，不分「誰」登入——沒有目前使用者的真實 ID、看不到自己的真實錢包餘額或訂單
+          （側欄錢包卡片的金額是寫死的 NT$ 415）。要換成真的登入系統時，除了接 Auth.js／NextAuth 之類的驗證，
+          還需要把 <code class="inline">app-shell.tsx</code> 的 <code class="inline">previewMode</code> 關掉，
+          並把 <code class="inline">Sidebar</code>／<code class="inline">Header</code> 目前吃 <code class="inline">localStorage</code>
+          demo 開關的地方，換成吃真正的 session（例如目前使用者的 <code class="inline">Member.id</code> 帶出真實餘額）。
+        </p>
+      </div>
+    </section>
+
+    <!-- ══════════════ 六、資料表規劃 ══════════════ -->
+    <section id="schema">
+      <h2><span class="num">06</span>資料表規劃</h2>
+      <p>
+        目前所有資料都定義在 <code class="inline">lib/mock.ts</code>（978 行）。下面把每個型別整理成「未來資料庫表」的樣子：
+        欄位、型別、說明、跟其他表的關聯。標示「衍生 / 非儲存」的不是真正的表，是用其他表即時算出來的（未來應該做成 SQL view
+        或後端計算，而不是真的建表存起來，否則資料會跟來源脫節）。
+      </p>
+
+      <div class="toolbar"><button onclick="document.querySelectorAll('.schema-entry').forEach(d=>d.open=true)">全部展開</button></div>
+
+      <details class="schema-entry" open>
+        <summary><span class="s-title">Supplier</span><span class="s-cn">店家 / 供應商</span></summary>
+        <div class="s-body">
+          <div class="tablewrap"><table>
+            <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">id</td><td class="type">string</td><td class="desc">主鍵。</td></tr>
+              <tr><td class="mono">name</td><td class="type">string</td><td class="desc">店家名稱。</td></tr>
+              <tr><td class="mono">type</td><td class="type">string</td><td class="desc">便當店／餐盒店／咖啡／手搖飲／烘焙／麵食。</td></tr>
+              <tr><td class="mono">phone</td><td class="type">string</td><td class="desc">聯絡電話。</td></tr>
+              <tr><td class="mono">active</td><td class="type">boolean</td><td class="desc">啟用狀態，停用後不影響已存在的品項／模板參照。</td></tr>
+            </tbody>
+          </table></div>
+          <p class="s-note">只是「品項是誰做的」標籤，不是品項或模板的容器——同一模板底下的品項可以來自不同店家。</p>
+        </div>
+      </details>
+
+      <details class="schema-entry" open>
+        <summary><span class="s-title">CatalogItem</span><span class="s-cn">品項總表（約 132 筆）</span></summary>
+        <div class="s-body">
+          <div class="tablewrap"><table>
+            <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">id</td><td class="type">string</td><td class="desc">主鍵。</td></tr>
+              <tr><td class="mono">name</td><td class="type">string</td><td class="desc">品項名稱，全站唯一來源，改名所有引用同步。</td></tr>
+              <tr><td class="mono">kind</td><td class="type">ItemKind</td><td class="desc">meal / drink / snack / other。</td></tr>
+              <tr><td class="mono">category</td><td class="type">string</td><td class="desc">分類（便當／餐盒／麵食／沙拉／咖啡／茶飲／手搖飲／點心／烘焙）。</td></tr>
+              <tr><td class="mono">supplierId</td><td class="type">string</td><td class="desc">→ Supplier.id</td></tr>
+              <tr><td class="mono">price</td><td class="type">number</td><td class="desc">預設價（目前是元，建議改存整數分，見第八節）。</td></tr>
+              <tr><td class="mono">tags</td><td class="type">string[]</td><td class="desc">值來自 TagGroup.options（主食 / 肉類 / 飲食 / 甜度冰塊）。</td></tr>
+              <tr><td class="mono">active</td><td class="type">boolean</td><td class="desc">停用後不會出現在模板可選清單。</td></tr>
+              <tr><td class="mono">emoji</td><td class="type">string</td><td class="desc">沒有圖片時的縮圖替代。</td></tr>
+              <tr><td class="mono">imageUrl</td><td class="type">string?</td><td class="desc">圖片路徑；接後端後由上傳流程寫入。</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+
+      <details class="schema-entry" open>
+        <summary><span class="s-title">TagGroup</span><span class="s-cn">品項標籤群組</span></summary>
+        <div class="s-body">
+          <div class="tablewrap"><table>
+            <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">id</td><td class="type">string</td><td class="desc">主鍵，例如 <code class="inline">staple</code>、<code class="inline">meat</code>。</td></tr>
+              <tr><td class="mono">name</td><td class="type">string</td><td class="desc">主食／肉類／飲食／甜度冰塊。</td></tr>
+              <tr><td class="mono">multi</td><td class="type">boolean</td><td class="desc">是否可複選（肉類、甜度冰塊可複選；主食、飲食單選）。</td></tr>
+              <tr><td class="mono">options</td><td class="type">string[]</td><td class="desc">例：肉類＝雞／豬／牛／羊／魚／海鮮。</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+
+      <details class="schema-entry">
+        <summary><span class="s-title">Interstitial</span><span class="s-cn">蓋台廣告</span></summary>
+        <div class="s-body">
+          <div class="tablewrap"><table>
+            <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">id</td><td class="type">string</td><td class="desc">主鍵。</td></tr>
+              <tr><td class="mono">name</td><td class="type">string</td><td class="desc">後台顯示用標籤，不對外顯示。</td></tr>
+              <tr><td class="mono">enabled</td><td class="type">boolean</td><td class="desc">總開關。</td></tr>
+              <tr><td class="mono">imageUrl</td><td class="type">string</td><td class="desc">廣告圖。</td></tr>
+              <tr><td class="mono">linkUrl</td><td class="type">string?</td><td class="desc">點擊後導向的網址，沒填就不可點擊。</td></tr>
+              <tr><td class="mono">dismissSeconds</td><td class="type">number</td><td class="desc">幾秒後自動關閉，0＝要手動關閉。</td></tr>
+              <tr><td class="mono">frequency</td><td class="type">PromoFrequency</td><td class="desc">always / daily / once。</td></tr>
+              <tr><td class="mono">startAt / endAt</td><td class="type">string</td><td class="desc">ISO 時間字串，決定投放時間窗。</td></tr>
+            </tbody>
+          </table></div>
+          <p class="s-note">前台由 <code class="inline">activeInterstitial(now?)</code> 依上述規則即時判斷要不要顯示。</p>
+        </div>
+      </details>
+
+      <details class="schema-entry" open>
+        <summary><span class="s-title">Template / TemplateSection</span><span class="s-cn">模板 / 模板分類（約 26 個模板）</span></summary>
+        <div class="s-body">
+          <div class="tablewrap"><table>
+            <thead><tr><th>表</th><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">Template</td><td class="mono">id</td><td class="type">string</td><td class="desc">主鍵。</td></tr>
+              <tr><td></td><td class="mono">name</td><td class="type">string</td><td class="desc">例：標準便當週。</td></tr>
+              <tr><td></td><td class="mono">kind</td><td class="type">TemplateKind</td><td class="desc">bento / drinks / tea / other。</td></tr>
+              <tr><td></td><td class="mono">supplierId</td><td class="type">string?</td><td class="desc">→ Supplier.id，僅供標記，非必填；底下品項可跨店家。</td></tr>
+              <tr><td></td><td class="mono">active</td><td class="type">boolean</td><td class="desc">停用後專區看不到此模板可選。</td></tr>
+              <tr><td></td><td class="mono">sections</td><td class="type">TemplateSection[]</td><td class="desc">見下。</td></tr>
+              <tr><td class="mono">TemplateSection</td><td class="mono">id</td><td class="type">string</td><td class="desc">主鍵。</td></tr>
+              <tr><td></td><td class="mono">name</td><td class="type">string</td><td class="desc">自由命名，例如「星期一」或「飲料 / 點心」，不綁死星期幾。</td></tr>
+              <tr><td></td><td class="mono">itemIds</td><td class="type">string[]</td><td class="desc">→ CatalogItem.id[]，同一品項可出現在多個分類 / 多個模板。</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+
+      <details class="schema-entry" open>
+        <summary><span class="s-title">OrderZone</span><span class="s-cn">訂餐專區（約 26 個，對應前台 /z/{slug} 頁）</span></summary>
+        <div class="s-body">
+          <div class="tablewrap"><table>
+            <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">id</td><td class="type">string</td><td class="desc">主鍵。</td></tr>
+              <tr><td class="mono">name</td><td class="type">string</td><td class="desc">例：本週便當。</td></tr>
+              <tr><td class="mono">slug</td><td class="type">string</td><td class="desc">前台網址代稱。</td></tr>
+              <tr><td class="mono">description</td><td class="type">string</td><td class="desc">說明文字。</td></tr>
+              <tr><td class="mono">icon</td><td class="type">string</td><td class="desc">emoji 圖示。</td></tr>
+              <tr><td class="mono">templateIds</td><td class="type">string[]</td><td class="desc">→ Template.id[]，N:N，同一模板最多被 3 個專區使用。</td></tr>
+              <tr><td class="mono">active</td><td class="type">boolean</td><td class="desc">上架 / 下架。</td></tr>
+              <tr><td class="mono">sortOrder</td><td class="type">number</td><td class="desc">排序權重。</td></tr>
+            </tbody>
+          </table></div>
+          <p class="s-note">目前只有後台管理頁，前台真正的 <code class="inline">/z/[slug]</code> 頁面跟「建專區後自動出現在前台導覽」都還沒做，見第八節。</p>
+        </div>
+      </details>
+
+      <details class="schema-entry" open>
+        <summary><span class="s-title">Member</span><span class="s-cn">會員（25 筆）</span></summary>
+        <div class="s-body">
+          <div class="tablewrap"><table>
+            <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">id</td><td class="type">string</td><td class="desc">主鍵。</td></tr>
+              <tr><td class="mono">employeeId</td><td class="type">string</td><td class="desc">員工編號，例：E010001。</td></tr>
+              <tr><td class="mono">name</td><td class="type">string</td><td class="desc">姓名。</td></tr>
+              <tr><td class="mono">account</td><td class="type">string</td><td class="desc">登入帳號。</td></tr>
+              <tr><td class="mono">email</td><td class="type">string</td><td class="desc">公司 Email。</td></tr>
+              <tr><td class="mono">dept</td><td class="type">string</td><td class="desc">部門，來自 <code class="inline">memberDepts</code>。</td></tr>
+              <tr><td class="mono">unit</td><td class="type">string</td><td class="desc">單位（樓層），來自 <code class="inline">memberUnits</code>。</td></tr>
+              <tr><td class="mono">role</td><td class="type">string</td><td class="desc">組別名稱，對應 MemberGroup.name（字串比對，非嚴格外鍵）。</td></tr>
+              <tr><td class="mono">status</td><td class="type">MemberStatus</td><td class="desc">active / suspended。</td></tr>
+              <tr><td class="mono">last</td><td class="type">string</td><td class="desc">最後登入時間（完整年月日時分秒）。</td></tr>
+              <tr><td class="mono">avatarUrl</td><td class="type">string?</td><td class="desc">頭像圖片。</td></tr>
+            </tbody>
+          </table></div>
+          <p class="s-note">參考陣列：<code class="inline">memberDepts</code>（8 個部門）、<code class="inline">memberUnits</code>（三樓／五樓／七樓／九樓）。</p>
+        </div>
+      </details>
+
+      <details class="schema-entry" open>
+        <summary><span class="s-title">PermissionGroup / MemberGroup</span><span class="s-cn">權限鍵 / 會員權限組別</span></summary>
+        <div class="s-body">
+          <div class="tablewrap"><table>
+            <thead><tr><th>表</th><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">PermissionGroup</td><td class="mono">key</td><td class="type">string</td><td class="desc">例：<code class="inline">finance.topup.*</code>。共 12 個：menu / schedule / grouporder / order / finance_topup / finance_wallet / report / user / gamification / audit / rbac / settings。</td></tr>
+              <tr><td></td><td class="mono">label</td><td class="type">string</td><td class="desc">顯示名稱，例：「儲值審核 finance.topup.*」。</td></tr>
+              <tr><td class="mono">MemberGroup</td><td class="mono">key</td><td class="type">string</td><td class="desc">主鍵。目前 5 組：一般使用者／餐飲管理員／財務管理員／客服管理員／超級管理員。</td></tr>
+              <tr><td></td><td class="mono">name</td><td class="type">string</td><td class="desc">顯示名稱，跟 Member.role 對照。</td></tr>
+              <tr><td></td><td class="mono">permissions</td><td class="type">Record&lt;key, PermissionLevel&gt;</td><td class="desc">12 個權限鍵各自的等級：none / own / full（無／僅限自己／具備）。</td></tr>
+            </tbody>
+          </table></div>
+          <p class="s-note"><code class="inline">memberRoles</code>（下拉選單用的組別名稱清單）是從 <code class="inline">memberGroups</code> 動態算出來的，不是另外寫死，兩邊永遠同步。</p>
+        </div>
+      </details>
+
+      <details class="schema-entry" open>
+        <summary><span class="s-title">MemberInsight 系列</span><span class="s-cn">會員洞察 — 每位會員的訂餐 / 收藏 / 評論 / 評分 / 儲值紀錄</span></summary>
+        <div class="s-body">
+          <p class="s-note">全部存在內部的 <code class="inline">memberInsightsMap</code>（依 Member.id 索引），對外透過 <code class="inline">memberInsightById(id)</code> 取整包。</p>
+          <div class="tablewrap"><table>
+            <thead><tr><th>表</th><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">MemberOrderRecord</td><td class="mono">itemId</td><td class="type">string</td><td class="desc">→ CatalogItem.id</td></tr>
+              <tr><td></td><td class="mono">itemName / price</td><td class="type">string / number</td><td class="desc">下單當下的快照（品項改名 / 改價不影響歷史紀錄）。</td></tr>
+              <tr><td></td><td class="mono">quantity</td><td class="type">number</td><td class="desc">單筆訂購數量。</td></tr>
+              <tr><td></td><td class="mono">date</td><td class="type">string</td><td class="desc">完整年月日。</td></tr>
+              <tr><td class="mono">MemberFavorite</td><td class="mono">itemId / at</td><td class="type">string</td><td class="desc">收藏的品項與收藏時間（完整年月日時分秒）。</td></tr>
+              <tr><td class="mono">MemberComment</td><td class="mono">itemId / text / stars / at</td><td class="type">string / string / number / string</td><td class="desc">留言一定帶自己的星等（跟純評分 MemberRating 是分開兩件事——一個是完整評論，一個是快速打星）。</td></tr>
+              <tr><td class="mono">MemberRating</td><td class="mono">itemId / stars</td><td class="type">string / number</td><td class="desc">單純打星，不附文字。</td></tr>
+              <tr><td class="mono">MemberTopupRecord</td><td class="mono">amount / method / at</td><td class="type">number / string / string</td><td class="desc">儲值金額、方式、完整時間。</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+
+      <details class="schema-entry">
+        <summary><span class="s-title">MemberItemBreakdown</span><span class="s-cn badge derived">衍生 / 非儲存</span></summary>
+        <div class="s-body">
+          <p>由 <code class="inline">memberItemBreakdown(id)</code> 把某會員的 MemberOrderRecord 依品項彙總算出：<code class="inline">itemId, itemName, category, tags, totalQuantity, orderCount</code>，依總訂購數量排序。這是「會員洞察 → 訂餐紀錄」頁籤實際顯示的資料。</p>
+        </div>
+      </details>
+
+      <details class="schema-entry">
+        <summary><span class="s-title">MemberLedgerRecord</span><span class="s-cn badge derived">衍生 / 非儲存</span></summary>
+        <div class="s-body">
+          <p>由 <code class="inline">memberLedger(id)</code> 把 MemberTopupRecord（儲值）跟 MemberOrderRecord（消費）合併、依時間排序、算出每筆之後的<code class="inline">balanceAfter</code>（起始基準 500）。欄位：<code class="inline">id, type（topup/spend）, detail, amount, at, balanceAfter</code>。這是「會員洞察 → 儲值紀錄」頁籤的資料來源。</p>
+        </div>
+      </details>
+
+      <details class="schema-entry">
+        <summary><span class="s-title">ItemStat</span><span class="s-cn badge derived">衍生 / 非儲存 — 跨全部會員彙總</span></summary>
+        <div class="s-body">
+          <p>由 <code class="inline">itemStatsList()</code> 把「全部會員」對同一品項的訂購與評分彙總：<code class="inline">itemId, itemName, price, totalQuantity, orderCount, avgRating（可能 null）, commentCount</code>，依總訂購數量排序。這是「餐點統計」列表與首頁輪播「熱門品項」的資料來源。</p>
+        </div>
+      </details>
+
+      <details class="schema-entry">
+        <summary><span class="s-title">ItemCommentEntry</span><span class="s-cn badge derived">衍生 / 非儲存</span></summary>
+        <div class="s-body">
+          <p>由 <code class="inline">itemComments(itemId)</code> 找出某品項被<strong>所有會員</strong>留下的評論，依時間新到舊排序：<code class="inline">memberId, memberName, text, stars, at</code>。用在「餐點統計」詳情頁、以及前台「所有品項 / 我的收藏」的評論彈窗。</p>
+        </div>
+      </details>
+
+      <h4>其他純參考陣列</h4>
+      <div class="tablewrap"><table>
+        <thead><tr><th>名稱</th><th>內容</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">itemCategories</td><td class="desc">便當／餐盒／麵食／沙拉／咖啡／茶飲／手搖飲／點心／烘焙（9 個）</td></tr>
+          <tr><td class="mono">memberDepts</td><td class="desc">網路發展部／設計部／行政部／業務部／資訊部／客服部／財務部／人資部</td></tr>
+          <tr><td class="mono">memberUnits</td><td class="desc">三樓／五樓／七樓／九樓</td></tr>
+          <tr><td class="mono">PAGE_SIZE_OPTIONS</td><td class="desc">10 / 25 / 50 / 100（定義在 components/ui/primitives.tsx，全站共用的每頁筆數選項）</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ══════════════ 七、共用查詢函式 ══════════════ -->
+    <section id="helpers">
+      <h2><span class="num">07</span>共用查詢函式</h2>
+      <p>全部定義在 <code class="inline">lib/mock.ts</code>，等於未來後端 API 的雛形——接資料庫時，這些函式的「輸入輸出形狀」建議直接沿用，內部實作換成真的查詢。</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>函式</th><th>回傳</th></tr></thead>
+        <tbody>
+          <tr><td class="mono fn-name">supplierById(id?)</td><td class="desc">單一 Supplier</td></tr>
+          <tr><td class="mono fn-name">itemById(id)</td><td class="desc">單一 CatalogItem</td></tr>
+          <tr><td class="mono fn-name">allTagOptions()</td><td class="desc">所有標籤值攤平成一個字串陣列</td></tr>
+          <tr><td class="mono fn-name">itemTagForGroup(item, groupId)</td><td class="desc">該品項屬於某個標籤群組的那個值</td></tr>
+          <tr><td class="mono fn-name">interstitialById(id)</td><td class="desc">單一 Interstitial</td></tr>
+          <tr><td class="mono fn-name">interstitialStatus(ad, now?)</td><td class="desc">showing / scheduled / ended / disabled</td></tr>
+          <tr><td class="mono fn-name">activeInterstitial(now?)</td><td class="desc">目前應該顯示的廣告（如果有）</td></tr>
+          <tr><td class="mono fn-name">templateById(id)</td><td class="desc">單一 Template</td></tr>
+          <tr><td class="mono fn-name">zoneById(id)</td><td class="desc">單一 OrderZone</td></tr>
+          <tr><td class="mono fn-name">zonesUsingTemplate(templateId)</td><td class="desc">使用該模板的所有專區</td></tr>
+          <tr><td class="mono fn-name">memberById(id)</td><td class="desc">單一 Member</td></tr>
+          <tr><td class="mono fn-name">membersInGroup(groupName)</td><td class="desc">套用某組別的會員人數</td></tr>
+          <tr><td class="mono fn-name">memberGroupByKey(key)</td><td class="desc">單一 MemberGroup</td></tr>
+          <tr><td class="mono fn-name">memberInsightById(id)</td><td class="desc">單一會員的完整 MemberInsight</td></tr>
+          <tr><td class="mono fn-name">memberInsightSummary(id)</td><td class="desc">訂單數／便當數／收藏數／評論數／評分數／剩餘儲值 六個數字</td></tr>
+          <tr><td class="mono fn-name">memberItemBreakdown(id)</td><td class="desc">該會員依品項彙總的訂餐統計</td></tr>
+          <tr><td class="mono fn-name">memberLedger(id)</td><td class="desc">儲值 + 消費合併流水帳（含餘額）</td></tr>
+          <tr><td class="mono fn-name">itemStatsList()</td><td class="desc">全部品項的跨會員統計，依訂購數量排序</td></tr>
+          <tr><td class="mono fn-name">itemStatById(itemId)</td><td class="desc">單一品項的統計</td></tr>
+          <tr><td class="mono fn-name">itemComments(itemId)</td><td class="desc">該品項所有會員的評論</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ══════════════ 八、建議調整與方向 ══════════════ -->
+    <section id="recommendations">
+      <h2><span class="num">08</span>整體建議與方向</h2>
+      <p>依優先度排列，前面是接下來動工建議先做的，後面是可以晚一點再處理的體驗優化。</p>
+
+      <h3>P0 — 沒有這個，其他都是空談</h3>
+      <div class="rec-grid">
+        <div class="rec-card"><span class="pri p0">P0</span><h4>接上真正的登入 / Session</h4><p>把 <code class="inline">previewMode</code> 關掉，Header／Sidebar 現在吃 localStorage 的地方改吃真實 session；沒有這步，「登入前後差異」永遠只是預覽切換。</p></div>
+        <div class="rec-card"><span class="pri p0">P0</span><h4>資料庫落地</h4><p>把第六節的表建成真正的 Postgres schema（先前規劃已定案：Prisma + Postgres）。<code class="inline">MemberInsight</code> 系列建議拆成真的 <code class="inline">orders / favorites / comments / ratings / topups</code> 表，衍生表全部用 view 或查詢時 group by，不要真的存。</p></div>
+        <div class="rec-card"><span class="pri p0">P0</span><h4>金額改成整數分</h4><p>目前 <code class="inline">price / amount</code> 全部是元（number），照先前規劃改成分（cents）存整數，避免浮點誤差，尤其儲值 / 消費流水帳這種要對帳的地方。</p></div>
+        <div class="rec-card"><span class="pri p0">P0</span><h4>錢包 / 經驗值改 append-only</h4><p><code class="inline">memberLedger()</code> 已經示範了「餘額用流水帳算，不直接改欄位」的概念——這應該變成正式的 <code class="inline">wallet_ledger</code> 表設計，<code class="inline">Member.balance</code> 只是快取欄位。</p></div>
+      </div>
+
+      <h3>P1 — 現有功能裡明顯還沒接的洞</h3>
+      <div class="rec-grid">
+        <div class="rec-card"><span class="pri p1">P1</span><h4>「儲存 / 建立 / 刪除」按鈕還沒串接</h4><p>後台大部分表單（新增組別、新增店家、編輯模板…）按下去目前沒有效果，是預期中的下一步，但要盤點清楚哪些頁面還缺 API。</p></div>
+        <div class="rec-card"><span class="pri p1">P1</span><h4>圖片上傳只是本機預覽</h4><p><code class="inline">ImageField</code> 目前用 <code class="inline">URL.createObjectURL</code> 做本機預覽，選檔沒有真的上傳；品項、會員頭像、蓋台廣告都共用這個元件，接後端時一次修好三處。</p></div>
+        <div class="rec-card"><span class="pri p1">P1</span><h4>訂餐專區沒有真正的前台頁面</h4><p><code class="inline">/admin/zones</code> 管理的專區目前沒有對應的 <code class="inline">/z/[slug]</code> 前台頁，也沒有「建立後自動出現在前台左側導覽」——這是先前討論過但特意延後的項目，建議排進下一輪。</p></div>
+        <div class="rec-card"><span class="pri p1">P1</span><h4>通知系統目前是純 UI</h4><p>Header 鈴鐺清單是寫死的三則假資料。要做成真的，需要：後台可以手動發送 / 排程通知（例如新品項上架）、新會員註冊自動收到一則操作說明、通知已讀狀態存在會員身上。</p></div>
+        <div class="rec-card"><span class="pri p1">P1</span><h4>「一般使用者」組別權限全空</h4><p>目前 5 個組別裡「一般使用者」12 條權限鍵全部是「無」，這符合預期（一般會員本來就不需要後台權限），但建議在權限矩陣頁面用文字註明，避免被誤會是漏設定。</p></div>
+      </div>
+
+      <h3>P2 — 值得做但不急</h3>
+      <div class="rec-grid">
+        <div class="rec-card"><span class="pri p2">P2</span><h4>會員洞察的「特別標記」</h4><p>目前用「推測偏好」自動算出最愛品項類型；如果要做到「手動標記這個人不吃牛」，需要在 Member 或 MemberInsight 上加一個 <code class="inline">dietaryNotes</code> 之類的欄位，讓後台可以直接寫備註，而不是完全依賴自動推算。</p></div>
+        <div class="rec-card"><span class="pri p2">P2</span><h4>命名一致性小整理</h4><p>「品項標籤」頁面標題已從「標籤群組」改名，但頁內個別實體仍叫「標籤群組」（例如「新增標籤群組」按鈕）——這是刻意保留的層次差異（頁面 vs. 資料概念），但建議在文件或頁面上加一句說明，避免後續開發者誤改。</p></div>
+        <div class="rec-card"><span class="pri p2">P2</span><h4>團訂「查看/加入」與「加入我的訂單」已經是同一頁</h4><p>曾經考慮過另外做一個獨立的加入訂單頁，後來確認 <code class="inline">/group-orders/[id]</code> 本身已經內建點餐表單——之後如果要重構，記得這兩者不要拆成兩個頁面，避免邏輯重複。</p></div>
+        <div class="rec-card"><span class="pri p2">P2</span><h4>行動裝置與列印</h4><p>後台表格在小螢幕上目前靠 <code class="inline">overflow-x-auto</code> 橫向捲動，堪用但不理想；如果後台會有人用平板操作，建議規劃一版窄螢幕專用列表卡片。</p></div>
+      </div>
+    </section>
+
+    <footer class="doc-footer">
+      MyMeal 系統手冊 · 依 2026/09/12 當時的程式碼狀態整理 · 之後功能異動請直接更新本檔，或請下一位維護者重新產生。
+    </footer>
+  </main>
+</div>
+
+<script>
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+    var sections = links.map(function (a) {
+      return document.querySelector(a.getAttribute('href'));
+    });
+    function onScroll() {
+      var y = window.scrollY + 120;
+      var idx = 0;
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i] && sections[i].offsetTop <= y) idx = i;
+      }
+      links.forEach(function (a, i) {
+        a.classList.toggle('current', i === idx);
+      });
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>

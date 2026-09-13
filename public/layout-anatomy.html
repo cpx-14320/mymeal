@@ -1,0 +1,593 @@
+<title>版面骨架剖析</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          page: "var(--page)",
+          surface: "var(--surface)",
+          "surface-2": "var(--surface-2)",
+          ink: "var(--ink)",
+          muted: "var(--muted)",
+          line: "var(--line)",
+          brand: "var(--brand)",
+          "brand-fg": "var(--brand-fg)",
+          "brand-soft": "var(--brand-soft)",
+          positive: "var(--positive)",
+          warning: "var(--warning)",
+          danger: "var(--danger)",
+        },
+        fontFamily: {
+          sans: ['"Noto Sans TC"', "system-ui", "sans-serif"],
+          mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root {
+    --page: #faf8f5;
+    --surface: #ffffff;
+    --surface-2: #f4f0ea;
+    --ink: #1c1a17;
+    --muted: #6b6459;
+    --line: #e7e1d8;
+    --brand: #b5730f;
+    --brand-fg: #ffffff;
+    --brand-soft: #fdf3e0;
+    --positive: #1f7a4d;
+    --warning: #9a6a12;
+    --danger: #b23c2e;
+    --doc-page: #f6f3ee;
+    --doc-ink: #262019;
+    --doc-muted: #8a7f6c;
+    --doc-line: #e4dccc;
+    --doc-accent: #6d5a3f;
+    --doc-accent-soft: #efe7d8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #14120f; --surface: #1b1916; --surface-2: #232019;
+      --ink: #ece7de; --muted: #a79f8f; --line: #322c22;
+      --brand: #e0a63e; --brand-fg: #241a08; --brand-soft: #2a2213;
+      --positive: #6fce9c; --warning: #e0b45e; --danger: #ef9587;
+      --doc-page: #171310; --doc-ink: #ece5d6; --doc-muted: #a89b83;
+      --doc-line: #332c20; --doc-accent: #d9b877; --doc-accent-soft: #2a2313;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #14120f; --surface: #1b1916; --surface-2: #232019;
+    --ink: #ece7de; --muted: #a79f8f; --line: #322c22;
+    --brand: #e0a63e; --brand-fg: #241a08; --brand-soft: #2a2213;
+    --positive: #6fce9c; --warning: #e0b45e; --danger: #ef9587;
+    --doc-page: #171310; --doc-ink: #ece5d6; --doc-muted: #a89b83;
+    --doc-line: #332c20; --doc-accent: #d9b877; --doc-accent-soft: #2a2313;
+  }
+  body { background: var(--doc-page); color: var(--doc-ink); font-family: "Noto Sans TC", system-ui, sans-serif; }
+  .doc-mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  .tag {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: var(--doc-accent-soft);
+    color: var(--doc-accent);
+    border: 1px solid color-mix(in srgb, var(--doc-accent) 35%, transparent);
+    white-space: nowrap;
+  }
+  .frame {
+    border: 1.5px dashed color-mix(in srgb, var(--doc-accent) 45%, transparent);
+    border-radius: 14px;
+    position: relative;
+    background: var(--doc-page);
+  }
+  .frame-label {
+    position: absolute;
+    top: -11px;
+    left: 14px;
+    background: var(--doc-page);
+    padding: 0 8px;
+  }
+  .zone { position: relative; }
+  .zone-tag { position: absolute; top: 6px; right: 8px; z-index: 20; }
+</style>
+
+<div class="mx-auto max-w-[1180px] px-5 py-12 sm:px-8">
+
+  <p class="tag">MYMEAL · 元件外觀對照</p>
+  <h1 class="mt-4 text-[28px] font-black tracking-tight text-balance sm:text-[34px]">版面骨架剖析</h1>
+  <p class="mt-3 max-w-[62ch] text-[15px] leading-7" style="color:var(--doc-muted)">
+    這頁不是文字說明,是直接把前台／後台的版面骨架、共用的 UI 元件庫,以及只有單邊在用的
+    <code class="doc-mono">Section</code> 與 <code class="doc-mono">PageContainer + PageHeader</code>、
+    只用過一次的 <code class="doc-mono">Progress</code> 實際排出來,
+    顏色、間距、字級都取自 <code class="doc-mono">app/globals.css</code> 與 <code class="doc-mono">components/ui/primitives.tsx</code> 的真實程式碼,深淺色模式跟著你目前的瀏覽器設定切換。
+  </p>
+
+  <!-- ═══════════ 一、前台骨架 ═══════════ -->
+  <section class="mt-14">
+    <div class="flex items-baseline gap-2">
+      <span class="tag">01</span>
+      <h2 class="text-xl font-extrabold tracking-tight">前台骨架</h2>
+    </div>
+    <p class="mt-2 max-w-[60ch] text-sm" style="color:var(--doc-muted)">Header（置頂）＋ Sidebar（primaryNav）＋ 內容區 ＋ Footer——AppShell 包住的所有前台頁面都是這個結構。</p>
+
+    <div class="frame mt-5">
+      <span class="frame-label tag">AppShell（前台）</span>
+      <div class="flex h-[520px] flex-col overflow-hidden rounded-[12px]">
+
+        <!-- Header -->
+        <div class="zone shrink-0 border-b bg-surface/90" style="border-color:var(--line)">
+          <span class="zone-tag tag">Header</span>
+          <div class="flex h-14 items-center gap-3 px-4">
+            <span class="inline-flex items-center gap-2 font-bold tracking-tight text-ink">
+              <span class="grid size-7 place-items-center rounded-lg bg-brand-soft text-base">🍱</span>
+              <span class="text-lg">My<span class="text-brand">Meal</span></span>
+            </span>
+            <div class="ml-auto flex items-center gap-2">
+              <span class="grid size-9 place-items-center rounded-lg text-muted">☀</span>
+              <span class="rounded-lg px-3 py-2 text-sm font-medium text-ink">登入</span>
+              <span class="rounded-lg bg-brand px-3.5 py-2 text-sm font-semibold text-brand-fg">申請帳號</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex min-h-0 flex-1">
+          <!-- Sidebar -->
+          <div class="zone hidden w-64 shrink-0 overflow-y-auto border-r bg-surface sm:block" style="border-color:var(--line)">
+            <span class="zone-tag tag">Sidebar · primaryNav</span>
+            <nav class="space-y-1 p-3 pt-10">
+              <a class="flex items-start gap-3 rounded-lg bg-brand-soft px-3 py-2.5 text-sm text-ink">
+                <span class="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded text-brand">▣</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block font-medium">本週餐點</span>
+                  <span class="block truncate text-xs text-muted">便當、飲料、下午茶</span>
+                </span>
+              </a>
+              <a class="flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm text-ink">
+                <span class="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded text-muted">▣</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block font-medium">所有品項</span>
+                  <span class="block truncate text-xs text-muted">瀏覽全部品項、收藏、看評論</span>
+                </span>
+              </a>
+              <a class="flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm text-ink">
+                <span class="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded text-muted">▣</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block font-medium">開團訂餐</span>
+                  <span class="block truncate text-xs text-muted">開團或加入同事的團</span>
+                </span>
+              </a>
+              <a class="flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm text-ink">
+                <span class="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded text-muted">▣</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block font-medium">我的訂單</span>
+                  <span class="block truncate text-xs text-muted">查看與修改餐點</span>
+                </span>
+              </a>
+              <a class="flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm text-ink">
+                <span class="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded text-muted">▣</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block font-medium">我的收藏</span>
+                  <span class="block truncate text-xs text-muted">收藏的菜色</span>
+                </span>
+              </a>
+              <a class="flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm text-ink">
+                <span class="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded text-muted">▣</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block font-medium">錢包 / 儲值</span>
+                  <span class="block truncate text-xs text-muted">餘額、交易明細、儲值申請</span>
+                </span>
+              </a>
+              <a class="flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm text-ink">
+                <span class="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded text-muted">▣</span>
+                <span class="min-w-0 flex-1"><span class="block font-medium">會員中心</span></span>
+              </a>
+              <a class="mt-1 flex items-start gap-3 rounded-lg border-t px-3 pt-3.5 py-2.5 text-sm text-ink" style="border-color:var(--line)">
+                <span class="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded text-muted">▣</span>
+                <span class="min-w-0 flex-1"><span class="block font-medium">後台管理</span></span>
+              </a>
+            </nav>
+          </div>
+
+          <!-- 內容區 -->
+          <div class="zone min-w-0 flex-1 bg-page">
+            <span class="zone-tag tag">頁面內容（children）</span>
+            <div class="flex h-full items-center justify-center p-8 text-sm" style="color:var(--doc-muted)">
+              例如 /menu、/catalog、/wallet…
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="zone shrink-0 border-t bg-surface" style="border-color:var(--line)">
+          <span class="zone-tag tag">Footer</span>
+          <div class="flex items-center justify-between px-4 py-3 text-xs text-muted">
+            <span class="inline-flex items-center gap-1.5 font-bold text-ink">🍱 My<span class="text-brand">Meal</span></span>
+            <span>© 2026 智冠科技　MyMeal</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 二、後台骨架 ═══════════ -->
+  <section class="mt-16">
+    <div class="flex items-baseline gap-2">
+      <span class="tag">02</span>
+      <h2 class="text-xl font-extrabold tracking-tight">後台骨架</h2>
+    </div>
+    <p class="mt-2 max-w-[60ch] text-sm" style="color:var(--doc-muted)">同一個 Header／Footer 元件,只有 Sidebar 換成 adminNav（六個分組，可各自收合）——不是另外做一套外框。</p>
+
+    <div class="frame mt-5">
+      <span class="frame-label tag">AppShell（後台，路徑以 /admin 開頭）</span>
+      <div class="flex h-[560px] flex-col overflow-hidden rounded-[12px]">
+
+        <div class="zone shrink-0 border-b bg-surface/90" style="border-color:var(--line)">
+          <span class="zone-tag tag">Header（同一份元件）</span>
+          <div class="flex h-14 items-center gap-3 px-4">
+            <span class="inline-flex items-center gap-2 font-bold tracking-tight text-ink">
+              <span class="grid size-7 place-items-center rounded-lg bg-brand-soft text-base">🍱</span>
+              <span class="text-lg">My<span class="text-brand">Meal</span></span>
+            </span>
+            <div class="ml-auto flex items-center gap-2">
+              <span class="grid size-9 place-items-center rounded-lg text-muted">☀</span>
+              <span class="grid size-9 place-items-center rounded-lg text-muted">🔔</span>
+              <span class="grid size-9 place-items-center rounded-full text-brand">◉</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex min-h-0 flex-1">
+          <div class="zone hidden w-64 shrink-0 overflow-y-auto border-r bg-surface sm:block" style="border-color:var(--line)">
+            <span class="zone-tag tag">Sidebar · adminNav</span>
+            <div class="border-b p-3 pt-10" style="border-color:var(--line)">
+              <p class="flex items-center gap-1.5 text-sm text-muted">← 返回前台</p>
+              <p class="mt-1.5 px-1 text-xs font-semibold tracking-wide text-brand">後台管理</p>
+            </div>
+            <nav class="space-y-3 p-3">
+              <a class="flex items-center gap-3 rounded-lg bg-brand-soft px-3 py-2 text-sm font-medium text-ink">
+                <span class="text-brand">▣</span>總覽
+              </a>
+              <div>
+                <div class="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium text-muted">
+                  菜單與訂餐<span>▾</span>
+                </div>
+                <div class="ml-0 space-y-0.5 pl-2.5">
+                  <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted"><span>▣</span>訂餐專區</a>
+                  <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted"><span>▣</span>模板</a>
+                  <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted"><span>▣</span>店家</a>
+                  <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted"><span>▣</span>品項分類</a>
+                  <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted"><span>▣</span>品項標籤</a>
+                  <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted"><span>▣</span>品項</a>
+                  <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted"><span>▣</span>團訂</a>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium text-muted">財務<span>▾</span></div>
+                <div class="space-y-0.5 pl-2.5">
+                  <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted"><span>▣</span>儲值審核</a>
+                  <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted"><span>▣</span>錢包與交易</a>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium text-muted">會員與權限<span>▸</span></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium text-muted">互動與行銷<span>▸</span></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium text-muted">系統<span>▸</span></div>
+              </div>
+            </nav>
+          </div>
+
+          <div class="zone min-w-0 flex-1 bg-page">
+            <span class="zone-tag tag">頁面內容（children）</span>
+            <div class="flex h-full items-center justify-center p-8 text-sm" style="color:var(--doc-muted)">
+              例如 /admin、/admin/items、/admin/roles…
+            </div>
+          </div>
+        </div>
+
+        <div class="zone shrink-0 border-t bg-surface" style="border-color:var(--line)">
+          <span class="zone-tag tag">Footer（同一份元件）</span>
+          <div class="flex items-center justify-between px-4 py-3 text-xs text-muted">
+            <span class="inline-flex items-center gap-1.5 font-bold text-ink">🍱 My<span class="text-brand">Meal</span></span>
+            <span>© 2026 智冠科技　MyMeal</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="mt-3 text-xs" style="color:var(--doc-muted)">
+      灰色 ▸ 代表該分組目前收合（收合狀態存在 <code class="doc-mono">localStorage['mymeal-admin-nav-collapsed']</code>）；「菜單與訂餐」「財務」展開作示範。
+    </p>
+  </section>
+
+  <!-- ═══════════ 三、共用 UI 元件庫 ═══════════ -->
+  <section class="mt-16">
+    <div class="flex items-baseline gap-2">
+      <span class="tag">03</span>
+      <h2 class="text-xl font-extrabold tracking-tight">共用 UI 元件庫</h2>
+    </div>
+    <p class="mt-2 max-w-[60ch] text-sm" style="color:var(--doc-muted)">
+      這些在 <code class="doc-mono">components/ui/primitives.tsx</code> 裡定義,前後台都直接拿來用,不是各自重做一份。
+    </p>
+
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+
+      <!-- Card / CardBody -->
+      <div class="rounded-2xl p-5" style="background:var(--surface);border:1px solid var(--line)">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="doc-mono text-sm font-semibold">&lt;Card&gt; / &lt;CardBody&gt;</span>
+          <span class="text-xs" style="color:var(--doc-muted)">10 / 15 個檔案</span>
+        </div>
+        <div class="rounded-xl border bg-surface" style="border-color:var(--line)">
+          <div class="p-5">
+            <p class="font-medium text-ink">三樓週三團</p>
+            <p class="mt-1 text-sm text-muted">健康廚房．8 / 6 份</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Badge -->
+      <div class="rounded-2xl p-5" style="background:var(--surface);border:1px solid var(--line)">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="doc-mono text-sm font-semibold">&lt;Badge&gt;</span>
+          <span class="text-xs" style="color:var(--doc-muted)">16 / 9 個檔案 · 5 種 tone</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:var(--surface-2);color:var(--muted)">neutral</span>
+          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:var(--brand-soft);color:var(--brand)">brand</span>
+          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:color-mix(in srgb, var(--positive) 15%, transparent);color:var(--positive)">positive</span>
+          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:color-mix(in srgb, var(--warning) 15%, transparent);color:var(--warning)">warning</span>
+          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:color-mix(in srgb, var(--danger) 15%, transparent);color:var(--danger)">danger</span>
+        </div>
+      </div>
+
+      <!-- Button / ButtonLink -->
+      <div class="rounded-2xl p-5 md:col-span-2" style="background:var(--surface);border:1px solid var(--line)">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="doc-mono text-sm font-semibold">&lt;Button&gt; / &lt;ButtonLink&gt;</span>
+          <span class="text-xs" style="color:var(--doc-muted)">28 / 24 個檔案 · 4 種 variant × 2 種 size</span>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <p class="mb-2 text-xs font-medium" style="color:var(--doc-muted)">size=md（預設）</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <button class="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-brand-fg bg-brand">primary</button>
+              <button class="inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold text-ink bg-surface" style="border-color:var(--line)">secondary</button>
+              <button class="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-ink">ghost</button>
+              <button class="inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold" style="border-color:color-mix(in srgb, var(--danger) 40%, transparent); color:var(--danger)">danger</button>
+            </div>
+          </div>
+          <div>
+            <p class="mb-2 text-xs font-medium" style="color:var(--doc-muted)">size=sm（表格「操作」欄用）</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <button class="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-sm font-semibold text-brand-fg bg-brand">核准</button>
+              <button class="inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1 text-sm font-semibold text-ink bg-surface" style="border-color:var(--line)">編輯</button>
+              <button class="inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1 text-sm font-semibold" style="border-color:color-mix(in srgb, var(--danger) 40%, transparent); color:var(--danger)">退件</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat -->
+      <div class="rounded-2xl p-5" style="background:var(--surface);border:1px solid var(--line)">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="doc-mono text-sm font-semibold">&lt;Stat&gt;</span>
+          <span class="text-xs" style="color:var(--doc-muted)">4 / 2 個檔案</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border p-4" style="border-color:var(--line)">
+            <p class="text-xs text-muted">今日團數</p>
+            <p class="mt-1 text-xl font-bold tabular-nums text-ink">2</p>
+            <p class="mt-0.5 text-xs text-muted">1 成團 · 1 未達標</p>
+          </div>
+          <div class="rounded-xl border p-4" style="border-color:var(--line)">
+            <p class="text-xs text-muted">待審儲值</p>
+            <p class="mt-1 text-xl font-bold tabular-nums text-ink">3</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PillTabs -->
+      <div class="rounded-2xl p-5" style="background:var(--surface);border:1px solid var(--line)">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="doc-mono text-sm font-semibold">&lt;PillTabs&gt;</span>
+          <span class="text-xs" style="color:var(--doc-muted)">5 / 3 個檔案</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class="rounded-full px-3 py-1.5 text-sm text-brand-fg bg-brand">全部<span class="ml-1.5 tabular-nums opacity-70">132</span></button>
+          <button class="rounded-full border px-3 py-1.5 text-sm text-muted bg-surface" style="border-color:var(--line)">餐點<span class="ml-1.5 tabular-nums opacity-70">80</span></button>
+          <button class="rounded-full border px-3 py-1.5 text-sm text-muted bg-surface" style="border-color:var(--line)">飲料<span class="ml-1.5 tabular-nums opacity-70">32</span></button>
+          <button class="rounded-full border px-3 py-1.5 text-sm text-muted bg-surface" style="border-color:var(--line)">點心<span class="ml-1.5 tabular-nums opacity-70">20</span></button>
+        </div>
+      </div>
+
+      <!-- TableWrap / Th / Td + PageSizeSelect + Pagination -->
+      <div class="rounded-2xl p-5 md:col-span-2" style="background:var(--surface);border:1px solid var(--line)">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="doc-mono text-sm font-semibold">&lt;TableWrap&gt;/&lt;Th&gt;/&lt;Td&gt; + &lt;PageSizeSelect&gt; + &lt;Pagination&gt;</span>
+          <span class="text-xs" style="color:var(--doc-muted)">17-13 / 2-4 個檔案</span>
+        </div>
+        <div class="mb-3 flex justify-end">
+          <label class="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted">
+            每頁顯示
+            <select class="rounded-lg border bg-surface px-2 py-1 text-xs text-ink" style="border-color:var(--line)"><option>25</option></select>
+            筆
+          </label>
+        </div>
+        <div class="overflow-x-auto rounded-xl border" style="border-color:var(--line)">
+          <table class="w-full text-sm">
+            <thead>
+              <tr>
+                <th class="whitespace-nowrap px-4 py-2.5 text-left text-xs font-medium text-muted bg-surface-2">品項</th>
+                <th class="whitespace-nowrap px-4 py-2.5 text-left text-xs font-medium text-muted bg-surface-2">分類</th>
+                <th class="whitespace-nowrap px-4 py-2.5 text-right text-xs font-medium text-muted bg-surface-2">預設價</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="border-t px-4 py-3 align-middle font-medium text-ink" style="border-color:var(--line)">🍗 招牌雞腿飯</td>
+                <td class="border-t px-4 py-3 align-middle text-muted" style="border-color:var(--line)">便當</td>
+                <td class="border-t px-4 py-3 align-middle text-right tabular-nums text-ink" style="border-color:var(--line)">NT$ 95</td>
+              </tr>
+              <tr>
+                <td class="border-t px-4 py-3 align-middle font-medium text-ink" style="border-color:var(--line)">🐟 香煎鯖魚飯</td>
+                <td class="border-t px-4 py-3 align-middle text-muted" style="border-color:var(--line)">便當</td>
+                <td class="border-t px-4 py-3 align-middle text-right tabular-nums text-ink" style="border-color:var(--line)">NT$ 90</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-3 pt-1">
+          <p class="text-xs tabular-nums text-muted">第 1–25 筆，共 132 筆</p>
+          <div class="flex items-center gap-1">
+            <button class="rounded-lg border px-2.5 py-1.5 text-sm text-muted bg-surface" style="border-color:var(--line)" disabled>‹</button>
+            <button class="min-w-8 rounded-lg px-2.5 py-1.5 text-sm tabular-nums text-brand-fg bg-brand">1</button>
+            <button class="min-w-8 rounded-lg border px-2.5 py-1.5 text-sm tabular-nums text-muted bg-surface" style="border-color:var(--line)">2</button>
+            <button class="min-w-8 rounded-lg border px-2.5 py-1.5 text-sm tabular-nums text-muted bg-surface" style="border-color:var(--line)">3</button>
+            <span class="px-1.5 text-sm text-muted">…</span>
+            <button class="min-w-8 rounded-lg border px-2.5 py-1.5 text-sm tabular-nums text-muted bg-surface" style="border-color:var(--line)">6</button>
+            <button class="rounded-lg border px-2.5 py-1.5 text-sm text-muted bg-surface" style="border-color:var(--line)">›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Field + inputClass -->
+      <div class="rounded-2xl p-5" style="background:var(--surface);border:1px solid var(--line)">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="doc-mono text-sm font-semibold">&lt;Field&gt; + inputClass</span>
+          <span class="text-xs" style="color:var(--doc-muted)">6 / 5 個檔案</span>
+        </div>
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-ink">姓名</span>
+          <input class="w-full rounded-lg border bg-surface px-3 py-2 text-sm text-ink" style="border-color:var(--line)" placeholder="例：林佩珊">
+          <span class="mt-1 block text-xs text-muted">選填提示文字放這裡。</span>
+        </label>
+      </div>
+
+      <!-- Note -->
+      <div class="rounded-2xl p-5" style="background:var(--surface);border:1px solid var(--line)">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="doc-mono text-sm font-semibold">&lt;Note&gt;</span>
+          <span class="text-xs" style="color:var(--doc-muted)">7 / 3 個檔案</span>
+        </div>
+        <div class="rounded-lg border p-4 text-sm text-muted" style="border-color:var(--line); border-left:3px solid var(--brand)">
+          「調整」用於訂單金額結算有誤等情況，會寫入一筆新的抵銷紀錄，不修改原始交易。
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════ 四、單邊使用的 UI 元件 ═══════════ -->
+  <section class="mt-16">
+    <div class="flex items-baseline gap-2">
+      <span class="tag">04</span>
+      <h2 class="text-xl font-extrabold tracking-tight">單邊使用的 UI 元件</h2>
+    </div>
+    <p class="mt-2 max-w-[60ch] text-sm" style="color:var(--doc-muted)">兩邊都需要「頁面標題＋說明＋操作按鈕」，但各自長出了不同的元件——外型差異看下面就很清楚。</p>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-2">
+      <!-- Section（後台） -->
+      <div>
+        <div class="mb-2 flex items-center gap-2">
+          <span class="tag" style="background:var(--danger);color:#fff;border-color:var(--danger)">後台專用</span>
+          <span class="doc-mono text-sm font-semibold">&lt;Section&gt;</span>
+          <span class="text-xs" style="color:var(--doc-muted)">32 個檔案在用</span>
+        </div>
+        <div class="rounded-2xl p-5" style="background:var(--surface);border:1px solid var(--line)">
+          <section class="space-y-4">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 class="text-lg font-bold tracking-tight text-ink">會員管理</h2>
+                <p class="mt-0.5 text-sm text-muted">註冊審核、停權 / 復權、權限指派。</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="rounded-lg bg-brand px-3.5 py-2 text-sm font-semibold text-brand-fg">新增會員</span>
+              </div>
+            </div>
+            <div class="rounded-xl border" style="border-color:var(--line)">
+              <div class="grid grid-cols-3 gap-px text-xs" style="background:var(--line)">
+                <div class="bg-surface-2 px-3 py-2 font-medium text-muted">姓名</div>
+                <div class="bg-surface-2 px-3 py-2 font-medium text-muted">部門</div>
+                <div class="bg-surface-2 px-3 py-2 font-medium text-muted">狀態</div>
+                <div class="bg-surface px-3 py-2 text-ink">林佩珊</div>
+                <div class="bg-surface px-3 py-2 text-muted">設計部</div>
+                <div class="bg-surface px-3 py-2"><span class="rounded-full px-2 py-0.5 text-[11px] font-medium" style="background:color-mix(in srgb, var(--positive) 18%, transparent); color:var(--positive)">啟用</span></div>
+              </div>
+            </div>
+          </section>
+        </div>
+        <p class="mt-2 text-xs leading-5" style="color:var(--doc-muted)">標題（<span class="doc-mono">text-lg</span>）＋說明＋操作按鈕跟內容<strong>包在同一個 &lt;section&gt; 裡</strong>，靠 <span class="doc-mono">space-y-4</span> 分隔——沒有獨立的頁面外殼，內容直接接在標題下面。</p>
+      </div>
+
+      <!-- PageContainer + PageHeader（前台） -->
+      <div>
+        <div class="mb-2 flex items-center gap-2">
+          <span class="tag" style="background:var(--positive);color:#fff;border-color:var(--positive)">前台專用</span>
+          <span class="doc-mono text-sm font-semibold">&lt;PageContainer&gt; + &lt;PageHeader&gt;</span>
+          <span class="text-xs" style="color:var(--doc-muted)">14 個檔案在用</span>
+        </div>
+        <div class="rounded-2xl p-5" style="background:var(--surface);border:1px solid var(--line)">
+          <div class="space-y-8">
+            <div class="flex flex-wrap items-end justify-between gap-4 border-b pb-5" style="border-color:var(--line)">
+              <div>
+                <h1 class="text-2xl font-bold tracking-tight text-ink">錢包 / 儲值</h1>
+                <p class="mt-1 text-sm text-muted">以錢包餘額支付餐費。餘額不足時請提出儲值申請。</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="rounded-lg bg-brand px-3.5 py-2 text-sm font-semibold text-brand-fg">申請儲值</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <div class="rounded-xl border p-4" style="border-color:var(--line)">
+                <p class="text-xs text-muted">目前餘額</p>
+                <p class="mt-1 text-xl font-bold tabular-nums text-ink">NT$ 415</p>
+              </div>
+              <div class="rounded-xl border p-4" style="border-color:var(--line)">
+                <p class="text-xs text-muted">本月儲值</p>
+                <p class="mt-1 text-xl font-bold tabular-nums text-ink">NT$ 500</p>
+              </div>
+              <div class="rounded-xl border p-4" style="border-color:var(--line)">
+                <p class="text-xs text-muted">本月消費</p>
+                <p class="mt-1 text-xl font-bold tabular-nums text-ink">NT$ 285</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="mt-2 text-xs leading-5" style="color:var(--doc-muted)"><span class="doc-mono">PageHeader</span> 是獨立、字級更大（<span class="doc-mono">text-2xl</span>）且<strong>底下有邊框線</strong>的獨立頁首，跟內容之間用 <span class="doc-mono">space-y-8</span>（比 Section 更鬆）隔開，比較像「一頁的封面」而不是區塊標題。</p>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="mt-8">
+      <div class="mb-2 flex items-center gap-2">
+        <span class="tag" style="background:var(--warning);color:#fff;border-color:var(--warning)">前台 · 只用過一次</span>
+        <span class="doc-mono text-sm font-semibold">&lt;Progress&gt;</span>
+        <span class="text-xs" style="color:var(--doc-muted)">/account 等級進度</span>
+      </div>
+      <div class="max-w-md rounded-2xl p-5" style="background:var(--surface);border:1px solid var(--line)">
+        <div class="flex items-center justify-between text-sm">
+          <span class="font-medium text-ink">Lv. 6 美食獵人</span>
+          <span class="tabular-nums text-muted">720 / 1000 XP</span>
+        </div>
+        <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+          <div class="h-full rounded-full bg-brand" style="width:72%"></div>
+        </div>
+      </div>
+      <p class="mt-2 text-xs leading-5" style="color:var(--doc-muted)">整個元件就是一條 <span class="doc-mono">h-2</span> 的圓角軌道 + 一個依百分比撐開寬度的 <span class="doc-mono">bg-brand</span> 內條，沒有數字標籤，數字是呼叫端自己排版加上去的。</p>
+    </div>
+  </section>
+
+  <p class="mt-16 border-t pt-6 text-xs" style="border-color:var(--doc-line); color:var(--doc-muted)">
+    版面骨架剖析 · 顏色與間距取自 app/globals.css 與 components/ui/primitives.tsx 的實際程式碼 · 2026/09/12
+  </p>
+</div>

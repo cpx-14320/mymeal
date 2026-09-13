@@ -1,0 +1,77 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Section,
+  Button,
+  Stat,
+  TableWrap,
+  Th,
+  Td,
+} from "@/components/ui/primitives";
+import { departments, departmentExportSummary } from "@/lib/mock";
+
+/**
+ * 部門負責人視角：選一個部門，跨底下所有單位彙總團訂資料，一次匯出。
+ * 對照單位負責人只會在上面表格裡看到、匯出自己單位的團。
+ */
+export function DepartmentExport() {
+  const [departmentId, setDepartmentId] = useState(departments[0]?.id ?? "");
+  const summary = departmentExportSummary(departmentId);
+
+  return (
+    <Section
+      title="依部門匯出"
+      description="部門負責人可以跨底下所有單位，一次彙總、匯出整個部門的團訂資料。"
+      actions={
+        <select
+          value={departmentId}
+          onChange={(e) => setDepartmentId(e.target.value)}
+          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+        >
+          {departments.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+      }
+    >
+      {summary && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-4">
+            <Stat label="單位數" value={summary.unitCount} />
+            <Stat label="團數" value={summary.orderCount} />
+            <Stat label="總份數" value={summary.totalQty} />
+            <Stat label="總金額" value={`NT$ ${summary.totalAmount}`} />
+          </div>
+
+          <TableWrap>
+            <thead>
+              <tr>
+                <Th>單位</Th>
+                <Th className="text-right">團數</Th>
+                <Th className="text-right">份數</Th>
+                <Th className="text-right">金額</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {summary.byUnit.map((u) => (
+                <tr key={u.unitId}>
+                  <Td className="font-medium">{u.unitName}</Td>
+                  <Td className="text-right tabular-nums">{u.orderCount}</Td>
+                  <Td className="text-right tabular-nums">{u.qty}</Td>
+                  <Td className="text-right tabular-nums">NT$ {u.amount}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </TableWrap>
+
+          <div className="flex justify-end">
+            <Button>匯出「{summary.departmentName}」全部單位資料</Button>
+          </div>
+        </>
+      )}
+    </Section>
+  );
+}

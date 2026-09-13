@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/* ── MyMeal 主題 ───────────────────────────────────────────
+   暖色（延續舊系統的黃色系）＋ 溫和的米色中性色。
+   三種狀態：
+   - 未設定 data-theme → 跟隨系統（prefers-color-scheme）
+   - data-theme="light" → 強制淺色
+   - data-theme="dark"  → 強制深色
+   元件一律用語意 class（bg-surface、text-ink…），不寫死顏色。   */
+
+:root {
+  color-scheme: light;
+  --page: #faf8f5;
+  --surface: #ffffff;
+  --surface-2: #f4f0ea;
+  --ink: #1c1a17;
+  --muted: #6b6459;
+  --line: #e7e1d8;
+  --brand: #b5730f;
+  --brand-fg: #ffffff;
+  --brand-soft: #fdf3e0;
+  --accent: #2f6b57;
+  --positive: #1f7a4d;
+  --warning: #9a6a12;
+  --danger: #b23c2e;
+}
+
+/* 深色調色盤（放這個 mixin 用的自訂屬性組，下面兩處引用） */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #14120f;
+    --surface: #1b1916;
+    --surface-2: #232019;
+    --ink: #ece7de;
+    --muted: #9c9488;
+    --line: #2f2a23;
+    --brand: #e0a63e;
+    --brand-fg: #241a08;
+    --brand-soft: #2a2213;
+    --accent: #68b79c;
+    --positive: #57c48a;
+    --warning: #e0b45e;
+    --danger: #e98a7c;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #14120f;
+  --surface: #1b1916;
+  --surface-2: #232019;
+  --ink: #ece7de;
+  --muted: #9c9488;
+  --line: #2f2a23;
+  --brand: #e0a63e;
+  --brand-fg: #241a08;
+  --brand-soft: #2a2213;
+  --accent: #68b79c;
+  --positive: #57c48a;
+  --warning: #e0b45e;
+  --danger: #e98a7c;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-noto-tc), "PingFang TC", "Microsoft JhengHei",
+    ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font-sans);
+  }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* 後台按鈕文字不加粗（前台維持 font-semibold） */
+.admin-scope .btn {
+  font-weight: 400;
+}
