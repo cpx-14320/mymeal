@@ -10,7 +10,6 @@ import {
   resolveHref,
   type SupplierNavItem,
 } from "./nav";
-import { currentMemberId, memberInsightById } from "@/lib/mock";
 import { useLoginModal } from "./login-modal-context";
 
 const ADMIN_NAV_COLLAPSE_KEY = "mymeal-admin-nav-collapsed";
@@ -29,6 +28,8 @@ interface SidebarProps {
   onNavigate?: () => void;
   /** 已上架的店家，動態多顯示在主導覽最後——後台新增店家就會同步出現，目前頁面內容先空著。 */
   suppliers?: SupplierNavItem[];
+  /** 目前登入會員的真實錢包餘額，「會員錢包」小工具用。 */
+  walletBalance?: number;
 }
 
 export function Sidebar({
@@ -37,6 +38,7 @@ export function Sidebar({
   previewMode = false,
   onNavigate,
   suppliers = [],
+  walletBalance = 0,
 }: SidebarProps) {
   const pathname = usePathname();
   const inAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
@@ -206,7 +208,7 @@ export function Sidebar({
         >
           <p className="text-xs text-muted">會員錢包</p>
           <p className="mt-0.5 text-lg font-bold tabular-nums text-brand">
-            NT$ {memberInsightById(currentMemberId)?.balance ?? 0}
+            NT$ {walletBalance}
           </p>
         </Link>
       )}

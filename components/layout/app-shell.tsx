@@ -28,12 +28,15 @@ export function AppShell({
   children,
   suppliers = [],
   announcement = "",
+  walletBalance = 0,
 }: {
   children: ReactNode;
   /** 已上架的店家，前台側欄用來動態多顯示一個連結（見 sidebar.tsx）；後台新增店家就會同步出現。 */
   suppliers?: SupplierNavItem[];
   /** 後台「系統設定」的公告文字；空字串就不顯示。 */
   announcement?: string;
+  /** 目前登入會員的真實錢包餘額（未登入時為 0），側欄「會員錢包」小工具用。 */
+  walletBalance?: number;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -111,7 +114,12 @@ export function AppShell({
         <div className="mx-auto flex w-full max-w-[1400px] flex-1">
           {/* 桌機：固定側欄 */}
           <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 border-r border-line bg-surface lg:block">
-            <Sidebar previewMode={previewMode} isAuthed={mounted && authed} suppliers={suppliers} />
+            <Sidebar
+              previewMode={previewMode}
+              isAuthed={mounted && authed}
+              suppliers={suppliers}
+              walletBalance={walletBalance}
+            />
           </aside>
 
           {/* 行動版：抽屜 */}
@@ -144,6 +152,7 @@ export function AppShell({
                     previewMode={previewMode}
                     isAuthed={mounted && authed}
                     suppliers={suppliers}
+                    walletBalance={walletBalance}
                     onNavigate={() => setDrawerOpen(false)}
                   />
                 </div>

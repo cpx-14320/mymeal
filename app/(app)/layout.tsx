@@ -2,9 +2,16 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { listSuppliers } from "@/lib/models/supplier";
 import { getAnnouncement } from "@/lib/models/settings";
+import { getSessionMemberId } from "@/lib/session";
+import { getMemberBalance } from "@/lib/models/wallet";
 
 export default async function AppGroupLayout({ children }: { children: ReactNode }) {
-  const [suppliers, announcement] = await Promise.all([listSuppliers(), getAnnouncement()]);
+  const memberId = await getSessionMemberId();
+  const [suppliers, announcement, walletBalance] = await Promise.all([
+    listSuppliers(),
+    getAnnouncement(),
+    memberId ? getMemberBalance(memberId) : Promise.resolve(0),
+  ]);
   const activeSuppliers = suppliers
     .filter((s) => s.active)
     .map((s) => ({
@@ -17,7 +24,7 @@ export default async function AppGroupLayout({ children }: { children: ReactNode
     }));
 
   return (
-    <AppShell suppliers={activeSuppliers} announcement={announcement}>
+    <AppShell suppliers={activeSuppliers} announcement={announcement} walletBalance={walletBalance}>
       {children}
     </AppShell>
   );

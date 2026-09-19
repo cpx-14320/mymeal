@@ -10,51 +10,21 @@ import {
   Th,
   Td,
 } from "@/components/ui/primitives";
+import { formatTaiwanDateTime } from "@/lib/date";
+import type { WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
+import type { TopupRequestView, TopupStatus } from "@/lib/models/topup-request";
 
-const txnTypes = ["訂餐扣款", "儲值入帳", "退款"] as const;
-const txnDescs = [
-  "五樓午餐．香煎鯖魚便當",
-  "行政週五團．三杯雞便當",
-  "三樓週三團．烤時蔬溫沙拉",
-  "銀行轉帳．末五碼 12345",
-  "三樓週三團取消",
-  "研發部午餐．招牌雞腿飯",
-  "星巴克揪團．拿鐵（大）",
-];
+const ledgerTypeLabel: Record<LedgerType, string> = {
+  topup: "儲值入帳",
+  spend: "訂餐扣款",
+  refund: "退款",
+  adjustment: "手動調整",
+};
 
-function timestamp(day: number, hour: number, minute: number) {
-  return `2026/09/${String(day).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-}
-
-let runningBalance = 415;
-const txns = Array.from({ length: 30 }, (_, i) => {
-  const type = txnTypes[i % txnTypes.length];
-  const amount =
-    type === "儲值入帳" ? [300, 500, 1000][i % 3] : type === "退款" ? 95 : -[90, 95, 100][i % 3];
-  runningBalance -= amount;
-  return {
-    date: timestamp(10 - (i % 9), 9 + (i % 10), (i * 7) % 60),
-    type,
-    desc: txnDescs[i % txnDescs.length],
-    amount,
-    balance: runningBalance,
-  };
-}).reverse();
-
-const requestMethods = ["銀行轉帳", "現金", "信用卡"];
-const requestStatuses = ["approved", "approved", "pending", "rejected"] as const;
-
-const requests = Array.from({ length: 14 }, (_, i) => ({
-  date: `2026/09/${String(10 - (i % 9)).padStart(2, "0")} ${String(9 + (i % 12)).padStart(2, "0")}:${String((i * 11) % 60).padStart(2, "0")}:${String((i * 19) % 60).padStart(2, "0")}`,
-  amount: [300, 500, 1000, 1500][i % 4],
-  method: requestMethods[i % requestMethods.length],
-  status: requestStatuses[i % requestStatuses.length],
-}));
-
-const reqStatus = {
-  approved: { label: "已核准", tone: "positive" as const },
-  pending: { label: "待審核", tone: "warning" as const },
-  rejected: { label: "已退件", tone: "danger" as const },
+const reqStatus: Record<TopupStatus, { label: string; tone: "positive" | "warning" | "danger" }> = {
+  approved: { label: "已核准", tone: "positive" },
+  pending: { label: "待審核", tone: "warning" },
+  rejected: { label: "已退件", tone: "danger" },
 };
 
 function paginate<T>(rows: T[], page: number, size: number) {
@@ -66,13 +36,19 @@ function paginate<T>(rows: T[], page: number, size: number) {
 
 type Tab = "txns" | "requests";
 
-export function WalletTabs() {
+export function WalletTabs({
+  ledger,
+  requests,
+}: {
+  ledger: WalletLedgerRow[];
+  requests: TopupRequestView[];
+}) {
   const [tab, setTab] = useState<Tab>("txns");
   const [pageSize, setPageSize] = useState(10);
   const [txnsPage, setTxnsPage] = useState(1);
   const [requestsPage, setRequestsPage] = useState(1);
 
-  const t = paginate(txns, txnsPage, pageSize);
+  const t = paginate(ledger, txnsPage, pageSize);
   const r = paginate(requests, requestsPage, pageSize);
 
   const changeSize = (n: number) => {
@@ -82,7 +58,7 @@ export function WalletTabs() {
   };
 
   const tabs = [
-    { key: "txns" as Tab, label: "交易明細", count: txns.length },
+    { key: "txns" as Tab, label: "交易明細", count: ledger.length },
     { key: "requests" as Tab, label: "儲值申請進度", count: requests.length },
   ];
 
@@ -106,27 +82,30 @@ export function WalletTabs() {
               </tr>
             </thead>
             <tbody>
-              {t.rows.map((tx, i) => (
-                <tr key={i}>
-                  <Td className="whitespace-nowrap text-muted">{tx.date}</Td>
-                  <Td>{tx.type}</Td>
-                  <Td className="text-muted">{tx.desc}</Td>
-                  <Td
-                    className={`text-right tabular-nums ${
-                      tx.amount > 0 ? "text-positive" : ""
-                    }`}
-                  >
+              {t.rows.map((tx) => (
+                <tr key={tx.id}>
+                  <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(tx.at)}</Td>
+                  <Td>{ledgerTypeLabel[tx.type]}</Td>
+                  <Td className="text-muted">{tx.detail}</Td>
+                  <Td className={`text-right tabular-nums ${tx.amount > 0 ? "text-positive" : ""}`}>
                     {tx.amount > 0 ? `+${tx.amount}` : tx.amount}
                   </Td>
-                  <Td className="text-right tabular-nums">{tx.balance}</Td>
+                  <Td className="text-right tabular-nums">{tx.balanceAfter}</Td>
                 </tr>
               ))}
+              {t.rows.length === 0 && (
+                <tr>
+                  <Td colSpan={5} className="text-center text-muted">
+                    還沒有任何交易紀錄。
+                  </Td>
+                </tr>
+              )}
             </tbody>
           </TableWrap>
           <Pagination
             page={t.current}
             pageCount={t.pageCount}
-            total={txns.length}
+            total={ledger.length}
             pageSize={pageSize}
             onPage={setTxnsPage}
             unit="筆"
@@ -146,20 +125,23 @@ export function WalletTabs() {
               </tr>
             </thead>
             <tbody>
-              {r.rows.map((req, i) => (
-                <tr key={i}>
-                  <Td className="whitespace-nowrap text-muted">{req.date}</Td>
-                  <Td className="text-right tabular-nums">
-                    NT$ {req.amount}
-                  </Td>
+              {r.rows.map((req) => (
+                <tr key={req.id}>
+                  <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(req.at)}</Td>
+                  <Td className="text-right tabular-nums">NT$ {req.amount}</Td>
                   <Td>{req.method}</Td>
                   <Td>
-                    <Badge tone={reqStatus[req.status].tone}>
-                      {reqStatus[req.status].label}
-                    </Badge>
+                    <Badge tone={reqStatus[req.status].tone}>{reqStatus[req.status].label}</Badge>
                   </Td>
                 </tr>
               ))}
+              {r.rows.length === 0 && (
+                <tr>
+                  <Td colSpan={4} className="text-center text-muted">
+                    還沒有任何儲值申請。
+                  </Td>
+                </tr>
+              )}
             </tbody>
           </TableWrap>
           <Pagination
