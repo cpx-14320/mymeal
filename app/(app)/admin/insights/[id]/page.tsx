@@ -5,6 +5,7 @@ import { MemberInsightTabs } from "@/components/admin/member-insight-tabs";
 import { findMemberById } from "@/lib/models/member";
 import { listFavoritesByMember } from "@/lib/models/favorite";
 import { listReviewsByMember, listCommentsByMember } from "@/lib/models/item-review";
+import { getMemberBalance, listLedgerForMember } from "@/lib/models/wallet";
 
 export async function generateMetadata({
   params,
@@ -22,11 +23,13 @@ export default async function MemberInsightDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [member, favorites, ratings, comments] = await Promise.all([
+  const [member, favorites, ratings, comments, balance, ledger] = await Promise.all([
     findMemberById(id),
     listFavoritesByMember(id),
     listReviewsByMember(id),
     listCommentsByMember(id),
+    getMemberBalance(id),
+    listLedgerForMember(id),
   ]);
   if (!member) notFound();
 
@@ -47,7 +50,7 @@ export default async function MemberInsightDetailPage({
           <Stat label="收藏" value={favorites.length} />
           <Stat label="評論" value={comments.length} />
           <Stat label="評分" value={ratings.length} />
-          <Stat label="剩餘儲值" value="NT$ 0" />
+          <Stat label="剩餘儲值" value={`NT$ ${balance}`} />
         </div>
       </Section>
 
@@ -57,7 +60,7 @@ export default async function MemberInsightDetailPage({
       >
         <MemberInsightTabs
           breakdown={[]}
-          ledger={[]}
+          ledger={ledger}
           favorites={favorites}
           comments={comments}
           ratings={ratings}

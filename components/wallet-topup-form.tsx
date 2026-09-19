@@ -10,18 +10,18 @@ import {
   inputClass,
   Button,
   ButtonLink,
-  Note,
 } from "@/components/ui/primitives";
 import { createTopupRequestAction, type TopupState } from "@/app/(app)/wallet/topup/actions";
 
 const initialState: TopupState = {};
-const quickAmounts = [100, 300, 500, 1000];
-const methods = ["銀行轉帳", "現金", "信用卡"];
+const quickAmounts = [100, 250, 500];
+const methods = ["銀行轉帳", "現金", "餐券"];
 
 export function TopupForm({ memberId }: { memberId: string }) {
   const boundAction = createTopupRequestAction.bind(null, memberId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
   const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState(methods[0]);
 
   return (
     <PageContainer>
@@ -59,26 +59,30 @@ export function TopupForm({ memberId }: { memberId: string }) {
 
             <Field label="付款方式">
               <div className="flex flex-wrap gap-4 pt-1 text-sm">
-                {methods.map((m, i) => (
+                {methods.map((m) => (
                   <label key={m} className="flex items-center gap-2">
-                    <input type="radio" name="method" value={m} defaultChecked={i === 0} />
+                    <input
+                      type="radio"
+                      name="method"
+                      value={m}
+                      checked={method === m}
+                      onChange={() => setMethod(m)}
+                    />
                     {m}
                   </label>
                 ))}
               </div>
             </Field>
 
-            <Field label="匯款後五碼 / 憑證" hint="銀行轉帳請填帳號末五碼，現金可略過">
-              <input className={inputClass} name="code" placeholder="12345" />
-            </Field>
+            {method === "銀行轉帳" && (
+              <Field label="匯款後五碼 / 憑證">
+                <input className={inputClass} name="code" placeholder="請輸入後5碼" />
+              </Field>
+            )}
 
             <Field label="備註">
-              <textarea className={`${inputClass} min-h-20`} name="note" placeholder="選填" />
+              <textarea className={`${inputClass} min-h-20`} name="note" placeholder="請輸入文字" />
             </Field>
-
-            <Note>
-              送出後狀態為「待審核」。管理員核准後餘額才會增加，並在交易明細留下一筆「儲值入帳」。
-            </Note>
 
             {state.error && <p className="text-sm text-danger">{state.error}</p>}
 

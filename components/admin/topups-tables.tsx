@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/primitives";
 import type { TopupRequestView } from "@/lib/models/topup-request";
 import { formatTaiwanDateTime } from "@/lib/date";
-import { approveTopupAction, rejectTopupAction } from "@/app/(app)/admin/topups/actions";
+import { approveTopupAction, rejectTopupAction, deleteTopupAction } from "@/app/(app)/admin/topups/actions";
 
 function paginate<T>(rows: T[], page: number, size: number) {
   const pageCount = Math.max(1, Math.ceil(rows.length / size));
@@ -56,9 +56,9 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
 
   const tabDescription: Record<Tab, string> = {
     pending: "核准後餘額才會增加並寫入交易明細。",
-    approved: "已核准的儲值申請紀錄。",
+    approved: "已核准的儲值申請紀錄。刪除只會移除這筆申請，不會復原已入帳的餘額與交易明細。",
     rejected: "已退件的儲值申請紀錄。",
-    all: "已核准與已退件的完整紀錄。",
+    all: "已核准與已退件的完整紀錄。刪除只會移除申請本身，已核准的入帳不會被復原。",
   };
 
   const p = paginate(pending, pPage, pageSize);
@@ -89,6 +89,15 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
     setBusyId(id);
     setError(undefined);
     const result = await rejectTopupAction(id);
+    setBusyId(null);
+    if (result.error) setError(result.error);
+    router.refresh();
+  }
+
+  async function remove(id: string) {
+    setBusyId(id);
+    setError(undefined);
+    const result = await deleteTopupAction(id);
     setBusyId(null);
     if (result.error) setError(result.error);
     router.refresh();
@@ -146,6 +155,14 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
                         >
                           退件
                         </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={busyId === req.id}
+                          onClick={() => remove(req.id)}
+                        >
+                          刪除
+                        </Button>
                       </div>
                     </Td>
                   </tr>
@@ -172,12 +189,13 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
                 <Th>方式</Th>
                 <Th>時間</Th>
                 {tab === "all" && <Th>結果</Th>}
+                <Th className="text-right">操作</Th>
               </tr>
             </thead>
             <tbody>
               {processedTabs[tab].rows.length === 0 ? (
                 <tr>
-                  <Td colSpan={tab === "all" ? 6 : 5} className="text-center text-muted">
+                  <Td colSpan={tab === "all" ? 7 : 6} className="text-center text-muted">
                     沒有資料。
                   </Td>
                 </tr>
@@ -196,6 +214,16 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
                         </Badge>
                       </Td>
                     )}
+                    <Td className="text-right">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={busyId === req.id}
+                        onClick={() => remove(req.id)}
+                      >
+                        刪除
+                      </Button>
+                    </Td>
                   </tr>
                 ))
               )}

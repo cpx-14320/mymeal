@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/primitives";
 import type { FavoriteView } from "@/lib/models/favorite";
 import type { ItemReviewView } from "@/lib/models/item-review";
+import type { WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
+import { formatTaiwanDateTime } from "@/lib/date";
 
-/** 訂餐／儲值分頁還沒有真的資料來源（要等團訂／錢包系統做出來），先留空狀態。 */
+/** 訂餐分頁還沒有真的資料來源（要等團訂彙總依會員拆解做出來），先留空狀態。儲值分頁已接上真實 wallet_ledger。 */
 interface OrderBreakdownStub {
   itemId: string;
   itemName: string;
@@ -22,14 +24,19 @@ interface OrderBreakdownStub {
   totalQuantity: number;
   orderCount: number;
 }
-interface LedgerStub {
-  id: string;
-  type: "topup" | "spend";
-  detail: string;
-  amount: number;
-  balanceAfter: number;
-  at: string;
-}
+
+const ledgerTypeLabel: Record<LedgerType, string> = {
+  topup: "儲值",
+  spend: "消費",
+  refund: "退款",
+  adjustment: "調整",
+};
+const ledgerTypeTone: Record<LedgerType, "positive" | "warning" | "neutral"> = {
+  topup: "positive",
+  refund: "positive",
+  spend: "warning",
+  adjustment: "neutral",
+};
 
 function paginate<T>(rows: T[], page: number, size: number) {
   const pageCount = Math.max(1, Math.ceil(rows.length / size));
@@ -56,7 +63,7 @@ export function MemberInsightTabs({
   ratings,
 }: {
   breakdown: OrderBreakdownStub[];
-  ledger: LedgerStub[];
+  ledger: WalletLedgerRow[];
   favorites: FavoriteView[];
   comments: ItemReviewView[];
   ratings: ItemReviewView[];
@@ -160,22 +167,20 @@ export function MemberInsightTabs({
                 {topups.rows.map((t) => (
                   <tr key={t.id}>
                     <Td>
-                      <Badge tone={t.type === "topup" ? "positive" : "warning"}>
-                        {t.type === "topup" ? "儲值" : "消費"}
-                      </Badge>
+                      <Badge tone={ledgerTypeTone[t.type]}>{ledgerTypeLabel[t.type]}</Badge>
                     </Td>
                     <Td className="text-muted">{t.detail}</Td>
                     <Td
                       className={`text-right tabular-nums ${
-                        t.type === "topup" ? "text-positive" : ""
+                        t.amount > 0 ? "text-positive" : ""
                       }`}
                     >
-                      {t.type === "topup" ? "+" : "-"}NT$ {t.amount}
+                      {t.amount > 0 ? `+NT$ ${t.amount}` : `-NT$ ${Math.abs(t.amount)}`}
                     </Td>
                     <Td className="text-right tabular-nums">
                       NT$ {t.balanceAfter}
                     </Td>
-                    <Td className="whitespace-nowrap text-muted">{t.at}</Td>
+                    <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(t.at)}</Td>
                   </tr>
                 ))}
               </tbody>

@@ -16,11 +16,13 @@ export function MemberInsightsTable({
   favoriteCounts,
   ratingCounts,
   commentCounts,
+  balances,
 }: {
   members: MemberListItem[];
   favoriteCounts: Record<string, number>;
   ratingCounts: Record<string, number>;
   commentCounts: Record<string, number>;
+  balances: Record<string, number>;
 }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -73,7 +75,7 @@ export function MemberInsightsTable({
                 <Td className="text-right tabular-nums">{favoriteCounts[m.id] ?? 0}</Td>
                 <Td className="text-right tabular-nums">{commentCounts[m.id] ?? 0}</Td>
                 <Td className="text-right tabular-nums">{ratingCounts[m.id] ?? 0}</Td>
-                <Td className="text-right tabular-nums">NT$ 0</Td>
+                <Td className="text-right tabular-nums">NT$ {balances[m.id] ?? 0}</Td>
                 <Td className="text-right">
                   <ButtonLink
                     href={`/admin/insights/${m.id}`}

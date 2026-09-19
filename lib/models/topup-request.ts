@@ -13,7 +13,7 @@ export interface TopupRequestDocument {
   _id: Types.ObjectId;
   memberId: Types.ObjectId; // ref Member
   amount: number;
-  method: string; // 銀行轉帳／現金／信用卡
+  method: string; // 銀行轉帳／現金／餐券
   code?: string; // 匯款末五碼或憑證
   note?: string; // 申請人備註
   status: TopupStatus;
@@ -158,6 +158,15 @@ export async function approveTopupRequest(id: string, by = "管理員"): Promise
   doc.reviewedBy = by;
   doc.reviewedAt = new Date();
   await doc.save();
+  return { id };
+}
+
+/** 刪除一筆申請紀錄（不論狀態）。純粹移除申請本身，若已核准，對應的 wallet_ledger 儲值紀錄與會員餘額不會被復原。 */
+export async function deleteTopupRequest(id: string): Promise<{ id: string }> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(id)) throw new Error("無效的申請 id");
+  const result = await TopupRequest.deleteOne({ _id: id });
+  if (result.deletedCount === 0) throw new Error("找不到這筆申請，可能已被刪除。");
   return { id };
 }
 

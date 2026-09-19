@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
   PageContainer,
@@ -15,24 +16,34 @@ import {
   taskPeriodLabel,
 } from "@/lib/mock";
 import { listDailyTasks, listExpRules, listMemberLevels } from "@/lib/models/gamification";
+import { getSessionMemberId } from "@/lib/session";
+import { findMemberById } from "@/lib/models/member";
 
 export const metadata: Metadata = { title: "會員中心" };
 
-const profile = [
-  ["姓名", "林佩珊"],
-  ["公司 Email", "peishan.lin@company.com"],
-  ["部門", "網路發展部"],
-  ["分機", "2317"],
-  ["員工編號", "A12345"],
-  ["預設取餐地點", "3F 茶水間"],
-];
-
 export default async function AccountPage() {
-  const [dailyTasks, expRules, memberLevels] = await Promise.all([
+  const memberId = await getSessionMemberId();
+  if (!memberId) redirect("/login");
+
+  const [member, dailyTasks, expRules, memberLevels] = await Promise.all([
+    findMemberById(memberId),
     listDailyTasks(),
     listExpRules(),
     listMemberLevels(),
   ]);
+  if (!member) redirect("/login");
+
+  const profile = [
+    ["姓名", member.name],
+    ["公司 Email", member.email],
+    ["部門", member.dept],
+    ["單位", member.unit],
+    ["員工編號", member.employeeId],
+    ["專屬碼", member.memberCode],
+  ];
+
+  // 任務／經驗值系統還沒有真的活動歷史可用（見 lib/mock.ts memberActivityCounts 的說明），
+  // 這裡暫時仍用 mock 的示範會員資料，不是這位真實登入者的資料。
   const { exp, level, levelIndex, next, expToNext } = memberLevelInfo(currentMemberId, expRules, memberLevels);
   const tasks = memberTaskProgress(currentMemberId, dailyTasks);
   return (
@@ -43,34 +54,30 @@ export default async function AccountPage() {
         actions={<Button variant="secondary">編輯資料</Button>}
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* 個人資料 */}
-        <Card className="lg:col-span-2">
-          <CardBody className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="grid size-16 place-items-center rounded-full bg-brand-soft text-2xl">
-                🙂
-              </div>
-              <div>
-                <p className="text-lg font-bold">林佩珊</p>
-                <p className="text-sm text-muted">網路發展部．分機 2317</p>
-              </div>
+      {/* 個人資料 */}
+      <Card>
+        <CardBody className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="grid size-16 place-items-center rounded-full bg-brand-soft text-2xl">
+              🙂
             </div>
-            <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-              {profile.map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4 border-b border-line py-2 text-sm">
-                  <dt className="text-muted">{k}</dt>
-                  <dd className="text-right">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            <Button variant="secondary">修改密碼</Button>
-          </CardBody>
-        </Card>
+            <div>
+              <p className="text-lg font-bold">{member.name}</p>
+              <p className="text-sm text-muted">{member.role || "一般使用者"}</p>
+            </div>
+          </div>
+          <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+            {profile.map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-4 border-b border-line py-2 text-sm">
+                <dt className="text-muted">{k}</dt>
+                <dd className="text-right">{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <Button variant="secondary">修改密碼</Button>
 
-        {/* 等級 */}
-        <Card>
-          <CardBody className="space-y-3">
+          {/* 等級 */}
+          <div className="space-y-3 border-t border-line pt-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">目前等級</h2>
               <Badge tone="brand">
@@ -90,9 +97,9 @@ export default async function AccountPage() {
             ) : (
               <p className="text-xs text-muted">已達最高等級</p>
             )}
-          </CardBody>
-        </Card>
-      </div>
+          </div>
+        </CardBody>
+      </Card>
 
       {/* 任務 */}
       <section className="space-y-3">

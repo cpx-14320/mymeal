@@ -28,6 +28,7 @@ export default async function FavoritesPage() {
         items={items}
         stats={stats}
         categories={categories}
+        defaultPageSize={25}
       />
     </PageContainer>
   );

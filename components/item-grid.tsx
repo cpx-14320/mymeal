@@ -21,16 +21,18 @@ export function ItemGrid({
   items,
   stats,
   categories,
+  defaultPageSize = 12,
 }: {
   scope?: "all" | "favorites";
   initialFavoriteIds?: string[];
   items: CatalogItemView[];
   stats: Record<string, ItemStat>;
   categories: ItemCategoryOption[];
+  defaultPageSize?: number;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12);
+  const [pageSize, setPageSize] = useState(defaultPageSize);
   const [favorited, setFavorited] = useState<Set<string>>(
     () => new Set(scope === "favorites" ? initialFavoriteIds : []),
   );
