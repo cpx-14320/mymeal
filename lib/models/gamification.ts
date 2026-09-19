@@ -3,8 +3,11 @@ import { connectMongo } from "@/lib/mongoose";
 
 /**
  * daily_task / exp_rule / member_level collections —— 任務／經驗值／等級，三張後台設定表。
- * 會員實際的 exp／任務進度目前還是從 lib/mock.ts 的假訂單/儲值/評分數量換算出來
- * （見 memberExp／memberTaskProgress），因為還沒有真的活動歷程可以算；
+ * daily/weekly/monthly 任務的會員進度目前還是從 lib/mock.ts 的假訂單/儲值/評分數量換算出來
+ * （見 memberExp／memberTaskProgress），因為還沒有真的period-bucketed活動歷程可以算；
+ * achievement（成就）任務不一樣：進度是帳號註冊至今的真實累積次數，見 lib/models/achievements.ts
+ * 的 getMemberLifetimeCounts／achievementProgress，直接查 group_orders／wallet_ledger／
+ * favorite／item_review 算出來，不經過 lib/mock.ts。
  * 這裡只負責讓「設定」本身是真資料，能新增/編輯/刪除任務、規則、等級。
  * 集合是空的才會種入原本寫死的預設值，跟 org.ts 的 seedIfEmpty 同一套做法。
  */
@@ -19,9 +22,14 @@ export const taskTypeLabel: Record<TaskType, string> = {
 };
 const TASK_TYPES: TaskType[] = ["topup", "order", "favorite", "comment", "rating"];
 
-export type TaskPeriod = "daily" | "weekly" | "monthly";
-export const taskPeriodLabel: Record<TaskPeriod, string> = { daily: "每日", weekly: "每週", monthly: "每月" };
-const TASK_PERIODS: TaskPeriod[] = ["daily", "weekly", "monthly"];
+export type TaskPeriod = "daily" | "weekly" | "monthly" | "achievement";
+export const taskPeriodLabel: Record<TaskPeriod, string> = {
+  daily: "每日",
+  weekly: "每週",
+  monthly: "每月",
+  achievement: "成就",
+};
+const TASK_PERIODS: TaskPeriod[] = ["daily", "weekly", "monthly", "achievement"];
 
 const DUPLICATE_KEY_ERROR = 11000;
 function isDuplicateKeyError(err: unknown): boolean {
@@ -74,6 +82,7 @@ const DEFAULT_TASKS = [
   { name: "每週儲值", type: "topup" as TaskType, period: "weekly" as TaskPeriod, targetCount: 1, rewardPoints: 10, active: true },
   { name: "每月評分", type: "rating" as TaskType, period: "monthly" as TaskPeriod, targetCount: 5, rewardPoints: 15, active: true },
   { name: "每月留言", type: "comment" as TaskType, period: "monthly" as TaskPeriod, targetCount: 3, rewardPoints: 10, active: false },
+  { name: "訂餐達人", type: "order" as TaskType, period: "achievement" as TaskPeriod, targetCount: 20, rewardPoints: 50, active: true },
 ];
 
 export interface DailyTaskView {

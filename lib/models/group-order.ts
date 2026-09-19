@@ -28,6 +28,8 @@ export interface GroupOrderDocument {
   _id: Types.ObjectId;
   name: string;
   templateId: Types.ObjectId; // ref Template
+  sectionId?: Types.ObjectId; // 模板裡選定的分類（例如「星期一」）；未選則整個模板都能點，舊資料也是這樣
+  sectionName?: string; // snapshot，模板分類之後改名不影響這裡
   unitId: Types.ObjectId; // ref Unit
   hostId: Types.ObjectId; // ref Member
   date: string; // "YYYY/MM/DD"
@@ -55,6 +57,8 @@ const groupOrderSchema = new Schema<GroupOrderDocument>(
   {
     name: { type: String, required: true, trim: true },
     templateId: { type: Schema.Types.ObjectId, ref: "Template", required: true },
+    sectionId: { type: Schema.Types.ObjectId },
+    sectionName: { type: String, default: "" },
     unitId: { type: Schema.Types.ObjectId, ref: "Unit", required: true },
     hostId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
     date: { type: String, required: true },
@@ -80,6 +84,8 @@ export interface GroupOrderListItem {
   name: string;
   templateId: string;
   templateName: string;
+  sectionId: string;
+  sectionName: string;
   unitId: string;
   unitName: string;
   departmentId: string;
@@ -106,6 +112,8 @@ type PopulatedGroupOrderDoc = {
   _id: Types.ObjectId;
   name: string;
   templateId: PopulatedRef | null;
+  sectionId?: Types.ObjectId;
+  sectionName?: string;
   unitId: PopulatedUnit | null;
   hostId: PopulatedRef | null;
   date: string;
@@ -122,6 +130,8 @@ function toGroupOrderListItem(d: PopulatedGroupOrderDoc): GroupOrderListItem {
     name: d.name,
     templateId: d.templateId ? String(d.templateId._id) : "",
     templateName: d.templateId?.name ?? "（已刪除模板）",
+    sectionId: d.sectionId ? String(d.sectionId) : "",
+    sectionName: d.sectionName ?? "",
     unitId: d.unitId ? String(d.unitId._id) : "",
     unitName: d.unitId?.name ?? "（已刪除單位）",
     departmentId: d.unitId?.departmentId ? String(d.unitId.departmentId._id) : "",
@@ -196,6 +206,8 @@ export async function findGroupOrderById(id: string): Promise<GroupOrderDetail |
     name: d.name,
     templateId: d.templateId ? String(d.templateId._id) : "",
     templateName: d.templateId?.name ?? "（已刪除模板）",
+    sectionId: d.sectionId ? String(d.sectionId) : "",
+    sectionName: d.sectionName ?? "",
     unitId: d.unitId ? String(d.unitId._id) : "",
     unitName: d.unitId?.name ?? "（已刪除單位）",
     departmentId: d.unitId?.departmentId ? String(d.unitId.departmentId._id) : "",
@@ -226,6 +238,7 @@ export async function findGroupOrderById(id: string): Promise<GroupOrderDetail |
 export interface CreateGroupOrderInput {
   name: string;
   templateId: string;
+  sectionId?: string;
   unitId: string;
   hostId: string;
   date: string;
@@ -242,9 +255,19 @@ export async function createGroupOrder(input: CreateGroupOrderInput) {
   if (!input.name.trim()) throw new Error("請填寫團名。");
   if (!input.date.trim()) throw new Error("請選擇取餐日期。");
 
+  let sectionName = "";
+  if (input.sectionId && Types.ObjectId.isValid(input.sectionId)) {
+    const { Template } = await import("@/lib/models/template");
+    const tpl = await Template.findById(input.templateId);
+    sectionName = tpl?.sections.find((s: { _id: Types.ObjectId }) => String(s._id) === input.sectionId)?.name ?? "";
+  }
+
   const doc = await GroupOrder.create({
     name: input.name,
     templateId: new Types.ObjectId(input.templateId),
+    ...(input.sectionId && Types.ObjectId.isValid(input.sectionId)
+      ? { sectionId: new Types.ObjectId(input.sectionId), sectionName }
+      : {}),
     unitId: new Types.ObjectId(input.unitId),
     hostId: new Types.ObjectId(input.hostId),
     date: input.date,
@@ -428,4 +451,19 @@ export async function getMemberFrequentItems(memberId: string, limit = 6): Promi
         totalQty: r.totalQty,
       };
     });
+}
+
+/** 這位會員累積訂餐次數（成就系統用）：帳號註冊至今，所有團訂裡屬於他的訂單行數總和。 */
+export async function getMemberOrderCount(memberId: string): Promise<number> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return 0;
+  const memberObjId = new Types.ObjectId(memberId);
+
+  const rows = await GroupOrder.aggregate<{ count: number }>([
+    { $match: { "lines.memberId": memberObjId } },
+    { $unwind: "$lines" },
+    { $match: { "lines.memberId": memberObjId } },
+    { $count: "count" },
+  ]);
+  return rows[0]?.count ?? 0;
 }

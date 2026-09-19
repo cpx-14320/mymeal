@@ -234,7 +234,7 @@ export function Sidebar({
           <div className="mb-1 border-b border-line pb-3.5">
             <p className="px-3 pb-1 text-xs font-medium text-muted">店家</p>
             {suppliers.map((supplier) => {
-              const href = `/suppliers/${supplier.slug}`;
+              const href = `/pages/${supplier.slug}`;
               const active = pathname === href || pathname.startsWith(`${href}/`);
               return (
                 <Link

@@ -61,7 +61,11 @@ export default async function GroupOrderDetailPage({
 
   const dishMap = new Map<string, OrderableDish>();
   if (tpl) {
-    for (const sec of tpl.sections) {
+    // 有選分類（例如「星期一」）就只能點那個分類的品項；舊資料沒有分類時維持整個模板都能點。
+    const sections = group.sectionId
+      ? tpl.sections.filter((sec) => sec.id === group.sectionId)
+      : tpl.sections;
+    for (const sec of sections) {
       for (const it of sec.items) {
         dishMap.set(it.id, { id: it.id, name: it.name, emoji: it.emoji, price: it.price });
       }
@@ -90,7 +94,9 @@ export default async function GroupOrderDetailPage({
     <PageContainer>
       <PageHeader
         title={group.name}
-        description={`團訂 #${group.id}．模板：${group.templateName}．${
+        description={`團訂 #${group.id}．模板：${group.templateName}${
+          group.sectionName ? `（${group.sectionName}）` : ""
+        }．${
           group.departmentName && group.unitName ? `${group.departmentName} ${group.unitName}．` : ""
         }${group.date} 取餐`}
         actions={<Badge tone={statusMap[group.status].tone}>{statusMap[group.status].label}</Badge>}

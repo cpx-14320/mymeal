@@ -45,13 +45,6 @@ export const primaryNav: NavItem[] = [
     requiresAuth: false,
   },
   {
-    key: "catalog",
-    label: "所有品項",
-    href: "/catalog",
-    description: "瀏覽全部品項、收藏、看評論",
-    requiresAuth: false,
-  },
-  {
     key: "group",
     label: "開團訂餐",
     href: "/group-orders",

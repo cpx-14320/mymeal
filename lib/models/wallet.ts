@@ -117,6 +117,13 @@ export async function getMemberBalance(memberId: string): Promise<number> {
   return doc?.balance ?? 0;
 }
 
+/** 這位會員累積儲值成功次數（成就系統用）：帳號註冊至今，wallet_ledger 裡 type=topup 的筆數。 */
+export async function getMemberTopupCount(memberId: string): Promise<number> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return 0;
+  return WalletLedger.countDocuments({ memberId: new Types.ObjectId(memberId), type: "topup" });
+}
+
 export interface WalletBalanceRow {
   memberId: string;
   name: string;

@@ -9,13 +9,10 @@ import {
   Badge,
   Progress,
 } from "@/components/ui/primitives";
-import {
-  currentMemberId,
-  memberLevelInfo,
-  memberTaskProgress,
-  taskPeriodLabel,
-} from "@/lib/mock";
+import { currentMemberId, memberLevelInfo, memberTaskProgress } from "@/lib/mock";
+import { AccountTaskTabs } from "@/components/account-task-tabs";
 import { listDailyTasks, listExpRules, listMemberLevels } from "@/lib/models/gamification";
+import { getMemberLifetimeCounts, achievementProgress } from "@/lib/models/achievements";
 import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
 
@@ -25,11 +22,12 @@ export default async function AccountPage() {
   const memberId = await getSessionMemberId();
   if (!memberId) redirect("/login");
 
-  const [member, dailyTasks, expRules, memberLevels] = await Promise.all([
+  const [member, dailyTasks, expRules, memberLevels, lifetimeCounts] = await Promise.all([
     findMemberById(memberId),
     listDailyTasks(),
     listExpRules(),
     listMemberLevels(),
+    getMemberLifetimeCounts(memberId),
   ]);
   if (!member) redirect("/login");
 
@@ -42,10 +40,16 @@ export default async function AccountPage() {
     ["專屬碼", member.memberCode],
   ];
 
-  // 任務／經驗值系統還沒有真的活動歷史可用（見 lib/mock.ts memberActivityCounts 的說明），
-  // 這裡暫時仍用 mock 的示範會員資料，不是這位真實登入者的資料。
+  // exp／等級跟 daily/weekly/monthly 任務進度還沒有真的 period-bucketed 活動歷史可用
+  // （見 lib/mock.ts memberActivityCounts 的說明），這裡暫時仍用 mock 的示範會員資料，
+  // 不是這位真實登入者的資料。成就（achievement）任務不一樣，是真的累積次數，見下面。
   const { exp, level, levelIndex, next, expToNext } = memberLevelInfo(currentMemberId, expRules, memberLevels);
-  const tasks = memberTaskProgress(currentMemberId, dailyTasks);
+  const periodicTasks = memberTaskProgress(
+    currentMemberId,
+    dailyTasks.filter((t) => t.period !== "achievement"),
+  );
+  const achievements = achievementProgress(dailyTasks, lifetimeCounts);
+  const tasks = [...periodicTasks, ...achievements];
   return (
     <PageContainer>
       <PageHeader
@@ -104,25 +108,7 @@ export default async function AccountPage() {
       {/* 任務 */}
       <section className="space-y-3">
         <h2 className="text-lg font-bold tracking-tight">任務進度</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {tasks.map(({ task, progress }) => (
-            <Card key={task.id}>
-              <CardBody className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{task.name}</span>
-                  <Badge>{taskPeriodLabel[task.period]}</Badge>
-                </div>
-                <Progress value={progress} max={task.targetCount} />
-                <div className="flex justify-between text-xs text-muted">
-                  <span className="tabular-nums">
-                    {progress} / {task.targetCount}
-                  </span>
-                  <span>完成 +{task.rewardPoints} exp</span>
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
+        <AccountTaskTabs tasks={tasks} />
       </section>
     </PageContainer>
   );

@@ -1072,11 +1072,12 @@ export const taskTypeLabel: Record<TaskType, string> = {
   rating: "評分",
 };
 
-export type TaskPeriod = "daily" | "weekly" | "monthly";
+export type TaskPeriod = "daily" | "weekly" | "monthly" | "achievement";
 export const taskPeriodLabel: Record<TaskPeriod, string> = {
   daily: "每日",
   weekly: "每週",
   monthly: "每月",
+  achievement: "成就",
 };
 
 export interface TaskConfig {

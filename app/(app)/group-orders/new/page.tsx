@@ -3,8 +3,8 @@ import { GroupOrderNewForm } from "@/components/group-order-new-form";
 import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
 import { listActiveTemplateDetails } from "@/lib/models/template";
-import { listUnits } from "@/lib/models/org";
-import { getSettings } from "@/lib/models/settings";
+import { listDepartments, listUnits } from "@/lib/models/org";
+import { todayTaiwanDateString } from "@/lib/date";
 
 export const metadata = { title: "開團" };
 
@@ -15,21 +15,23 @@ export default async function NewGroupOrderPage() {
   const host = await findMemberById(memberId);
   if (!host) redirect("/login");
 
-  const [templates, units, settings] = await Promise.all([
+  const [templates, departments, units] = await Promise.all([
     listActiveTemplateDetails(),
+    listDepartments(),
     listUnits(),
-    getSettings(),
   ]);
+
+  const todayDash = todayTaiwanDateString().replaceAll("/", "-");
 
   return (
     <GroupOrderNewForm
       hostId={memberId}
       hostUnitId={host.unitId}
       templates={templates}
+      departments={departments}
       units={units}
-      pickupLocations={settings.pickupLocations}
-      deadlineDefaultHint={settings.orderDeadlineDefault}
-      underMinPolicy={settings.underMinPolicy}
+      defaultDate={todayDash}
+      defaultDeadline={`${todayDash}T10:30`}
     />
   );
 }

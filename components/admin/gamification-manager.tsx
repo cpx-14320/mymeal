@@ -25,7 +25,7 @@ import {
 
 const cellInput = "w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 hover:border-line focus:border-brand focus:outline-none";
 const TASK_TYPES: TaskType[] = ["topup", "order", "favorite", "comment", "rating"];
-const TASK_PERIODS: TaskPeriod[] = ["daily", "weekly", "monthly"];
+const TASK_PERIODS: TaskPeriod[] = ["daily", "weekly", "monthly", "achievement"];
 
 function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
   const router = useRouter();

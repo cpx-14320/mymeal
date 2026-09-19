@@ -7,7 +7,7 @@ export interface SupplierDocument {
   name: string;
   description: string; // 側邊導覽名稱下方的說明文字，例如：便當、飲料、咖啡
   icon: string; // 側邊導覽名稱前面的圖示 emoji，留空則用預設圖示
-  slug: string; // 前台網址代稱：/suppliers/{slug}
+  slug: string; // 前台網址代稱：/pages/{slug}
   sortOrder: number; // 前台顯示順序，數字小的排前面
   openInNewTab: boolean; // 前台連結點擊後是否另開新分頁
   active: boolean;
