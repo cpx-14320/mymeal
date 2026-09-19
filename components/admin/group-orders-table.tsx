@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Button,
   Badge,
+  Card,
+  CardBody,
+  Field,
+  inputClass,
   TableWrap,
   Th,
   Td,
@@ -11,15 +16,13 @@ import {
   PageSizeSelect,
   PillTabs,
 } from "@/components/ui/primitives";
+import type { GroupOrderListItem, GroupOrderStatus } from "@/lib/models/group-order";
 import {
-  groupOrders as initialGroupOrders,
-  groupOrderTotals,
-  templateById,
-  unitById,
-  departmentById,
-  type GroupOrder,
-  type GroupOrderStatus,
-} from "@/lib/mock";
+  createGroupOrderAction,
+  setGroupOrdersStatusAction,
+  deleteGroupOrdersAction,
+  type CreateGroupOrderState,
+} from "@/app/(app)/admin/group-orders/actions";
 
 const statusMap: Record<GroupOrderStatus, { label: string; tone: "positive" | "warning" | "neutral" }> = {
   open: { label: "開放中", tone: "positive" },
@@ -27,22 +30,115 @@ const statusMap: Record<GroupOrderStatus, { label: string; tone: "positive" | "w
   completed: { label: "已完成", tone: "neutral" },
 };
 
-const filters: { label: string; test: (r: GroupOrder) => boolean }[] = [
+const filters: { label: string; test: (r: GroupOrderListItem) => boolean }[] = [
   { label: "全部", test: () => true },
   { label: "開放中", test: (r) => r.status === "open" },
   { label: "已截止", test: (r) => r.status === "closed" },
   { label: "已完成", test: (r) => r.status === "completed" },
 ];
 
-export function GroupOrdersTable() {
-  const [rows, setRows] = useState(initialGroupOrders);
+function CreateGroupOrderForm({
+  templates,
+  units,
+  members,
+  onDone,
+}: {
+  templates: { id: string; name: string }[];
+  units: { id: string; name: string; departmentName: string }[];
+  members: { id: string; name: string }[];
+  onDone: () => void;
+}) {
+  const router = useRouter();
+  const [state, formAction, pending] = useActionState<CreateGroupOrderState, FormData>(
+    createGroupOrderAction,
+    {},
+  );
+
+  if (state.success) {
+    router.refresh();
+    onDone();
+  }
+
+  return (
+    <Card>
+      <CardBody>
+        <form action={formAction} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="團名">
+              <input className={inputClass} name="name" placeholder="例：業務一組 週三便當團" required />
+            </Field>
+            <Field label="取餐日期">
+              <input className={inputClass} type="date" name="date" required />
+            </Field>
+            <Field label="模板">
+              <select className={inputClass} name="templateId" required>
+                {templates.length === 0 && <option value="">（尚無模板）</option>}
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="單位">
+              <select className={inputClass} name="unitId" required>
+                {units.length === 0 && <option value="">（尚無單位）</option>}
+                {units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.departmentName} {u.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="團主">
+              <select className={inputClass} name="hostId" required>
+                {members.length === 0 && <option value="">（尚無會員）</option>}
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="截止時間" hint="自由文字，例：今天 17:00 截止">
+              <input className={inputClass} name="deadline" placeholder="今天 17:00 截止" />
+            </Field>
+          </div>
+
+          {state.error && <p className="text-sm text-danger">{state.error}</p>}
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={onDone}>
+              取消
+            </Button>
+            <Button disabled={pending}>{pending ? "建立中…" : "建立團訂"}</Button>
+          </div>
+        </form>
+      </CardBody>
+    </Card>
+  );
+}
+
+export function GroupOrdersTable({
+  rows,
+  templates,
+  units,
+  members,
+}: {
+  rows: GroupOrderListItem[];
+  templates: { id: string; name: string }[];
+  units: { id: string; name: string; departmentName: string }[];
+  members: { id: string; name: string }[];
+}) {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [filterLabel, setFilterLabel] = useState("全部");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [creating, setCreating] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const activeFilter =
-    filters.find((f) => f.label === filterLabel) ?? filters[0];
+  const activeFilter = filters.find((f) => f.label === filterLabel) ?? filters[0];
   const filtered = rows.filter(activeFilter.test);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -58,8 +154,7 @@ export function GroupOrdersTable() {
       return next;
     });
 
-  const pageAllSelected =
-    pageRows.length > 0 && pageRows.every((r) => selected.has(r.id));
+  const pageAllSelected = pageRows.length > 0 && pageRows.every((r) => selected.has(r.id));
 
   const togglePageAll = () =>
     setSelected((prev) => {
@@ -69,45 +164,55 @@ export function GroupOrdersTable() {
       return next;
     });
 
-  const bulkDelete = () => {
-    setRows((prev) => prev.filter((r) => !selected.has(r.id)));
+  async function bulkSetStatus(status: GroupOrderStatus) {
+    setBusy(true);
+    await setGroupOrdersStatusAction([...selected], status);
     setSelected(new Set());
-  };
+    setBusy(false);
+    router.refresh();
+  }
 
-  const bulkSetStatus = (status: GroupOrderStatus) => {
-    setRows((prev) =>
-      prev.map((r) => (selected.has(r.id) ? { ...r, status } : r)),
-    );
+  async function bulkDelete() {
+    setBusy(true);
+    await deleteGroupOrdersAction([...selected]);
     setSelected(new Set());
-  };
-
-  const bulkExport = () => {
-    setSelected(new Set());
-  };
+    setBusy(false);
+    router.refresh();
+  }
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PillTabs
-          tabs={filters.map((f) => ({
-            key: f.label,
-            label: f.label,
-            count: rows.filter(f.test).length,
-          }))}
+          tabs={filters.map((f) => ({ key: f.label, label: f.label, count: rows.filter(f.test).length }))}
           value={filterLabel}
           onChange={(key) => {
             setFilterLabel(key);
             setPage(1);
           }}
         />
-        <PageSizeSelect
-          value={pageSize}
-          onChange={(n) => {
-            setPageSize(n);
-            setPage(1);
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <PageSizeSelect
+            value={pageSize}
+            onChange={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
+          <Button variant="secondary" onClick={() => setCreating((v) => !v)}>
+            代開團
+          </Button>
+        </div>
       </div>
+
+      {creating && (
+        <CreateGroupOrderForm
+          templates={templates}
+          units={units}
+          members={members}
+          onDone={() => setCreating(false)}
+        />
+      )}
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-sm">
@@ -115,45 +220,38 @@ export function GroupOrdersTable() {
             已選 <b className="tabular-nums">{selected.size}</b> 團
           </span>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setSelected(new Set())}
-              className="text-muted hover:text-ink"
-            >
+            <button type="button" onClick={() => setSelected(new Set())} className="text-muted hover:text-ink">
               取消選取
             </button>
             <button
               type="button"
-              onClick={bulkExport}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface"
-            >
-              匯出選取
-            </button>
-            <button
-              type="button"
+              disabled={busy}
               onClick={() => bulkSetStatus("open")}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface"
+              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
             >
               開放選取
             </button>
             <button
               type="button"
+              disabled={busy}
               onClick={() => bulkSetStatus("closed")}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface"
+              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
             >
               截止選取
             </button>
             <button
               type="button"
+              disabled={busy}
               onClick={() => bulkSetStatus("completed")}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface"
+              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
             >
               完成選取
             </button>
             <button
               type="button"
+              disabled={busy}
               onClick={bulkDelete}
-              className="rounded-lg border border-danger/40 px-3 py-1 font-semibold text-danger hover:bg-danger/10"
+              className="rounded-lg border border-danger/40 px-3 py-1 font-semibold text-danger hover:bg-danger/10 disabled:opacity-50"
             >
               刪除選取
             </button>
@@ -165,12 +263,7 @@ export function GroupOrdersTable() {
         <thead>
           <tr>
             <Th className="w-10">
-              <input
-                type="checkbox"
-                checked={pageAllSelected}
-                onChange={togglePageAll}
-                aria-label="選取本頁全部"
-              />
+              <input type="checkbox" checked={pageAllSelected} onChange={togglePageAll} aria-label="選取本頁全部" />
             </Th>
             <Th>團名</Th>
             <Th>部門 / 單位</Th>
@@ -180,15 +273,17 @@ export function GroupOrdersTable() {
             <Th className="text-right">份數</Th>
             <Th className="text-right">金額</Th>
             <Th>狀態</Th>
-            <Th className="text-right">操作</Th>
           </tr>
         </thead>
         <tbody>
-          {pageRows.map((r) => {
-            const totals = groupOrderTotals(r);
-            const unit = unitById(r.unitId);
-            const dept = unit ? departmentById(unit.departmentId) : undefined;
-            return (
+          {pageRows.length === 0 ? (
+            <tr>
+              <Td colSpan={9} className="text-center text-muted">
+                還沒有任何團訂，點「代開團」建立第一筆。
+              </Td>
+            </tr>
+          ) : (
+            pageRows.map((r) => (
               <tr key={r.id} className={selected.has(r.id) ? "bg-brand-soft" : ""}>
                 <Td>
                   <input
@@ -201,46 +296,25 @@ export function GroupOrdersTable() {
                 <Td className="font-medium">{r.name}</Td>
                 <Td>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge tone="brand">{dept?.name ?? "—"}</Badge>
-                    <span className="text-muted">{unit?.name ?? "—"}</span>
+                    <Badge tone="brand">{r.departmentName || "—"}</Badge>
+                    <span className="text-muted">{r.unitName}</span>
                   </div>
                 </Td>
-                <Td className="text-muted">{templateById(r.templateId)?.name ?? r.templateId}</Td>
-                <Td className="text-muted">{r.host}</Td>
+                <Td className="text-muted">{r.templateName}</Td>
+                <Td className="text-muted">{r.hostName}</Td>
                 <Td className="tabular-nums">{r.date}</Td>
-                <Td className="text-right tabular-nums">{totals.qty}</Td>
-                <Td className="text-right tabular-nums">NT$ {totals.amount}</Td>
+                <Td className="text-right tabular-nums">{r.qty}</Td>
+                <Td className="text-right tabular-nums">NT$ {r.amount}</Td>
                 <Td>
-                  <Badge tone={statusMap[r.status].tone}>
-                    {statusMap[r.status].label}
-                  </Badge>
-                </Td>
-                <Td className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="secondary" size="sm">
-                      匯出
-                    </Button>
-                    <Button size="sm">結算</Button>
-                  </div>
+                  <Badge tone={statusMap[r.status].tone}>{statusMap[r.status].label}</Badge>
                 </Td>
               </tr>
-            );
-          })}
+            ))
+          )}
         </tbody>
       </TableWrap>
 
-      <Pagination
-        page={current}
-        pageCount={pageCount}
-        total={filtered.length}
-        pageSize={pageSize}
-        onPage={setPage}
-        unit="團"
-      />
-
-      <p className="text-xs text-muted">
-        ＊同一個模板可以同時被多個單位各自開團(見上表「套用模板」欄有重複值)；此頁為介面預覽，資料為範例。
-      </p>
+      <Pagination page={current} pageCount={pageCount} total={filtered.length} pageSize={pageSize} onPage={setPage} unit="團" />
     </div>
   );
 }

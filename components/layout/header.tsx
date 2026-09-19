@@ -30,11 +30,13 @@ interface HeaderProps {
   mounted: boolean;
   /** 預覽用登入狀態，跟側欄共用同一份（見 AppShell） */
   authed: boolean;
-  /** 切換預覽登入狀態 */
+  /** 切換預覽登入狀態（訪客狀態下的「預覽切換為已登入」按鈕用） */
   onToggleAuth: () => void;
+  /** 真正登出（清掉 session cookie） */
+  onLogout: () => void;
 }
 
-export function Header({ onMenuClick, mounted, authed, onToggleAuth }: HeaderProps) {
+export function Header({ onMenuClick, mounted, authed, onToggleAuth, onLogout }: HeaderProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const { openLogin } = useLoginModal();
@@ -53,6 +55,11 @@ export function Header({ onMenuClick, mounted, authed, onToggleAuth }: HeaderPro
   function toggleDemoAuth() {
     setNotifOpen(false);
     onToggleAuth();
+  }
+
+  function handleLogout() {
+    setNotifOpen(false);
+    onLogout();
   }
 
   return (
@@ -104,9 +111,9 @@ export function Header({ onMenuClick, mounted, authed, onToggleAuth }: HeaderPro
 
               <button
                 type="button"
-                onClick={toggleDemoAuth}
-                aria-label="會員選單（預覽：點擊登出）"
-                title="預覽：點擊登出"
+                onClick={handleLogout}
+                aria-label="登出"
+                title="登出"
                 className="grid size-9 place-items-center rounded-full text-brand hover:bg-surface-2"
               >
                 <UserCircleIcon className="h-7 w-7" />

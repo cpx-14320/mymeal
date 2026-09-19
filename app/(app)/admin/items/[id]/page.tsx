@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
-import { Section, Button, ButtonLink } from "@/components/ui/primitives";
+import { Section, ButtonLink } from "@/components/ui/primitives";
 import { ItemForm } from "@/components/admin/item-form";
-import { itemById } from "@/lib/mock";
+import { findCatalogItemById } from "@/lib/models/catalog-item";
+import { listItemKinds } from "@/lib/models/item-kind";
+import { listItemCategories } from "@/lib/models/item-category";
+import { listSuppliers } from "@/lib/models/supplier";
+import { listTagGroups } from "@/lib/models/tag-group";
 
 export const metadata = { title: "編輯品項" };
 
@@ -11,7 +15,13 @@ export default async function EditItemPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const item = itemById(id);
+  const [item, kinds, categories, suppliers, tagGroups] = await Promise.all([
+    findCatalogItemById(id),
+    listItemKinds(),
+    listItemCategories(),
+    listSuppliers(),
+    listTagGroups(),
+  ]);
   if (!item) notFound();
 
   return (
@@ -24,19 +34,7 @@ export default async function EditItemPage({
         </ButtonLink>
       }
     >
-      <ItemForm item={item} />
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <Button variant="danger">刪除品項</Button>
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/items" variant="ghost">
-            取消
-          </ButtonLink>
-          <Button>儲存</Button>
-        </div>
-      </div>
-
-      <p className="mt-3 text-xs text-muted">＊此頁為介面預覽，表單尚未串接後端。</p>
+      <ItemForm item={item} kinds={kinds} categories={categories} suppliers={suppliers} tagGroups={tagGroups} />
     </Section>
   );
 }

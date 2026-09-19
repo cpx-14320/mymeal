@@ -1,23 +1,37 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Section,
-  Button,
-  Stat,
-  TableWrap,
-  Th,
-  Td,
-} from "@/components/ui/primitives";
-import { departments, departmentExportSummary } from "@/lib/mock";
+import { useEffect, useState } from "react";
+import { Section, Button, Stat, TableWrap, Th, Td } from "@/components/ui/primitives";
+import type { OrgOption } from "@/lib/models/org";
+import type { DepartmentExportSummary } from "@/lib/models/group-order";
+import { getDepartmentExportSummaryAction } from "@/app/(app)/admin/group-orders/actions";
 
 /**
  * 部門負責人視角：選一個部門，跨底下所有單位彙總團訂資料，一次匯出。
  * 對照單位負責人只會在上面表格裡看到、匯出自己單位的團。
  */
-export function DepartmentExport() {
+export function DepartmentExport({ departments }: { departments: OrgOption[] }) {
   const [departmentId, setDepartmentId] = useState(departments[0]?.id ?? "");
-  const summary = departmentExportSummary(departmentId);
+  const [summary, setSummary] = useState<DepartmentExportSummary | null>(null);
+
+  useEffect(() => {
+    if (!departmentId) return;
+    let cancelled = false;
+    getDepartmentExportSummaryAction(departmentId).then((s) => {
+      if (!cancelled) setSummary(s);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [departmentId]);
+
+  if (departments.length === 0) {
+    return (
+      <Section title="依部門匯出" description="還沒有任何部門，先到「部門與單位」頁建立。">
+        <p className="text-sm text-muted">尚無可彙總的部門。</p>
+      </Section>
+    );
+  }
 
   return (
     <Section
@@ -56,14 +70,22 @@ export function DepartmentExport() {
               </tr>
             </thead>
             <tbody>
-              {summary.byUnit.map((u) => (
-                <tr key={u.unitId}>
-                  <Td className="font-medium">{u.unitName}</Td>
-                  <Td className="text-right tabular-nums">{u.orderCount}</Td>
-                  <Td className="text-right tabular-nums">{u.qty}</Td>
-                  <Td className="text-right tabular-nums">NT$ {u.amount}</Td>
+              {summary.byUnit.length === 0 ? (
+                <tr>
+                  <Td colSpan={4} className="text-center text-muted">
+                    這個部門底下還沒有單位。
+                  </Td>
                 </tr>
-              ))}
+              ) : (
+                summary.byUnit.map((u) => (
+                  <tr key={u.unitId}>
+                    <Td className="font-medium">{u.unitName}</Td>
+                    <Td className="text-right tabular-nums">{u.orderCount}</Td>
+                    <Td className="text-right tabular-nums">{u.qty}</Td>
+                    <Td className="text-right tabular-nums">NT$ {u.amount}</Td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </TableWrap>
 

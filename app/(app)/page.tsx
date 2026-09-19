@@ -68,7 +68,7 @@ export default function HomePage() {
           </LoginButton>
         </div>
         <p className="mt-3 text-xs text-muted">
-          請使用公司 Email（@company.com）登入或申請帳號。
+          填寫基本資料即可登入或申請帳號。
         </p>
       </section>
 
@@ -102,9 +102,7 @@ export default function HomePage() {
               </div>
             </li>
           ))}
-        </ul>
-        <p className="mt-3 text-xs text-muted">＊以上為範例資料。</p>
-      </section>
+        </ul>      </section>
 
       {/* 運作方式 */}
       <section className="border-t border-line py-12">

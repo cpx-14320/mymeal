@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navIcons, adminNavIcons, ChevronDownIcon, LockIcon } from "./icons";
+import { navIcons, adminNavIcons, StoreIcon, ChevronDownIcon, LockIcon } from "./icons";
 import {
   primaryNav,
   adminNav,
-  footerNav,
   resolveHref,
+  type SupplierNavItem,
 } from "./nav";
 import { currentMemberId, memberInsightById } from "@/lib/mock";
 import { useLoginModal } from "./login-modal-context";
@@ -27,6 +27,8 @@ interface SidebarProps {
   previewMode?: boolean;
   /** 行動版抽屜中，點擊項目後關閉抽屜 */
   onNavigate?: () => void;
+  /** 已上架的店家，動態多顯示在主導覽最後——後台新增店家就會同步出現，目前頁面內容先空著。 */
+  suppliers?: SupplierNavItem[];
 }
 
 export function Sidebar({
@@ -34,6 +36,7 @@ export function Sidebar({
   isAdmin = false,
   previewMode = false,
   onNavigate,
+  suppliers = [],
 }: SidebarProps) {
   const pathname = usePathname();
   const inAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
@@ -44,8 +47,22 @@ export function Sidebar({
   );
   const loadedCollapse = useRef(false);
 
-  const isItemActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+  // 用最長（最精確）符合的 href 作為 active 項目，
+  // 避免巢狀路由（例如 /admin/items/[id]）同時命中父層與自己。
+  const activeAdminHref = adminNav
+    .flatMap((group) => group.items)
+    .filter((item) =>
+      item.href === "/admin"
+        ? pathname === "/admin"
+        : pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )
+    .reduce<string | null>(
+      (best, item) =>
+        !best || item.href.length > best.length ? item.href : best,
+      null,
+    );
+
+  const isItemActive = (href: string) => href === activeAdminHref;
 
   // 讀取上次收合狀態，並確保目前所在頁面所屬的組會自動展開一次
   // （之後使用者若手動再收合該組，這裡不會再蓋回去）。
@@ -168,10 +185,6 @@ export function Sidebar({
             );
           })}
         </nav>
-
-        <div className="border-t border-line p-3">
-          <p className="px-3 text-[11px] text-muted">MyMeal v0.1 · 後台</p>
-        </div>
       </div>
     );
   }
@@ -215,6 +228,47 @@ export function Sidebar({
       )}
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        {suppliers.length > 0 && (
+          <div className="mb-1 border-b border-line pb-3.5">
+            <p className="px-3 pb-1 text-xs font-medium text-muted">店家</p>
+            {suppliers.map((supplier) => {
+              const href = `/suppliers/${supplier.slug}`;
+              const active = pathname === href || pathname.startsWith(`${href}/`);
+              return (
+                <Link
+                  key={supplier.id}
+                  href={href}
+                  onClick={onNavigate}
+                  target={supplier.openInNewTab ? "_blank" : undefined}
+                  rel={supplier.openInNewTab ? "noopener noreferrer" : undefined}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                    active ? "bg-brand-soft text-ink" : "text-ink hover:bg-surface-2"
+                  }`}
+                >
+                  {supplier.icon ? (
+                    <span className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center text-base leading-none">
+                      {supplier.icon}
+                    </span>
+                  ) : (
+                    <StoreIcon
+                      className={`mt-0.5 h-[18px] w-[18px] shrink-0 ${
+                        active ? "text-brand" : "text-muted"
+                      }`}
+                    />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="font-medium">{supplier.name}</span>
+                    {supplier.description && (
+                      <span className="block truncate text-xs text-muted">{supplier.description}</span>
+                    )}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
         {items.map((item) => {
           const Icon = navIcons[item.key];
           const href = previewMode ? item.href : resolveHref(item, isAuthed);
@@ -252,23 +306,6 @@ export function Sidebar({
           );
         })}
       </nav>
-
-      <div className="border-t border-line p-3">
-        <ul className="space-y-0.5">
-          {footerNav.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                onClick={onNavigate}
-                className="block rounded-md px-3 py-1.5 text-xs text-muted hover:bg-surface-2 hover:text-ink"
-              >
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <p className="px-3 pt-2 text-[11px] text-muted">MyMeal v0.1 · 內部系統</p>
-      </div>
     </div>
   );
 }

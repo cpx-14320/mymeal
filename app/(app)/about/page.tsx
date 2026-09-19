@@ -18,7 +18,6 @@ export default function AboutPage() {
             錢包餘額透過「儲值申請 → 管理員審核 → 入帳」補充。管理後台可維護餐廳、
             菜單、排餐、團訂、儲值審核、會員與權限等。
           </p>
-          <p className="text-muted">目前為介面預覽階段，功能尚未全部完成。</p>
         </CardBody>
       </Card>
     </PageContainer>

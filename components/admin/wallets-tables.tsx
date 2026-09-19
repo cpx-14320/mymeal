@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Section,
   Button,
@@ -13,50 +14,16 @@ import {
   PageSizeSelect,
   PillTabs,
 } from "@/components/ui/primitives";
+import type { WalletBalanceRow, WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
+import { formatTaiwanDateTime } from "@/lib/date";
+import { adjustBalanceAction } from "@/app/(app)/admin/wallets/actions";
 
-const names = [
-  "林佩珊", "王建豪", "陳怡君", "張家瑋", "黃志明", "李冠廷", "吳雅婷", "蔡孟儒",
-  "鄭凱文", "許家豪", "周宜蓁", "謝旻軒", "洪世昌", "江佩蓉", "曾柏翰", "邱瑋倫",
-  "賴品妍", "蕭子涵", "羅偉誠", "高鈺婷",
-];
-const depts = [
-  "網路發展部", "設計部", "行政部", "業務部", "資訊部", "客服部", "財務部", "人資部",
-];
-
-const balances = Array.from({ length: 26 }, (_, i) => {
-  const topup = [900, 1500, 2000, 3000, 4000, 5000][i % 6];
-  const spent = [860, 1180, 1400, 2100, 2760, 3300][i % 6] + (i % 3) * 55;
-  return {
-    who: names[i % names.length],
-    dept: depts[i % depts.length],
-    balance: topup - spent,
-    topup,
-    spent,
-  };
-});
-
-const txTypes = ["訂餐扣款", "儲值入帳", "退款", "手動調整"] as const;
-
-const txns = Array.from({ length: 30 }, (_, i) => {
-  const type = txTypes[i % txTypes.length];
-  const base = [45, 90, 95, 100, 300, 500, 1000][i % 7];
-  const amount =
-    type === "儲值入帳" || type === "退款"
-      ? base
-      : type === "手動調整"
-        ? i % 2 === 0
-          ? -35
-          : 50
-        : -base;
-  return {
-    who: names[(i + 5) % names.length],
-    type,
-    amount,
-    after: 1200 - (i % 20) * 45,
-    by: type === "訂餐扣款" ? "系統" : "finance",
-    at: `09/${10 - (i % 8)} ${String(9 + (i % 9)).padStart(2, "0")}:${String((i * 13) % 60).padStart(2, "0")}`,
-  };
-});
+const ledgerTypeLabel: Record<LedgerType, string> = {
+  topup: "儲值入帳",
+  spend: "訂餐扣款",
+  refund: "退款",
+  adjustment: "手動調整",
+};
 
 function paginate<T>(rows: T[], page: number, size: number) {
   const pageCount = Math.max(1, Math.ceil(rows.length / size));
@@ -65,21 +32,97 @@ function paginate<T>(rows: T[], page: number, size: number) {
   return { pageCount, current, rows: rows.slice(start, start + size) };
 }
 
+/** 「調整餘額／調整」共用的內嵌表單：填金額（可正可負）+ 必填備註，送出後整頁 refresh。 */
+function AdjustForm({
+  memberId,
+  onDone,
+  onCancel,
+}: {
+  memberId: string;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const router = useRouter();
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+
+  async function submit() {
+    const n = Number(amount);
+    if (!Number.isFinite(n) || n === 0) {
+      setError("請輸入非 0 的調整金額（正數加值、負數扣款）。");
+      return;
+    }
+    if (!note.trim()) {
+      setError("請填寫調整備註。");
+      return;
+    }
+    setPending(true);
+    setError(undefined);
+    const result = await adjustBalanceAction(memberId, n, note.trim());
+    setPending(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    router.refresh();
+    onDone();
+  }
+
+  return (
+    <div className="flex flex-wrap items-start gap-2 rounded-lg border border-line bg-surface-2 p-3">
+      <input
+        className={`${inputClass} w-32`}
+        type="number"
+        placeholder="±金額"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+      />
+      <input
+        className={`${inputClass} flex-1 min-w-40`}
+        placeholder="調整備註（必填）"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+      />
+      <Button size="sm" disabled={pending} onClick={submit}>
+        {pending ? "送出中…" : "確認"}
+      </Button>
+      <Button size="sm" variant="ghost" disabled={pending} onClick={onCancel}>
+        取消
+      </Button>
+      {error && <p className="w-full text-sm text-danger">{error}</p>}
+    </div>
+  );
+}
+
 type Tab = "balances" | "txns";
 
-const tabs: { key: Tab; label: string; count: number }[] = [
-  { key: "balances", label: "會員餘額", count: balances.length },
-  { key: "txns", label: "最近交易", count: txns.length },
-];
-
-export function WalletsTables() {
+export function WalletsTables({
+  balances,
+  ledger,
+}: {
+  balances: WalletBalanceRow[];
+  ledger: WalletLedgerRow[];
+}) {
   const [tab, setTab] = useState<Tab>("balances");
   const [bPage, setBPage] = useState(1);
   const [tPage, setTPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [search, setSearch] = useState("");
+  const [adjustingMemberId, setAdjustingMemberId] = useState<string | null>(null);
 
-  const b = paginate(balances, bPage, pageSize);
-  const t = paginate(txns, tPage, pageSize);
+  const filteredBalances = balances.filter(
+    (b) => !search.trim() || b.name.includes(search) || b.dept.includes(search),
+  );
+
+  const b = paginate(filteredBalances, bPage, pageSize);
+  const t = paginate(ledger, tPage, pageSize);
+
+  const tabs: { key: Tab; label: string; count: number }[] = [
+    { key: "balances", label: "會員餘額", count: balances.length },
+    { key: "txns", label: "最近交易", count: ledger.length },
+  ];
 
   const changeSize = (n: number) => {
     setPageSize(n);
@@ -91,9 +134,7 @@ export function WalletsTables() {
     <Section
       title="錢包與交易"
       description={
-        tab === "balances"
-          ? "各會員的餘額與累計儲值 / 消費。"
-          : "所有錢包異動：訂餐扣款、儲值入帳、退款、手動調整。"
+        tab === "balances" ? "各會員的餘額與累計儲值 / 消費。" : "所有錢包異動：訂餐扣款、儲值入帳、退款、手動調整。"
       }
       actions={
         tab === "balances" ? (
@@ -101,6 +142,11 @@ export function WalletsTables() {
             <input
               className={`${inputClass} w-48`}
               placeholder="搜尋姓名 / 部門"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setBPage(1);
+              }}
             />
             <Button variant="secondary">匯出</Button>
           </div>
@@ -126,44 +172,61 @@ export function WalletsTables() {
               </tr>
             </thead>
             <tbody>
-              {b.rows.map((r, i) => (
-                <tr key={i}>
-                  <Td className="font-medium">{r.who}</Td>
-                  <Td className="text-muted">{r.dept}</Td>
-                  <Td
-                    className={`text-right tabular-nums ${
-                      r.balance < 0 ? "text-danger" : ""
-                    }`}
-                  >
-                    NT$ {r.balance}
-                  </Td>
-                  <Td className="text-right tabular-nums text-muted">
-                    NT$ {r.topup}
-                  </Td>
-                  <Td className="text-right tabular-nums text-muted">
-                    NT$ {r.spent}
-                  </Td>
-                  <Td className="text-right">
-                    <Button variant="secondary" size="sm">
-                      調整餘額
-                    </Button>
+              {b.rows.length === 0 ? (
+                <tr>
+                  <Td colSpan={6} className="text-center text-muted">
+                    沒有符合的會員。
                   </Td>
                 </tr>
-              ))}
+              ) : (
+                b.rows.map((r) => (
+                  <Fragment key={r.memberId}>
+                    <tr>
+                      <Td className="font-medium">{r.name}</Td>
+                      <Td className="text-muted">{r.dept}</Td>
+                      <Td className={`text-right tabular-nums ${r.balance < 0 ? "text-danger" : ""}`}>
+                        NT$ {r.balance}
+                      </Td>
+                      <Td className="text-right tabular-nums text-muted">NT$ {r.totalTopup}</Td>
+                      <Td className="text-right tabular-nums text-muted">NT$ {r.totalSpend}</Td>
+                      <Td className="text-right">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() =>
+                            setAdjustingMemberId(adjustingMemberId === r.memberId ? null : r.memberId)
+                          }
+                        >
+                          調整餘額
+                        </Button>
+                      </Td>
+                    </tr>
+                    {adjustingMemberId === r.memberId && (
+                      <tr>
+                        <Td colSpan={6}>
+                          <AdjustForm
+                            memberId={r.memberId}
+                            onDone={() => setAdjustingMemberId(null)}
+                            onCancel={() => setAdjustingMemberId(null)}
+                          />
+                        </Td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))
+              )}
             </tbody>
           </TableWrap>
           <Pagination
             page={b.current}
             pageCount={b.pageCount}
-            total={balances.length}
+            total={filteredBalances.length}
             pageSize={pageSize}
             onPage={setBPage}
             unit="人"
           />
           <div className="mt-3">
-            <Note>
-              「調整餘額」為高風險操作（手動加值 / 扣款 / 退款），每次都需填寫備註並寫入稽核紀錄。
-            </Note>
+            <Note>「調整餘額」為高風險操作（手動加值 / 扣款 / 退款），每次都需填寫備註並寫入稽核紀錄。</Note>
           </div>
         </>
       ) : (
@@ -181,36 +244,51 @@ export function WalletsTables() {
               </tr>
             </thead>
             <tbody>
-              {t.rows.map((r, i) => (
-                <tr key={i}>
-                  <Td className="font-medium">{r.who}</Td>
-                  <Td>{r.type}</Td>
-                  <Td
-                    className={`text-right tabular-nums ${
-                      r.amount > 0 ? "text-positive" : ""
-                    }`}
-                  >
-                    {r.amount > 0 ? `+${r.amount}` : r.amount}
-                  </Td>
-                  <Td className="text-right tabular-nums">{r.after}</Td>
-                  <Td className="text-muted">{r.by}</Td>
-                  <Td className="whitespace-nowrap text-muted">{r.at}</Td>
-                  <Td className="text-right">
-                    <Button variant="secondary" size="sm">
-                      調整
-                    </Button>
+              {t.rows.length === 0 ? (
+                <tr>
+                  <Td colSpan={7} className="text-center text-muted">
+                    目前沒有任何交易紀錄。
                   </Td>
                 </tr>
-              ))}
+              ) : (
+                t.rows.map((r) => (
+                  <Fragment key={r.id}>
+                    <tr>
+                      <Td className="font-medium">{r.memberName}</Td>
+                      <Td>{ledgerTypeLabel[r.type]}</Td>
+                      <Td className={`text-right tabular-nums ${r.amount > 0 ? "text-positive" : ""}`}>
+                        {r.amount > 0 ? `+${r.amount}` : r.amount}
+                      </Td>
+                      <Td className="text-right tabular-nums">{r.balanceAfter}</Td>
+                      <Td className="text-muted">{r.by}</Td>
+                      <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(r.at)}</Td>
+                      <Td className="text-right">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setAdjustingMemberId(adjustingMemberId === r.memberId ? null : r.memberId)}
+                        >
+                          調整
+                        </Button>
+                      </Td>
+                    </tr>
+                    {adjustingMemberId === r.memberId && (
+                      <tr>
+                        <Td colSpan={7}>
+                          <AdjustForm
+                            memberId={r.memberId}
+                            onDone={() => setAdjustingMemberId(null)}
+                            onCancel={() => setAdjustingMemberId(null)}
+                          />
+                        </Td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))
+              )}
             </tbody>
           </TableWrap>
-          <Pagination
-            page={t.current}
-            pageCount={t.pageCount}
-            total={txns.length}
-            pageSize={pageSize}
-            onPage={setTPage}
-          />
+          <Pagination page={t.current} pageCount={t.pageCount} total={ledger.length} pageSize={pageSize} onPage={setTPage} />
           <div className="mt-3">
             <Note>
               「調整」用於訂單金額結算有誤等情況：不會修改這筆歷史交易本身，而是寫入一筆新的「手動調整」紀錄來抵銷/補足差額，並需填寫備註；原始訂單記錄不會被改動。

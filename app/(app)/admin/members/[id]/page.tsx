@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Section, Button, ButtonLink } from "@/components/ui/primitives";
-import { MemberForm } from "@/components/admin/member-form";
-import { memberById } from "@/lib/mock";
+import { Section, ButtonLink } from "@/components/ui/primitives";
+import { MemberEditForm } from "@/components/admin/member-edit-form";
+import { findMemberById } from "@/lib/models/member";
+import { listDepartments, listUnits } from "@/lib/models/org";
+import { listRoles } from "@/lib/models/role";
 
 export async function generateMetadata({
   params,
@@ -10,7 +12,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const member = memberById(id);
+  const member = await findMemberById(id);
   return { title: member ? `編輯會員：${member.name}` : "編輯會員" };
 }
 
@@ -20,8 +22,31 @@ export default async function EditMemberPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const member = memberById(id);
-  if (!member) notFound();
+  const [doc, departments, units, roles] = await Promise.all([
+    findMemberById(id),
+    listDepartments(),
+    listUnits(),
+    listRoles(),
+  ]);
+  if (!doc) notFound();
+  const roleNames = roles.map((r) => r.name);
+
+  const member = {
+    id: String(doc._id),
+    account: doc.account,
+    email: doc.email,
+    name: doc.name,
+    employeeId: doc.employeeId,
+    dept: doc.dept,
+    unit: doc.unit,
+    memberCode: doc.memberCode,
+    referredByCode: doc.referredByCode,
+    referredByName: doc.referredByName,
+    role: doc.role,
+    status: doc.status,
+    createdAt: doc.createdAt,
+    lastLoginAt: doc.lastLoginAt,
+  };
 
   return (
     <Section
@@ -33,19 +58,7 @@ export default async function EditMemberPage({
         </ButtonLink>
       }
     >
-      <MemberForm member={member} />
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <Button variant="danger">刪除會員</Button>
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/members" variant="ghost">
-            取消
-          </ButtonLink>
-          <Button>儲存</Button>
-        </div>
-      </div>
-
-      <p className="mt-3 text-xs text-muted">＊此頁為介面預覽，表單尚未串接後端。</p>
+      <MemberEditForm member={member} departments={departments} units={units} roleNames={roleNames} />
     </Section>
   );
 }

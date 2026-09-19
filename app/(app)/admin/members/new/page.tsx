@@ -1,9 +1,14 @@
-import { Section, Button, ButtonLink } from "@/components/ui/primitives";
-import { MemberForm } from "@/components/admin/member-form";
+import { Section, ButtonLink } from "@/components/ui/primitives";
+import { MemberCreateForm } from "@/components/admin/member-create-form";
+import { listDepartments, listUnits } from "@/lib/models/org";
+import { listRoles } from "@/lib/models/role";
 
 export const metadata = { title: "新增會員" };
 
-export default function NewMemberPage() {
+export default async function NewMemberPage() {
+  const [departments, units, roles] = await Promise.all([listDepartments(), listUnits(), listRoles()]);
+  const roleNames = roles.map((r) => r.name);
+
   return (
     <Section
       title="新增會員"
@@ -14,16 +19,7 @@ export default function NewMemberPage() {
         </ButtonLink>
       }
     >
-      <MemberForm />
-
-      <div className="mt-4 flex justify-end gap-2">
-        <ButtonLink href="/admin/members" variant="ghost">
-          取消
-        </ButtonLink>
-        <Button>建立會員</Button>
-      </div>
-
-      <p className="mt-3 text-xs text-muted">＊此頁為介面預覽，表單尚未串接後端。</p>
+      <MemberCreateForm departments={departments} units={units} roleNames={roleNames} />
     </Section>
   );
 }

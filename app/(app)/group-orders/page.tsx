@@ -14,8 +14,6 @@ export default function GroupOrdersPage() {
       />
 
       <GroupOrdersList />
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，資料為範例。</p>
     </PageContainer>
   );
 }

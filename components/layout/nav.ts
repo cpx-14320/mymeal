@@ -13,6 +13,16 @@ export type NavKey =
   | "account"
   | "admin";
 
+/** 前台側欄動態店家連結——後台新增店家就會同步多一個，見 sidebar.tsx / app-shell.tsx。 */
+export interface SupplierNavItem {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  slug: string;
+  openInNewTab: boolean;
+}
+
 export interface NavItem {
   key: NavKey;
   label: string;
@@ -91,8 +101,7 @@ export type AdminNavKey =
   | "zones"
   | "suppliers"
   | "items"
-  | "itemCategories"
-  | "itemTags"
+  | "itemClassification"
   | "templates"
   | "grouporders"
   | "topups"
@@ -100,6 +109,7 @@ export type AdminNavKey =
   | "members"
   | "memberInsights"
   | "roles"
+  | "orgUnits"
   | "itemStats"
   | "gamification"
   | "reports"
@@ -128,16 +138,21 @@ export const adminNav: AdminNavGroup[] = [
     items: [{ key: "overview", label: "總覽", href: "/admin" }],
   },
   {
-    key: "catalog",
-    label: "菜單與訂餐",
+    key: "ordering",
+    label: "訂餐與開團",
     items: [
       { key: "zones", label: "訂餐專區", href: "/admin/zones" },
-      { key: "templates", label: "模板", href: "/admin/templates" },
-      { key: "suppliers", label: "店家", href: "/admin/suppliers" },
-      { key: "itemCategories", label: "品項分類", href: "/admin/items/categories" },
-      { key: "itemTags", label: "品項標籤", href: "/admin/items/tags" },
-      { key: "items", label: "品項", href: "/admin/items" },
       { key: "grouporders", label: "團訂", href: "/admin/group-orders" },
+    ],
+  },
+  {
+    key: "catalog",
+    label: "菜單管理",
+    items: [
+      { key: "suppliers", label: "頁面設定", href: "/admin/pages" },
+      { key: "templates", label: "模板設定", href: "/admin/templates" },
+      { key: "itemClassification", label: "類別設定", href: "/admin/classification" },
+      { key: "items", label: "品項設定", href: "/admin/items" },
     ],
   },
   {
@@ -156,9 +171,10 @@ export const adminNav: AdminNavGroup[] = [
       {
         key: "memberInsights",
         label: "會員洞察",
-        href: "/admin/members/insights",
+        href: "/admin/insights",
       },
       { key: "roles", label: "會員權限", href: "/admin/roles" },
+      { key: "orgUnits", label: "部門與單位", href: "/admin/org" },
     ],
   },
   {
@@ -175,7 +191,7 @@ export const adminNav: AdminNavGroup[] = [
     items: [
       { key: "itemStats", label: "餐點統計", href: "/admin/item-stats" },
       { key: "reports", label: "報表", href: "/admin/reports" },
-      { key: "audit", label: "稽核", href: "/admin/audit" },
+      { key: "audit", label: "稽核紀錄", href: "/admin/audit" },
       { key: "settings", label: "系統設定", href: "/admin/settings" },
     ],
   },

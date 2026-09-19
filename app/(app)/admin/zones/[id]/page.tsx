@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { Section, Button, ButtonLink } from "@/components/ui/primitives";
+import { Section, ButtonLink } from "@/components/ui/primitives";
 import { ZoneForm } from "@/components/admin/zone-form";
-import { zoneById } from "@/lib/mock";
+import { findOrderZoneById } from "@/lib/models/order-zone";
+import { listTemplates } from "@/lib/models/template";
 
 export const metadata = { title: "編輯專區" };
 
@@ -11,7 +12,7 @@ export default async function EditZonePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const zone = zoneById(id);
+  const [zone, templates] = await Promise.all([findOrderZoneById(id), listTemplates()]);
   if (!zone) notFound();
 
   return (
@@ -24,19 +25,7 @@ export default async function EditZonePage({
         </ButtonLink>
       }
     >
-      <ZoneForm zone={zone} />
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <Button variant="danger">刪除專區</Button>
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/zones" variant="ghost">
-            取消
-          </ButtonLink>
-          <Button>儲存</Button>
-        </div>
-      </div>
-
-      <p className="mt-3 text-xs text-muted">＊此頁為介面預覽，表單尚未串接後端。</p>
+      <ZoneForm zone={zone} templates={templates} />
     </Section>
   );
 }

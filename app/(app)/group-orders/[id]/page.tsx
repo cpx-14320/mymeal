@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
   PageContainer,
@@ -13,17 +13,13 @@ import {
   Th,
   Td,
 } from "@/components/ui/primitives";
-import { GroupOrderForm } from "@/components/group-order-form";
+import { GroupOrderForm, type OrderableDish } from "@/components/group-order-form";
 import { GroupOrderExportButton } from "@/components/group-order-export-button";
-import {
-  groupOrderById,
-  groupOrderTotals,
-  templateById,
-  unitById,
-  departmentById,
-  itemById,
-  riceLevelLabel,
-} from "@/lib/mock";
+import { findGroupOrderById, getMemberFrequentItems, type RiceLevel } from "@/lib/models/group-order";
+import { findTemplateById } from "@/lib/models/template";
+import { findMemberById } from "@/lib/models/member";
+import { getMemberBalance } from "@/lib/models/wallet";
+import { getSessionMemberId } from "@/lib/session";
 
 const statusMap = {
   open: { label: "開放中", tone: "positive" as const },
@@ -31,13 +27,15 @@ const statusMap = {
   completed: { label: "已完成", tone: "neutral" as const },
 };
 
+const riceLevelLabel: Record<RiceLevel, string> = { normal: "正常", half: "半飯", none: "不要飯" };
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const group = groupOrderById(id);
+  const group = await findGroupOrderById(id);
   return { title: group ? `團訂明細：${group.name}` : "團訂明細" };
 }
 
@@ -47,26 +45,41 @@ export default async function GroupOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const group = groupOrderById(id);
+  const group = await findGroupOrderById(id);
   if (!group) notFound();
 
-  const tpl = templateById(group.templateId);
-  const unit = unitById(group.unitId);
-  const dept = unit ? departmentById(unit.departmentId) : undefined;
-  const totals = groupOrderTotals(group);
+  const memberId = await getSessionMemberId();
+  if (!memberId) redirect("/login");
+  const viewer = await findMemberById(memberId);
+  if (!viewer) redirect("/login");
 
-  const dishIds = [
-    ...new Set(tpl ? tpl.sections.flatMap((s) => s.itemIds) : []),
-  ];
-  const dishes = dishIds
-    .map((id2) => itemById(id2))
-    .filter((it): it is NonNullable<typeof it> => Boolean(it));
+  const [tpl, walletBalance, frequentItems] = await Promise.all([
+    findTemplateById(group.templateId),
+    getMemberBalance(memberId),
+    getMemberFrequentItems(memberId),
+  ]);
 
-  const lineGroups: {
-    memberId: string;
-    memberName: string;
-    lines: typeof group.lines;
-  }[] = [];
+  const dishMap = new Map<string, OrderableDish>();
+  if (tpl) {
+    for (const sec of tpl.sections) {
+      for (const it of sec.items) {
+        dishMap.set(it.id, { id: it.id, name: it.name, emoji: it.emoji, price: it.price });
+      }
+    }
+  }
+  const dishes = [...dishMap.values()];
+
+  // 只推薦這個團的模板裡真的有賣的品項；已經點過的品項還是會顯示，方便直接在這裡調整數量。
+  const recommendedDishIds = frequentItems
+    .filter((f) => dishMap.has(f.itemId))
+    .map((f) => f.itemId)
+    .slice(0, 4);
+
+  const existingLines = group.lines
+    .filter((l) => l.memberId === memberId)
+    .map((l) => ({ itemId: l.itemId, qty: l.qty, rice: l.rice, note: l.note }));
+
+  const lineGroups: { memberId: string; memberName: string; lines: typeof group.lines }[] = [];
   for (const l of group.lines) {
     const last = lineGroups[lineGroups.length - 1];
     if (last && last.memberId === l.memberId) last.lines.push(l);
@@ -77,14 +90,16 @@ export default async function GroupOrderDetailPage({
     <PageContainer>
       <PageHeader
         title={group.name}
-        description={`團訂 #${group.id}．模板：${tpl?.name ?? group.templateId}．${dept && unit ? `${dept.name} ${unit.name}．` : ""}${group.date} 取餐`}
+        description={`團訂 #${group.id}．模板：${group.templateName}．${
+          group.departmentName && group.unitName ? `${group.departmentName} ${group.unitName}．` : ""
+        }${group.date} 取餐`}
         actions={<Badge tone={statusMap[group.status].tone}>{statusMap[group.status].label}</Badge>}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="截止時間" value={group.deadline} />
-        <Stat label="目前份數" value={`${totals.qty} 份`} hint={`NT$ ${totals.amount}`} />
-        <Stat label="所屬單位" value={unit?.name ?? "—"} hint={`團主：${group.host}`} />
+        <Stat label="截止時間" value={group.deadline || "—"} />
+        <Stat label="目前份數" value={`${group.qty} 份`} hint={`NT$ ${group.amount}`} />
+        <Stat label="所屬單位" value={group.unitName || "—"} hint={`團主：${group.hostName}`} />
       </div>
 
       {/* 我的餐點 */}
@@ -93,10 +108,22 @@ export default async function GroupOrderDetailPage({
           <h2 className="text-lg font-bold tracking-tight">
             點餐{" "}
             <span className="text-sm font-normal text-muted">
-            （品項為本團清單，開團時可由團主調整）
+              （品項來自這個團使用的模板；換品項請到「模板設定」調整）
             </span>
           </h2>
-          <GroupOrderForm dishes={dishes} />
+          {dishes.length === 0 ? (
+            <p className="text-sm text-muted">這個模板還沒有品項可以點。</p>
+          ) : (
+            <GroupOrderForm
+              groupOrderId={group.id}
+              dishes={dishes}
+              recommendedDishIds={recommendedDishIds}
+              existingLines={existingLines}
+              memberId={memberId}
+              memberName={viewer.name}
+              walletBalance={walletBalance}
+            />
+          )}
         </CardBody>
       </Card>
 
@@ -120,9 +147,7 @@ export default async function GroupOrderDetailPage({
                 <tr key={`${grp.memberId}-${li}`}>
                   {li === 0 && (
                     <Td rowSpan={grp.lines.length} className="align-middle">
-                      {grp.memberName === group.host
-                        ? `${grp.memberName}（團主）`
-                        : grp.memberName}
+                      {grp.memberId === group.hostId ? `${grp.memberName}（團主）` : grp.memberName}
                     </Td>
                   )}
                   <Td>{l.itemName}</Td>
@@ -133,17 +158,20 @@ export default async function GroupOrderDetailPage({
                 </tr>
               )),
             )}
+            {group.lines.length === 0 && (
+              <tr>
+                <Td colSpan={6} className="text-center text-muted">
+                  還沒有人點餐。
+                </Td>
+              </tr>
+            )}
             <tr>
               <Td className="font-semibold">合計</Td>
               <Td />
               <Td />
-              <Td className="text-center font-semibold tabular-nums">
-                {totals.qty}
-              </Td>
+              <Td className="text-center font-semibold tabular-nums">{group.qty}</Td>
               <Td />
-              <Td className="text-right font-semibold tabular-nums">
-                NT$ {totals.amount}
-              </Td>
+              <Td className="text-right font-semibold tabular-nums">NT$ {group.amount}</Td>
             </tr>
           </tbody>
         </TableWrap>
@@ -155,14 +183,12 @@ export default async function GroupOrderDetailPage({
         </ButtonLink>
         <GroupOrderExportButton
           lines={group.lines}
-          host={group.host}
+          host={group.hostName}
           filename={`${group.name}_訂購彙總.csv`}
         />
         <Button variant="danger">取消整團</Button>
         <Button>提前結單</Button>
       </div>
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，資料為範例。</p>
     </PageContainer>
   );
 }

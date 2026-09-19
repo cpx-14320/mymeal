@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Section, ButtonLink, Stat } from "@/components/ui/primitives";
 import { ItemCommentsTable } from "@/components/admin/item-comments-table";
-import { itemById, itemStatById, itemComments } from "@/lib/mock";
+import { findItemStatById, findCatalogItemById } from "@/lib/models/catalog-item";
+import { listReviewsForItem } from "@/lib/models/item-review";
 
 export async function generateMetadata({
   params,
@@ -10,8 +11,8 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const item = itemById(id);
-  return { title: item ? `餐點統計：${item.name}` : "餐點統計" };
+  const stat = await findItemStatById(id);
+  return { title: stat ? `餐點統計：${stat.itemName}` : "餐點統計" };
 }
 
 export default async function ItemStatDetailPage({
@@ -20,17 +21,16 @@ export default async function ItemStatDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const item = itemById(id);
-  const stat = itemStatById(id);
-  if (!item || !stat) notFound();
+  const [stat, item] = await Promise.all([findItemStatById(id), findCatalogItemById(id)]);
+  if (!stat || !item) notFound();
 
-  const comments = itemComments(id);
+  const comments = await listReviewsForItem(id);
 
   return (
     <div className="space-y-8">
       <Section
-        title={`餐點統計：${item.name}`}
-        description={`${item.category}．NT$ ${item.price}`}
+        title={`餐點統計：${stat.itemName}`}
+        description={`${item.categoryName}．NT$ ${stat.price}`}
         actions={
           <ButtonLink href="/admin/item-stats" variant="ghost">
             返回列表
@@ -51,8 +51,6 @@ export default async function ItemStatDetailPage({
       <Section title="評論留言" description="所有會員對這個品項留下的評論。">
         <ItemCommentsTable comments={comments} />
       </Section>
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，資料為範例。</p>
     </div>
   );
 }

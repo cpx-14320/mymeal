@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { Section, Button, ButtonLink } from "@/components/ui/primitives";
+import { Section, ButtonLink } from "@/components/ui/primitives";
 import { PromoForm } from "@/components/admin/promo-form";
-import { interstitialById } from "@/lib/mock";
+import { findInterstitialById } from "@/lib/models/interstitial";
 
 export const metadata = { title: "編輯廣告" };
 
@@ -11,7 +11,7 @@ export default async function EditPromoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const promo = interstitialById(id);
+  const promo = await findInterstitialById(id);
   if (!promo) notFound();
 
   return (
@@ -25,18 +25,6 @@ export default async function EditPromoPage({
       }
     >
       <PromoForm promo={promo} />
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <Button variant="danger">刪除廣告</Button>
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/promos" variant="ghost">
-            取消
-          </ButtonLink>
-          <Button>儲存</Button>
-        </div>
-      </div>
-
-      <p className="mt-3 text-xs text-muted">＊此頁為介面預覽，表單尚未串接後端。</p>
     </Section>
   );
 }

@@ -8,6 +8,13 @@ import {
   Badge,
   Progress,
 } from "@/components/ui/primitives";
+import {
+  currentMemberId,
+  memberLevelInfo,
+  memberTaskProgress,
+  taskPeriodLabel,
+} from "@/lib/mock";
+import { listDailyTasks, listExpRules, listMemberLevels } from "@/lib/models/gamification";
 
 export const metadata: Metadata = { title: "會員中心" };
 
@@ -20,14 +27,14 @@ const profile = [
   ["預設取餐地點", "3F 茶水間"],
 ];
 
-const tasks = [
-  { name: "每日訂餐", period: "每日", progress: 1, target: 1, points: 10 },
-  { name: "每週訂餐", period: "每週", progress: 3, target: 4, points: 20 },
-  { name: "每月評分", period: "每月", progress: 2, target: 5, points: 15 },
-  { name: "每週儲值", period: "每週", progress: 1, target: 1, points: 10 },
-];
-
-export default function AccountPage() {
+export default async function AccountPage() {
+  const [dailyTasks, expRules, memberLevels] = await Promise.all([
+    listDailyTasks(),
+    listExpRules(),
+    listMemberLevels(),
+  ]);
+  const { exp, level, levelIndex, next, expToNext } = memberLevelInfo(currentMemberId, expRules, memberLevels);
+  const tasks = memberTaskProgress(currentMemberId, dailyTasks);
   return (
     <PageContainer>
       <PageHeader
@@ -66,13 +73,23 @@ export default function AccountPage() {
           <CardBody className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">目前等級</h2>
-              <Badge tone="brand">Lv.3 熟客</Badge>
+              <Badge tone="brand">
+                Lv.{levelIndex + 1} {level.name}
+              </Badge>
             </div>
             <p className="text-2xl font-bold tabular-nums">
-              820 <span className="text-sm font-normal text-muted">exp</span>
+              {exp} <span className="text-sm font-normal text-muted">exp</span>
             </p>
-            <Progress value={820} max={1000} />
-            <p className="text-xs text-muted">距離 Lv.4「常客」還差 180 exp</p>
+            {next ? (
+              <>
+                <Progress value={exp - level.minExp} max={next.minExp - level.minExp} />
+                <p className="text-xs text-muted">
+                  距離 Lv.{levelIndex + 2}「{next.name}」還差 {expToNext} exp
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-muted">已達最高等級</p>
+            )}
           </CardBody>
         </Card>
       </div>
@@ -81,27 +98,25 @@ export default function AccountPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-bold tracking-tight">任務進度</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {tasks.map((t) => (
-            <Card key={t.name}>
+          {tasks.map(({ task, progress }) => (
+            <Card key={task.id}>
               <CardBody className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">{t.name}</span>
-                  <Badge>{t.period}</Badge>
+                  <span className="font-medium">{task.name}</span>
+                  <Badge>{taskPeriodLabel[task.period]}</Badge>
                 </div>
-                <Progress value={t.progress} max={t.target} />
+                <Progress value={progress} max={task.targetCount} />
                 <div className="flex justify-between text-xs text-muted">
                   <span className="tabular-nums">
-                    {t.progress} / {t.target}
+                    {progress} / {task.targetCount}
                   </span>
-                  <span>完成 +{t.points} exp</span>
+                  <span>完成 +{task.rewardPoints} exp</span>
                 </div>
               </CardBody>
             </Card>
           ))}
         </div>
       </section>
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，資料為範例。</p>
     </PageContainer>
   );
 }

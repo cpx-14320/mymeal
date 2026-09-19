@@ -1,0 +1,793 @@
+<title>MyMeal 資料模型規劃</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --page: #faf8f5;
+    --surface: #ffffff;
+    --surface-2: #f4f0ea;
+    --surface-3: #ece5d8;
+    --ink: #1c1a17;
+    --muted: #6b6459;
+    --faint: #a39c8d;
+    --line: #e7e1d8;
+    --line-strong: #d8cfc0;
+    --brand: #b5730f;
+    --brand-fg: #ffffff;
+    --brand-soft: #fdf3e0;
+    --positive: #1f7a4d;
+    --positive-soft: #e6f3ec;
+    --warning: #9a6a12;
+    --warning-soft: #fbf0dc;
+    --danger: #b23c2e;
+    --danger-soft: #fbe9e6;
+    --code-bg: #f1ece1;
+    --shadow: 0 1px 2px rgba(28,26,23,.04), 0 8px 24px -12px rgba(28,26,23,.12);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #14120f; --surface: #1b1916; --surface-2: #232019; --surface-3: #2b271d;
+      --ink: #ece7de; --muted: #a79f8f; --faint: #766f61;
+      --line: #322c22; --line-strong: #3d3527;
+      --brand: #e0a63e; --brand-fg: #241a08; --brand-soft: #2a2213;
+      --positive: #6fce9c; --positive-soft: #16261f;
+      --warning: #e0b45e; --warning-soft: #2a2314;
+      --danger: #ef9587; --danger-soft: #2c1a17;
+      --code-bg: #241f16;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #14120f; --surface: #1b1916; --surface-2: #232019; --surface-3: #2b271d;
+    --ink: #ece7de; --muted: #a79f8f; --faint: #766f61;
+    --line: #322c22; --line-strong: #3d3527;
+    --brand: #e0a63e; --brand-fg: #241a08; --brand-soft: #2a2213;
+    --positive: #6fce9c; --positive-soft: #16261f;
+    --warning: #e0b45e; --warning-soft: #2a2314;
+    --danger: #ef9587; --danger-soft: #2c1a17;
+    --code-bg: #241f16;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  code, .mono, .fname, .ftype, .coll-name {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  h1, h2, h3, h4 { text-wrap: balance; line-height: 1.35; margin: 0; }
+  a { color: var(--brand); }
+  img { max-width: 100%; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.hero {
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em;
+    color: var(--brand); text-transform: uppercase;
+  }
+  h1 { font-size: 30px; font-weight: 900; margin-top: 8px; }
+  .lede { color: var(--muted); font-size: 15.5px; margin-top: 10px; max-width: 68ch; }
+
+  nav.toc {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 20px;
+  }
+  nav.toc a {
+    font-size: 12.5px; font-weight: 600; text-decoration: none;
+    color: var(--muted); background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 12px;
+  }
+  nav.toc a:hover { color: var(--brand); border-color: var(--brand); }
+
+  section { margin: 56px 0; scroll-margin-top: 20px; }
+  section > h2 {
+    font-size: 22px; font-weight: 800;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  section > h2 .num {
+    font-family: "JetBrains Mono", monospace; font-size: 14px;
+    color: var(--faint); font-weight: 600;
+  }
+  section > p.desc { color: var(--muted); margin-top: 8px; max-width: 72ch; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 14px; box-shadow: var(--shadow);
+  }
+
+  /* 權限矩陣 */
+  .org-flow {
+    display: flex; flex-wrap: wrap; align-items: stretch; gap: 0;
+    margin-top: 20px;
+  }
+  .org-node {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 18px; min-width: 150px; box-shadow: var(--shadow);
+  }
+  .org-node .k { font-size: 11px; color: var(--faint); font-weight: 700; letter-spacing: .04em; }
+  .org-node .v { font-size: 15px; font-weight: 700; margin-top: 2px; }
+  .org-arrow {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 14px; color: var(--faint); font-size: 20px;
+  }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 16px; font-size: 13.5px; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .03em;
+    color: var(--muted); text-transform: uppercase;
+    background: var(--surface-2); padding: 9px 12px; border-bottom: 1px solid var(--line-strong);
+  }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  .fname { color: var(--brand); font-weight: 600; }
+  .ftype { color: var(--muted); }
+  .fnote { color: var(--muted); font-size: 12.5px; }
+  tbody tr:hover { background: var(--surface-2); }
+
+  .coll-card { margin-top: 28px; }
+  .coll-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 16px 20px; border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .coll-name { font-size: 17px; font-weight: 800; }
+  .coll-name .db { color: var(--faint); font-weight: 500; }
+  .coll-purpose { font-size: 13px; color: var(--muted); }
+  .coll-body { padding: 4px 20px 18px; }
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 2px 9px; border-radius: 999px; margin-left: 6px;
+  }
+  .tag.embed { background: var(--brand-soft); color: var(--brand); }
+  .tag.ref { background: var(--positive-soft); color: var(--positive); }
+  .tag.append { background: var(--warning-soft); color: var(--warning); }
+
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 12.5px; line-height: 1.6;
+  }
+  code { font-size: 0.92em; }
+  :not(pre) > code {
+    background: var(--code-bg); padding: 1px 5px; border-radius: 5px;
+  }
+
+  .rule-list { display: grid; gap: 10px; margin-top: 16px; }
+  .rule {
+    display: flex; gap: 12px; padding: 12px 16px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+  .rule .n {
+    font-family: "JetBrains Mono", monospace; font-weight: 700; color: var(--brand);
+    flex-shrink: 0;
+  }
+  .rule b { display: block; margin-bottom: 2px; }
+  .rule .ex { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  .feature-map td:first-child { font-weight: 600; }
+  .feature-map .colls { display: flex; flex-wrap: wrap; gap: 5px; }
+  .feature-map .colls span {
+    font-family: "JetBrains Mono", monospace; font-size: 11.5px;
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 6px; padding: 2px 7px; white-space: nowrap;
+  }
+
+  .mermaid { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); }
+
+  .note {
+    background: var(--brand-soft); border: 1px solid var(--line); border-left: 3px solid var(--brand);
+    border-radius: 8px; padding: 12px 16px; font-size: 13.5px; color: var(--ink);
+    margin-top: 16px;
+  }
+  .note b { color: var(--brand); }
+
+  footer.page-end {
+    margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line);
+    color: var(--faint); font-size: 12.5px;
+  }
+
+  @media (max-width: 640px) {
+    .org-flow { flex-direction: column; }
+    .org-arrow { transform: rotate(90deg); padding: 6px 0; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">MyMeal · 內部規劃文件</p>
+    <h1>資料模型與權限規劃（草案）</h1>
+    <p class="lede">
+      盤點前台＋後台目前所有功能後，規劃真正接 MongoDB 時需要的 collection、
+      彼此的關聯，以及使用者／權限相關的資料要怎麼放。目前 <code>lib/mock.ts</code>
+      裡的資料會逐步依照這份規劃搬過去——這份文件只是規劃參考，還沒有全部落地。
+      這版也對照了舊系統的 <code>訂餐網站資料表.xlsx</code>（原本 PHP + MySQL 版本的實際資料表結構）
+      當作參考，命名習慣、部分欄位設計有沿用，但不是照抄——遇到 MongoDB 文件模型能簡化的地方
+      （例如內嵌陣列取代多張關聯表）就直接簡化，文中會註明「參考舊系統」的地方代表有實質參考到，
+      沒特別註明的部分則是針對 MongoDB／這個專案重新設計的。
+    </p>
+    <nav class="toc">
+      <a href="#org">① 組織與權限模型</a>
+      <a href="#erd">② 資料表關聯圖</a>
+      <a href="#collections">③ 各 Collection 詳細欄位</a>
+      <a href="#naming">④ 命名規則</a>
+      <a href="#features">⑤ 功能對應表</a>
+      <a href="#deferred">⑥ 延伸／待決定</a>
+    </nav>
+  </header>
+
+  <section id="org">
+    <h2><span class="num">01</span> 組織與權限模型</h2>
+    <p class="desc">
+      會員的「部門/單位」跟「權限」是兩條獨立的軸線：部門/單位決定「這個人屬於哪個團隊」
+      （開團訂餐、部門彙總報表要用），角色決定「這個人在後台能做什麼」（沿用既有的
+      <code>permissionGroups</code> / <code>memberGroups</code> 設計，key + none/own/full 三段式）。
+    </p>
+
+    <div class="org-flow">
+      <div class="org-node"><div class="k">組織階層</div><div class="v">部門 department</div></div>
+      <div class="org-arrow">→</div>
+      <div class="org-node"><div class="v">單位 unit</div></div>
+      <div class="org-arrow">→</div>
+      <div class="org-node"><div class="v">會員 member</div></div>
+    </div>
+    <div class="org-flow" style="margin-top:12px">
+      <div class="org-node"><div class="k">權限階層</div><div class="v">角色 role</div></div>
+      <div class="org-arrow">→</div>
+      <div class="org-node"><div class="v">會員 member</div></div>
+      <div class="org-arrow">→</div>
+      <div class="org-node"><div class="v">權限鍵 × 等級</div><div class="fnote">none / own / full</div></div>
+    </div>
+
+    <div class="note">
+      <b>沿用既有設計，不重新發明：</b>權限鍵清單（<code>menu</code>、<code>grouporder</code>、
+      <code>finance_topup</code>…）本來就是固定的功能模組列表，不太會變動，建議留在程式碼常數裡
+      （不必開一張 collection），只有「角色 → 各權限鍵的等級」這個對應關係需要存進 <code>member_roles</code>。
+    </div>
+  </section>
+
+  <section id="erd">
+    <h2><span class="num">02</span> 資料表關聯圖</h2>
+    <p class="desc">用表格列出所有 collection 之間的關聯，比畫一張 17 個實體的關聯圖更容易掃過去確認每一條關係。「基數」欄的 1:N 代表「一筆對多筆」，N:N 代表多對多。</p>
+    <div class="card">
+      <table>
+        <thead><tr><th>來源</th><th>關聯</th><th>目標</th><th>基數</th><th>說明</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">member_departments</td><td>→</td><td class="mono">member_units</td><td>1:N</td><td>一個部門有多個單位</td></tr>
+          <tr><td class="mono">member_units</td><td>→</td><td class="mono">member</td><td>1:N</td><td>一個單位有多個會員</td></tr>
+          <tr><td class="mono">member_roles</td><td>→</td><td class="mono">member</td><td>1:N</td><td>一個角色套用給多個會員</td></tr>
+          <tr><td class="mono">suppliers</td><td>→</td><td class="mono">menu_items</td><td>1:N</td><td>一個店家供應多個品項</td></tr>
+          <tr><td class="mono">suppliers</td><td>→</td><td class="mono">menu_templates</td><td>1:N</td><td>一個店家配合多個模板</td></tr>
+          <tr><td class="mono">menu_categories</td><td>→</td><td class="mono">menu_items</td><td>1:N</td><td>一個分類底下多個品項</td></tr>
+          <tr><td class="mono">menu_templates</td><td>↔</td><td class="mono">order_zones</td><td>N:N</td><td>模板可被多個專區使用，專區也可套多個模板</td></tr>
+          <tr><td class="mono">menu_templates</td><td>→</td><td class="mono">group_orders</td><td>1:N</td><td>一個模板被多次拿去開團</td></tr>
+          <tr><td class="mono">member_units</td><td>→</td><td class="mono">group_orders</td><td>1:N</td><td>一個單位開多次團</td></tr>
+          <tr><td class="mono">member</td><td>→</td><td class="mono">group_orders</td><td>1:N</td><td>一個人可以當多次團主</td></tr>
+          <tr><td class="mono">member</td><td>→</td><td class="mono">wallet_ledger</td><td>1:N</td><td>一個人有多筆錢包歷程</td></tr>
+          <tr><td class="mono">group_orders</td><td>→</td><td class="mono">wallet_ledger</td><td>1:N</td><td>一次開團扣款可能對應多筆歷程（每位參加者各一筆）</td></tr>
+          <tr><td class="mono">member</td><td>→</td><td class="mono">topup_requests</td><td>1:N</td><td>一個人可申請多次儲值</td></tr>
+          <tr><td class="mono">member</td><td>→</td><td class="mono">item_reviews</td><td>1:N</td><td>一個人寫多筆評論</td></tr>
+          <tr><td class="mono">menu_items</td><td>→</td><td class="mono">item_reviews</td><td>1:N</td><td>一個品項收到多筆評論</td></tr>
+          <tr><td class="mono">member</td><td>→</td><td class="mono">favorites</td><td>1:N</td><td>一個人收藏多個品項</td></tr>
+          <tr><td class="mono">menu_items</td><td>→</td><td class="mono">favorites</td><td>1:N</td><td>一個品項被多人收藏</td></tr>
+          <tr><td class="mono">member</td><td>→</td><td class="mono">audit_logs</td><td>1:N</td><td>一個人（管理員）觸發多筆稽核事件</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="collections">
+    <h2><span class="num">03</span> 各 Collection 詳細欄位</h2>
+    <p class="desc">共 17 個 collection。每個欄位表最後一欄註記型別／關聯方式：<span class="tag ref">參照</span> 表示存對方的 <code>_id</code>；<span class="tag embed">內嵌</span> 表示整包資料直接放在同一份文件裡，不用另開 collection；<span class="tag append">只增不改</span> 表示歷程型資料，只能新增、不能修改既有列。</p>
+
+    <!-- member_departments -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">member_departments <span class="db">部門</span></span></div>
+        <div class="coll-purpose">組織階層最上層，取代 mock 裡的 memberDepts 字串陣列</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td class="fnote">MongoDB 內建主鍵</td></tr>
+            <tr><td class="fname">name</td><td class="ftype">string</td><td class="fnote">例："網路發展部"</td></tr>
+            <tr><td class="fname">active</td><td class="ftype">boolean</td><td class="fnote">停用的部門不能再被指派</td></tr>
+            <tr><td class="fname">createdAt / updatedAt</td><td class="ftype">Date</td><td class="fnote">建立／異動時間</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- member_units -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">member_units <span class="db">單位</span></span></div>
+        <div class="coll-purpose">部門底下的組別，取代 mock 裡樓層式的 memberUnits</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">name</td><td class="ftype">string</td><td class="fnote">例："業務一組"</td></tr>
+            <tr><td class="fname">departmentId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member_departments._id</td></tr>
+            <tr><td class="fname">active</td><td class="ftype">boolean</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- member_roles -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">member_roles <span class="db">角色／權限組</span></span></div>
+        <div class="coll-purpose">取代 mock 的 memberGroups；每個角色是一組「權限鍵 → 等級」的對應</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">key</td><td class="ftype">string</td><td class="fnote">唯一代碼，例 "catering_admin"（給 member.roleKey 參照，比參照 ObjectId 更好讀）</td></tr>
+            <tr><td class="fname">name</td><td class="ftype">string</td><td class="fnote">顯示用名稱，例 "餐飲管理員"</td></tr>
+            <tr><td class="fname">permissions</td><td class="ftype">object</td><td class="fnote"><span class="tag embed">內嵌</span> <code>{ menu: "full", grouporder: "own", ... }</code>，鍵是固定的權限鍵常數</td></tr>
+            <tr><td class="fname">isSystemRole</td><td class="ftype">boolean</td><td class="fnote">系統內建角色（如「一般使用者」）不能被刪除</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- member -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">member <span class="db">使用者</span></span></div>
+        <div class="coll-purpose">目前已建立，見 lib/models/member.ts；這裡補上跟部門/單位/角色的關聯欄位</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">employeeId</td><td class="ftype">string</td><td class="fnote">員工編號，唯一索引</td></tr>
+            <tr><td class="fname">account</td><td class="ftype">string</td><td class="fnote">登入帳號，唯一索引</td></tr>
+            <tr><td class="fname">email</td><td class="ftype">string</td><td class="fnote">公司 Email，唯一索引</td></tr>
+            <tr><td class="fname">passwordHash</td><td class="ftype">string</td><td class="fnote">bcrypt hash，絕不存明文</td></tr>
+            <tr><td class="fname">name</td><td class="ftype">string</td><td></td></tr>
+            <tr><td class="fname">extension</td><td class="ftype">string?</td><td class="fnote">分機</td></tr>
+            <tr><td class="fname">departmentId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member_departments._id（<b>新增</b>，取代舊的字串 dept）</td></tr>
+            <tr><td class="fname">unitId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member_units._id（<b>新增</b>，取代舊的字串 unit）</td></tr>
+            <tr><td class="fname">roleKey</td><td class="ftype">string</td><td><span class="tag ref">參照</span> member_roles.key（<b>新增</b>，取代舊的自由文字 role）</td></tr>
+            <tr><td class="fname">memberCode</td><td class="ftype">string</td><td class="fnote"><b>已實作</b>：個人專屬碼，格式固定 2 碼大寫英文＋6 碼數字（例 <code>NN021937</code>）；註冊時隨機產生，寫入前查重避免撞碼</td></tr>
+            <tr><td class="fname">referredByCode</td><td class="ftype">string?</td><td class="fnote"><b>已實作</b>：註冊時邀請碼若對到某位會員的 <code>memberCode</code>，記下那組碼（推薦碼／推薦人）</td></tr>
+            <tr><td class="fname">referredByName</td><td class="ftype">string?</td><td class="fnote"><b>已實作</b>：推薦人當下的姓名快照，避免之後推薦人改名要多查一次（沿用「存名稱快照」原則）</td></tr>
+            <tr><td class="fname">status</td><td class="ftype">"pending"|"active"|"suspended"</td><td class="fnote">pending＝註冊待審核</td></tr>
+            <tr><td class="fname">balance</td><td class="ftype">number</td><td class="fnote">目前餘額快取，異動時跟著 <code>wallet_ledger</code> 一起寫（<b>參考舊系統</b>：PHP 版本也是另存一張 <code>member_balance</code> 快取表，這裡簡化成直接當 <code>member</code> 的一個欄位，MongoDB 不需要為了 1 對 1 的快取值另開一個 collection）</td></tr>
+            <tr><td class="fname">avatarUrl</td><td class="ftype">string?</td><td></td></tr>
+            <tr><td class="fname">createdAt / updatedAt / lastLoginAt</td><td class="ftype">Date</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="note"><b>邀請碼（已實作，一碼兩用）：</b>註冊表單上的「邀請碼」欄位本身不落地存成 <code>member</code> 的欄位，比對順序是：① 等於固定碼（存在 <code>.env.local</code> 的 <code>ADMIN_INVITE_CODE</code>）→ 這筆 <code>role</code> 直接設成「超級管理員」；② 沒對到固定碼、但對到某位現有會員的 <code>memberCode</code> → 當推薦碼，寫入 <code>referredByCode</code>／<code>referredByName</code>，<code>role</code> 不受影響；③ 兩者都沒對到（含留空）→ 當沒填，照常註冊一般使用者，不擋註冊流程。</div>
+      </div>
+    </div>
+
+    <!-- suppliers -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">suppliers <span class="db">店家</span></span></div>
+        <div class="coll-purpose">跟 mock 的 Supplier 幾乎一樣，直接對應搬移</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">name / type / phone</td><td class="ftype">string</td><td class="fnote">店名、類型（便當店/咖啡…）、電話</td></tr>
+            <tr><td class="fname">active</td><td class="ftype">boolean</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- menu_categories -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">menu_categories <span class="db">品項分類</span></span></div>
+        <div class="coll-purpose">對應後台「品項分類」頁；跟 menu_tags 不同——分類是單一頂層歸類（便當/飲料/點心），標籤是可複選的屬性</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">name</td><td class="ftype">string</td><td class="fnote">例 "便當"</td></tr>
+            <tr><td class="fname">sortOrder</td><td class="ftype">number</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- menu_tags -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">menu_tags <span class="db">品項標籤群組</span></span></div>
+        <div class="coll-purpose">跟 mock 的 TagGroup 一樣：主食／肉類／飲食／甜度冰塊</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">name</td><td class="ftype">string</td><td class="fnote">例 "肉類"</td></tr>
+            <tr><td class="fname">multi</td><td class="ftype">boolean</td><td class="fnote">是否可複選</td></tr>
+            <tr><td class="fname">options</td><td class="ftype">string[]</td><td class="fnote"><span class="tag embed">內嵌</span> 選項列表</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- menu_items -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">menu_items <span class="db">品項總表</span></span></div>
+        <div class="coll-purpose">全站唯一的品項來源，模板／開團都只存 itemId 再回頭查</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">name / price</td><td class="ftype">string / number</td><td></td></tr>
+            <tr><td class="fname">kind</td><td class="ftype">"meal"|"drink"|"snack"</td><td></td></tr>
+            <tr><td class="fname">categoryId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> menu_categories._id</td></tr>
+            <tr><td class="fname">supplierId</td><td class="ftype">ObjectId?</td><td><span class="tag ref">參照</span> suppliers._id</td></tr>
+            <tr><td class="fname">tags</td><td class="ftype">string[]</td><td class="fnote">值取自 menu_tags.options，不強制外鍵</td></tr>
+            <tr><td class="fname">emoji / imageUrl</td><td class="ftype">string</td><td class="fnote">imageUrl 可為空，沒圖用 emoji 頂著</td></tr>
+            <tr><td class="fname">active</td><td class="ftype">boolean</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="note">
+          <b>刪除行為（已決定）：</b>刪除／下架一個品項時，要連動刪除它在 <code>item_reviews</code> 的所有評論評分——
+          避免留下參照到不存在品項的評分資料，變成沒辦法顯示也沒辦法使用的孤兒資料（沿用舊系統
+          <code>menu_dishes</code> 對 <code>menu_comments</code>/<code>menu_ratings</code> 的 CASCADE 行為）。
+          <code>favorites</code> 建議一起處理（同樣的孤兒資料風險），實作時記得一起清。
+        </div>
+      </div>
+    </div>
+
+    <!-- menu_templates -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">menu_templates <span class="db">訂餐模板</span></span></div>
+        <div class="coll-purpose">一週菜單／一組飲料清單；sections 直接內嵌（順序有意義、不需要獨立查詢）</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">name</td><td class="ftype">string</td><td></td></tr>
+            <tr><td class="fname">kind</td><td class="ftype">"bento"|"drinks"|"tea"|"other"</td><td></td></tr>
+            <tr><td class="fname">supplierId</td><td class="ftype">ObjectId?</td><td><span class="tag ref">參照</span> suppliers._id</td></tr>
+            <tr><td class="fname">sections</td><td class="ftype">array</td><td class="fnote"><span class="tag embed">內嵌</span> <code>[{ name, itemIds: ObjectId[] }]</code></td></tr>
+            <tr><td class="fname">active</td><td class="ftype">boolean</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- order_zones -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">order_zones <span class="db">訂餐專區</span></span></div>
+        <div class="coll-purpose">前台一個專區＝一個頁面，可套用多個模板</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">name / slug / description / icon</td><td class="ftype">string</td><td class="fnote">slug 對應前台網址 /z/{slug}</td></tr>
+            <tr><td class="fname">templateIds</td><td class="ftype">ObjectId[]</td><td><span class="tag ref">參照</span> menu_templates._id（多對多）</td></tr>
+            <tr><td class="fname">active / sortOrder</td><td class="ftype">boolean / number</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- group_orders -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">group_orders <span class="db">開團</span></span></div>
+        <div class="coll-purpose">一個單位在某天套用某模板開的團；訂購明細直接內嵌在 lines 裡</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">name</td><td class="ftype">string</td><td class="fnote">例 "業務一組 週三便當團"</td></tr>
+            <tr><td class="fname">templateId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> menu_templates._id</td></tr>
+            <tr><td class="fname">unitId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member_units._id</td></tr>
+            <tr><td class="fname">hostMemberId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member._id（團主）</td></tr>
+            <tr><td class="fname">date / deadline</td><td class="ftype">Date</td><td></td></tr>
+            <tr><td class="fname">status</td><td class="ftype">"open"|"closed"|"completed"</td><td></td></tr>
+            <tr><td class="fname">lines</td><td class="ftype">array</td><td class="fnote"><span class="tag embed">內嵌</span> 見下方明細</td></tr>
+          </tbody>
+        </table>
+        <p class="fnote" style="margin-top:14px">group_orders.lines[] 內嵌明細：</p>
+        <pre>{
+  memberId: ObjectId,          // 參照 member._id
+  memberName: string,          // 下單當下的姓名快照（人改名不影響歷史單）
+  itemId: ObjectId,            // 參照 menu_items._id
+  itemName: string, price: number,  // 下單當下的名稱／價格快照
+  qty: number,
+  rice: "normal" | "half" | "none",
+  note: string,
+  paymentMethod: "wallet" | "cash" | "voucher" | "free",
+  paymentStatus: "unpaid" | "pending" | "paid" | "failed"
+  // 已付款標記，目前彙總頁的付款圖示要落地存這裡。
+  // 參考舊系統 group_order_items.payment_status 用四段式而不是單純 boolean，
+  // 可以多表達「轉帳確認中」「失敗」這種中間狀態。
+}</pre>
+        <div class="note">
+          <b>已決定不做：</b>舊系統 <code>group_order_items</code> 有 <code>disliked</code>／<code>likes_count</code>／
+          <code>disliked_confirmed_by</code>（單筆訂購項目的按讚/踩與確認機制）。討論後決定
+          <b>不需要</b>，這裡不會有對應欄位。
+        </div>
+      </div>
+    </div>
+
+    <!-- wallet_ledger -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">wallet_ledger <span class="db">錢包歷程</span> <span class="tag append">只增不改</span></span></div>
+        <div class="coll-purpose">儲值、消費、調整都是一筆歷程紀錄；每次寫入同時更新 <code>member.balance</code> 快取欄位</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">memberId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member._id</td></tr>
+            <tr><td class="fname">type</td><td class="ftype">"topup"|"order"|"refund"|"adjustment"</td><td></td></tr>
+            <tr><td class="fname">amount</td><td class="ftype">number</td><td class="fnote">正負號代表入帳/扣款</td></tr>
+            <tr><td class="fname">balanceBefore / balanceAfter</td><td class="ftype">number</td><td class="fnote">寫入當下的餘額快照，方便直接顯示歷程不用重算（<b>參考舊系統</b> <code>balance_transactions</code> 的做法，比原草案多存了 before）</td></tr>
+            <tr><td class="fname">referenceType</td><td class="ftype">"group_order"|"topup_request"|"manual"?</td><td class="fnote">這筆歷程是因為什麼而產生的</td></tr>
+            <tr><td class="fname">referenceId</td><td class="ftype">ObjectId?</td><td class="fnote">依 referenceType 對應到 group_orders._id 或 topup_requests._id；<b>參考舊系統</b>的多型參照寫法（reference_type + reference_id），比只存一個 relatedGroupOrderId 更能擴充到儲值、手動調整等其他來源</td></tr>
+            <tr><td class="fname">note / at</td><td class="ftype">string / Date</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- topup_requests -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">topup_requests <span class="db">儲值申請</span></span></div>
+        <div class="coll-purpose">審核通過後才會在 wallet_ledger 產生一筆 type="topup"</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">memberId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member._id</td></tr>
+            <tr><td class="fname">amount / method</td><td class="ftype">number / string</td><td></td></tr>
+            <tr><td class="fname">status</td><td class="ftype">"pending"|"approved"|"rejected"</td><td></td></tr>
+            <tr><td class="fname">requestedAt / reviewedAt</td><td class="ftype">Date</td><td></td></tr>
+            <tr><td class="fname">reviewedByMemberId</td><td class="ftype">ObjectId?</td><td><span class="tag ref">參照</span> member._id（審核的管理員）</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- item_reviews -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">item_reviews <span class="db">評論／評分</span></span></div>
+        <div class="coll-purpose">合併 mock 裡分開的 MemberComment 跟 MemberRating——一筆評論本來就該同時帶星等，拆兩個集合只是徒增複雜度（舊系統 <code>menu_comments</code>／<code>menu_ratings</code> 也是分開兩張表，這裡刻意不沿用，改成合併）</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">memberId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member._id</td></tr>
+            <tr><td class="fname">itemId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> menu_items._id</td></tr>
+            <tr><td class="fname">stars</td><td class="ftype">number</td><td class="fnote">1–5</td></tr>
+            <tr><td class="fname">text</td><td class="ftype">string?</td><td class="fnote">只評分不留言時可空白</td></tr>
+            <tr><td class="fname">at</td><td class="ftype">Date</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="note">建議對 <code>(memberId, itemId)</code> 建複合唯一索引——一個人對同一個品項只能有一筆評論，重複評論改用「更新既有那筆」。<b>可見性（已決定）：</b>誰評論了什麼是公開的，任何人瀏覽品項都看得到評論者姓名／星等／內容——跟目前 <code>ItemCard</code> 評論彈窗的行為一致，不用改。</div>
+      </div>
+    </div>
+
+    <!-- favorites -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">favorites <span class="db">收藏</span></span></div>
+        <div class="coll-purpose">會員與品項的多對多關係——<b>可見性（已決定）：</b>只記錄，不公開；誰收藏了什麼只有本人跟後台看得到（後台「會員洞察」的收藏分頁已經是這樣），不會顯示在品項頁給其他使用者看（例如「N 人收藏」這種公開統計目前不做）</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">memberId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member._id</td></tr>
+            <tr><td class="fname">itemId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> menu_items._id</td></tr>
+            <tr><td class="fname">at</td><td class="ftype">Date</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="note">同樣建議 <code>(memberId, itemId)</code> 複合唯一索引，取消收藏就整筆刪除。</div>
+      </div>
+    </div>
+
+    <!-- interstitials -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">interstitials <span class="db">蓋台廣告</span></span></div>
+        <div class="coll-purpose">跟 mock 的 Interstitial 幾乎一樣，直接對應搬移</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">name / enabled / imageUrl / linkUrl</td><td class="ftype">string / boolean</td><td></td></tr>
+            <tr><td class="fname">dismissSeconds</td><td class="ftype">number</td><td class="fnote">0＝需手動關閉</td></tr>
+            <tr><td class="fname">frequency</td><td class="ftype">"always"|"daily"|"once"</td><td></td></tr>
+            <tr><td class="fname">startAt / endAt</td><td class="ftype">Date</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- audit_logs -->
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">audit_logs <span class="db">稽核紀錄</span> <span class="tag append">只增不改</span></span></div>
+        <div class="coll-purpose">後台任何有影響性的操作都寫一筆，只能新增，絕不能修改或刪除既有紀錄</div>
+      </div>
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">_id</td><td class="ftype">ObjectId</td><td></td></tr>
+            <tr><td class="fname">actorMemberId</td><td class="ftype">ObjectId</td><td><span class="tag ref">參照</span> member._id（操作者）</td></tr>
+            <tr><td class="fname">action</td><td class="ftype">string</td><td class="fnote">例 "member.suspend"、"topup.approve"</td></tr>
+            <tr><td class="fname">targetType / targetId</td><td class="ftype">string / ObjectId</td><td class="fnote">被操作的對象是哪個 collection 的哪一筆</td></tr>
+            <tr><td class="fname">detail</td><td class="ftype">object?</td><td class="fnote">變更前後差異，視需要記錄</td></tr>
+            <tr><td class="fname">at</td><td class="ftype">Date</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="naming">
+    <h2><span class="num">04</span> 命名規則</h2>
+    <p class="desc">整份規劃統一套用以下規則，之後新增 collection／欄位都照這幾條走。</p>
+    <div class="rule-list">
+      <div class="rule">
+        <div class="n">01</div>
+        <div>
+          <b>Collection 名稱：小寫、底線分隔、複數</b>
+          <div class="ex">例：<code>group_orders</code>、<code>menu_items</code>（不是 <code>GroupOrder</code> 或 <code>groupOrder</code>）——跟 JS 變數命名（camelCase）明確區分開，一眼就知道這是資料庫層還是程式層。<b>例外：</b><code>member</code> 這張表是單數（已在 Atlas 上直接改名），不是照這條規則的 <code>members</code>，其餘表仍照複數命名，不用跟著改。</div>
+        </div>
+      </div>
+      <div class="rule">
+        <div class="n">02</div>
+        <div>
+          <b>欄位名稱：camelCase</b>
+          <div class="ex">例：<code>employeeId</code>、<code>createdAt</code>——跟現有 <code>lib/mock.ts</code>、TypeScript 介面的命名習慣一致，讀出來不用再轉換命名風格。</div>
+        </div>
+      </div>
+      <div class="rule">
+        <div class="n">03</div>
+        <div>
+          <b>參照另一個 collection 一律用 <code>xxxId</code> 後綴</b>
+          <div class="ex">例：<code>unitId</code>、<code>supplierId</code>；一對多用單數（一筆開團只有一個 unitId），多對多用複數 + <code>Ids</code>（例 <code>templateIds</code>）。</div>
+        </div>
+      </div>
+      <div class="rule">
+        <div class="n">04</div>
+        <div>
+          <b>時間戳一律用 <code>Date</code> 型別，欄位名固定幾種</b>
+          <div class="ex"><code>createdAt</code> / <code>updatedAt</code>（建立與最後更新）、<code>at</code>（歷程型 collection 裡「這件事發生的時間」，比 createdAt 更直覺）。不要各表自創 <code>date</code>、<code>time</code>、<code>timestamp</code> 混用。</div>
+        </div>
+      </div>
+      <div class="rule">
+        <div class="n">05</div>
+        <div>
+          <b>快照欄位要explicit命名，不要讓人誤會是即時查詢結果</b>
+          <div class="ex">例：<code>group_orders.lines[].memberName</code> 是下單當下的姓名快照，即使那個人後來改名，這裡也不會跟著變——沿用現有 v0.3 已經決定的「存名稱/價格快照」原則。</div>
+        </div>
+      </div>
+      <div class="rule">
+        <div class="n">06</div>
+        <div>
+          <b>該內嵌就內嵌，不是每種關聯都要開新 collection</b>
+          <div class="ex">判斷原則：這份子資料「只在父文件底下才有意義、不需要被單獨查詢或跨父文件搜尋」→ 內嵌（如 <code>menu_templates.sections</code>、<code>group_orders.lines</code>）；「需要獨立查詢、有自己的生命週期」→ 開獨立 collection（如 <code>item_reviews</code> 需要「查某品項的所有評論」）。</div>
+        </div>
+      </div>
+      <div class="rule">
+        <div class="n">07</div>
+        <div>
+          <b>歷程／稽核類資料只增不改（append-only）</b>
+          <div class="ex"><code>wallet_ledger</code>、<code>audit_logs</code> 一旦寫入就不能再 update，要修正就再補一筆反向紀錄——這是先前 v0.2 規劃就點名 PHP 舊系統「刪除不會重算任務/經驗」的 bug 對策，延續下來。</div>
+        </div>
+      </div>
+      <div class="rule">
+        <div class="n">08</div>
+        <div>
+          <b>同一個功能領域的表，用共同前綴分組（<code>member_</code> / <code>menu_</code>）</b>
+          <div class="ex">參考舊系統 <code>訂餐網站資料表.xlsx</code> 的實際命名：PHP 版本本來就用 <code>member_balance</code>、<code>member_experience</code>、<code>member_permissions</code> 分組會員自身的狀態資料，<code>menu_categories</code>、<code>menu_dishes</code>、<code>menu_comments</code> 分組菜單相關資料——這份規劃延續同樣的分組邏輯：<code>member</code> 本身當作該群組最核心的表不加前綴，衍生／參照它的組織資料才加 <code>member_</code>（<code>member_departments</code>、<code>member_units</code>、<code>member_roles</code>）；品項相關的表都加 <code>menu_</code>（<code>menu_items</code>、<code>menu_categories</code>、<code>menu_tags</code>、<code>menu_templates</code>）。不是每張表都需要前綴——像 <code>suppliers</code>、<code>interstitials</code>、<code>audit_logs</code> 這種自成一類、沒有同群表的，維持原名就好，硬加前綴反而沒有意義。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <h2><span class="num">05</span> 功能對應表</h2>
+    <p class="desc">每個前後台功能會讀寫哪些 collection，方便之後把某個頁面從 mock 換成真的資料庫查詢時，一次看清楚範圍。</p>
+    <table class="feature-map">
+      <thead><tr><th>功能／頁面</th><th>會用到的 Collection</th></tr></thead>
+      <tbody>
+        <tr><td>登入／註冊</td><td class="colls"><span>member</span><span>member_departments</span><span>member_units</span><span>member_roles</span></td></tr>
+        <tr><td>本週餐點／所有品項</td><td class="colls"><span>menu_items</span><span>menu_categories</span><span>menu_tags</span><span>suppliers</span><span>item_reviews</span></td></tr>
+        <tr><td>我的收藏</td><td class="colls"><span>favorites</span><span>menu_items</span></td></tr>
+        <tr><td>開團訂餐（前台列表／詳細／彙總）</td><td class="colls"><span>group_orders</span><span>menu_templates</span><span>member_units</span><span>member_departments</span><span>member</span></td></tr>
+        <tr><td>點餐送出訂單</td><td class="colls"><span>group_orders</span><span>menu_items</span><span>wallet_ledger</span></td></tr>
+        <tr><td>我的訂單</td><td class="colls"><span>group_orders</span></td></tr>
+        <tr><td>錢包／儲值申請</td><td class="colls"><span>wallet_ledger</span><span>topup_requests</span><span>member</span></td></tr>
+        <tr><td>會員中心</td><td class="colls"><span>member</span><span>member_units</span><span>member_departments</span></td></tr>
+        <tr><td>後台－訂餐專區／模板／店家／品項</td><td class="colls"><span>order_zones</span><span>menu_templates</span><span>suppliers</span><span>menu_items</span><span>menu_categories</span><span>menu_tags</span></td></tr>
+        <tr><td>後台－團訂列表／部門匯出</td><td class="colls"><span>group_orders</span><span>member_units</span><span>member_departments</span></td></tr>
+        <tr><td>後台－儲值審核</td><td class="colls"><span>topup_requests</span><span>wallet_ledger</span></td></tr>
+        <tr><td>後台－錢包與交易</td><td class="colls"><span>wallet_ledger</span><span>member</span></td></tr>
+        <tr><td>後台－會員列表／會員洞察</td><td class="colls"><span>member</span><span>group_orders</span><span>item_reviews</span><span>favorites</span><span>wallet_ledger</span></td></tr>
+        <tr><td>後台－會員權限</td><td class="colls"><span>member_roles</span></td></tr>
+        <tr><td>後台－蓋台廣告</td><td class="colls"><span>interstitials</span></td></tr>
+        <tr><td>後台－餐點統計／報表</td><td class="colls"><span>group_orders</span><span>item_reviews</span><span>menu_items</span></td></tr>
+        <tr><td>後台－稽核</td><td class="colls"><span>audit_logs</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="deferred">
+    <h2><span class="num">06</span> 延伸／待決定：任務與經驗值系統</h2>
+    <p class="desc">
+      參考 <code>訂餐網站資料表.xlsx</code> 時發現舊系統其實有一整套遊戏化機制（每日/每週/每月任務、
+      經驗值、等級），對應 <code>daily_tasks</code>、<code>exp_rules</code>、<code>member_levels</code>、
+      <code>member_experience</code>、<code>member_exp_history</code>、<code>member_task_completions</code>
+      六張表。目前這份規劃<b>沒有把它們排進前面的 17 個 collection</b>——這不是漏掉，
+      是延續原本 v0.2 規劃就留著的開放問題：「要不要保留遊戏化機制？」還沒有定案。
+      後台雖然有「任務與經驗」這個 nav 項目，但目前還沒有實際功能與資料。
+    </p>
+    <div class="note">
+      如果之後決定要做，會沿用同樣的 <code>member_</code> 命名習慣：例如
+      <code>member_experience</code>（目前經驗值＋等級，可考慮直接當 <code>member</code> 的欄位而非獨立表，
+      比照 <code>balance</code> 的做法）、<code>member_task_completions</code>（任務完成歷程，append-only）、
+      <code>daily_tasks</code> / <code>exp_rules</code>（任務與經驗規則的設定表，不屬於 member_ 群組，
+      因為它們是全站共用的規則定義，不是某個會員的個人資料）。真要做的話再另外討論，這裡先記錄舊系統的設計讓你參考。
+    </div>
+  </section>
+
+  <footer class="page-end">
+    ＊此頁為規劃參考文件，尚未全部落地——目前只有 <code>member</code> 真的建在 MongoDB 上。
+  </footer>
+</div>

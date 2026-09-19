@@ -2,10 +2,17 @@ import type { Metadata } from "next";
 import { PageContainer, PageHeader } from "@/components/ui/primitives";
 import { ItemCarousel } from "@/components/item-carousel";
 import { ItemGrid } from "@/components/item-grid";
+import { listItemCategories } from "@/lib/models/item-category";
+import { listCatalogItems } from "@/lib/models/catalog-item";
+import { getItemStatsByItems } from "@/lib/models/item-review";
 
 export const metadata: Metadata = { title: "所有品項" };
 
-export default function CatalogPage() {
+export default async function CatalogPage() {
+  const [categories, allItems] = await Promise.all([listItemCategories(), listCatalogItems()]);
+  const items = allItems.filter((it) => it.active);
+  const stats = await getItemStatsByItems(items.map((it) => it.id));
+
   return (
     <PageContainer>
       <PageHeader
@@ -15,9 +22,7 @@ export default function CatalogPage() {
 
       <ItemCarousel />
 
-      <ItemGrid />
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，資料為範例。</p>
+      <ItemGrid items={items} stats={stats} categories={categories} />
     </PageContainer>
   );
 }

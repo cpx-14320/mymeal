@@ -42,8 +42,6 @@ export default function OrdersPage() {
         <h2 className="text-lg font-bold tracking-tight">歷史紀錄</h2>
         <OrdersHistory />
       </section>
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，資料為範例。</p>
     </PageContainer>
   );
 }

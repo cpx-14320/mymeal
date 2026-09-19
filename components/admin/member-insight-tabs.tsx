@@ -10,13 +10,26 @@ import {
   Td,
   Badge,
 } from "@/components/ui/primitives";
-import {
-  itemById,
-  itemTagForGroup,
-  memberItemBreakdown,
-  memberLedger,
-  type MemberInsight,
-} from "@/lib/mock";
+import type { FavoriteView } from "@/lib/models/favorite";
+import type { ItemReviewView } from "@/lib/models/item-review";
+
+/** 訂餐／儲值分頁還沒有真的資料來源（要等團訂／錢包系統做出來），先留空狀態。 */
+interface OrderBreakdownStub {
+  itemId: string;
+  itemName: string;
+  category: string;
+  tags: string[];
+  totalQuantity: number;
+  orderCount: number;
+}
+interface LedgerStub {
+  id: string;
+  type: "topup" | "spend";
+  detail: string;
+  amount: number;
+  balanceAfter: number;
+  at: string;
+}
 
 function paginate<T>(rows: T[], page: number, size: number) {
   const pageCount = Math.max(1, Math.ceil(rows.length / size));
@@ -29,14 +42,24 @@ function stars(n: number) {
   return "★".repeat(n) + "☆".repeat(5 - n);
 }
 
+function formatAt(at: Date) {
+  return new Date(at).toLocaleString("zh-TW", { hour12: false });
+}
+
 type Tab = "orders" | "topups" | "favorites" | "comments" | "ratings";
 
 export function MemberInsightTabs({
-  id,
-  insight,
+  breakdown,
+  ledger,
+  favorites,
+  comments,
+  ratings,
 }: {
-  id: string;
-  insight: MemberInsight;
+  breakdown: OrderBreakdownStub[];
+  ledger: LedgerStub[];
+  favorites: FavoriteView[];
+  comments: ItemReviewView[];
+  ratings: ItemReviewView[];
 }) {
   const [tab, setTab] = useState<Tab>("orders");
   const [pageSize, setPageSize] = useState(25);
@@ -45,28 +68,19 @@ export function MemberInsightTabs({
   const [favoritesPage, setFavoritesPage] = useState(1);
   const [commentsPage, setCommentsPage] = useState(1);
   const [ratingsPage, setRatingsPage] = useState(1);
-  const [ledger, setLedger] = useState(() => memberLedger(id));
 
-  const removeLedgerRow = (rowId: string) =>
-    setLedger((prev) => prev.filter((r) => r.id !== rowId));
-
-  const breakdown = memberItemBreakdown(id);
   const orders = paginate(breakdown, ordersPage, pageSize);
   const topups = paginate(ledger, topupsPage, pageSize);
-  const favorites = paginate(insight.favorites, favoritesPage, pageSize);
-  const comments = paginate(insight.comments, commentsPage, pageSize);
-  const ratings = paginate(insight.ratings, ratingsPage, pageSize);
+  const favoritesPaged = paginate(favorites, favoritesPage, pageSize);
+  const commentsPaged = paginate(comments, commentsPage, pageSize);
+  const ratingsPaged = paginate(ratings, ratingsPage, pageSize);
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "orders", label: "訂餐紀錄", count: breakdown.length },
     { key: "topups", label: "儲值紀錄", count: ledger.length },
-    {
-      key: "favorites",
-      label: "收藏的品項",
-      count: insight.favorites.length,
-    },
-    { key: "comments", label: "評論留言", count: insight.comments.length },
-    { key: "ratings", label: "評分", count: insight.ratings.length },
+    { key: "favorites", label: "收藏的品項", count: favorites.length },
+    { key: "comments", label: "評論留言", count: comments.length },
+    { key: "ratings", label: "評分", count: ratings.length },
   ];
 
   const changeSize = (n: number) => {
@@ -85,150 +99,141 @@ export function MemberInsightTabs({
         <PageSizeSelect value={pageSize} onChange={changeSize} />
       </div>
 
-      {tab === "orders" && (
-        <>
-          <TableWrap>
-            <thead>
-              <tr>
-                <Th>品項</Th>
-                <Th>分類</Th>
-                <Th>標籤</Th>
-                <Th className="text-right">總訂購數量</Th>
-                <Th className="text-right">訂單次數</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.rows.map((o) => (
-                <tr key={o.itemId}>
-                  <Td className="font-medium">{o.itemName}</Td>
-                  <Td className="text-muted">{o.category}</Td>
-                  <Td className="text-muted">
-                    {o.tags.length ? o.tags.join("、") : "—"}
-                  </Td>
-                  <Td className="text-right tabular-nums">
-                    {o.totalQuantity}
-                  </Td>
-                  <Td className="text-right tabular-nums">{o.orderCount}</Td>
+      {tab === "orders" &&
+        (breakdown.length === 0 ? (
+          <p className="text-sm text-muted">尚無訂餐紀錄（團訂功能尚未上線）。</p>
+        ) : (
+          <>
+            <TableWrap>
+              <thead>
+                <tr>
+                  <Th>品項</Th>
+                  <Th>分類</Th>
+                  <Th>標籤</Th>
+                  <Th className="text-right">總訂購數量</Th>
+                  <Th className="text-right">訂單次數</Th>
                 </tr>
-              ))}
-            </tbody>
-          </TableWrap>
-          <Pagination
-            page={orders.current}
-            pageCount={orders.pageCount}
-            total={breakdown.length}
-            pageSize={pageSize}
-            onPage={setOrdersPage}
-            unit="項品項"
-          />
-        </>
-      )}
+              </thead>
+              <tbody>
+                {orders.rows.map((o) => (
+                  <tr key={o.itemId}>
+                    <Td className="font-medium">{o.itemName}</Td>
+                    <Td className="text-muted">{o.category}</Td>
+                    <Td className="text-muted">
+                      {o.tags.length ? o.tags.join("、") : "—"}
+                    </Td>
+                    <Td className="text-right tabular-nums">
+                      {o.totalQuantity}
+                    </Td>
+                    <Td className="text-right tabular-nums">{o.orderCount}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableWrap>
+            <Pagination
+              page={orders.current}
+              pageCount={orders.pageCount}
+              total={breakdown.length}
+              pageSize={pageSize}
+              onPage={setOrdersPage}
+              unit="項品項"
+            />
+          </>
+        ))}
 
-      {tab === "topups" && (
-        <>
-          <TableWrap>
-            <thead>
-              <tr>
-                <Th>類型</Th>
-                <Th>明細</Th>
-                <Th className="text-right">金額</Th>
-                <Th className="text-right">剩餘金額</Th>
-                <Th>時間</Th>
-                <Th className="text-right">操作</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {topups.rows.map((t) => (
-                <tr key={t.id}>
-                  <Td>
-                    <Badge tone={t.type === "topup" ? "positive" : "warning"}>
-                      {t.type === "topup" ? "儲值" : "消費"}
-                    </Badge>
-                  </Td>
-                  <Td className="text-muted">{t.detail}</Td>
-                  <Td
-                    className={`text-right tabular-nums ${
-                      t.type === "topup" ? "text-positive" : ""
-                    }`}
-                  >
-                    {t.type === "topup" ? "+" : "-"}NT$ {t.amount}
-                  </Td>
-                  <Td className="text-right tabular-nums">
-                    NT$ {t.balanceAfter}
-                  </Td>
-                  <Td className="whitespace-nowrap text-muted">{t.at}</Td>
-                  <Td className="text-right">
-                    <button
-                      type="button"
-                      onClick={() => removeLedgerRow(t.id)}
-                      className="text-xs text-muted hover:text-danger"
+      {tab === "topups" &&
+        (ledger.length === 0 ? (
+          <p className="text-sm text-muted">尚無儲值／消費紀錄（錢包功能尚未上線）。</p>
+        ) : (
+          <>
+            <TableWrap>
+              <thead>
+                <tr>
+                  <Th>類型</Th>
+                  <Th>明細</Th>
+                  <Th className="text-right">金額</Th>
+                  <Th className="text-right">剩餘金額</Th>
+                  <Th>時間</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {topups.rows.map((t) => (
+                  <tr key={t.id}>
+                    <Td>
+                      <Badge tone={t.type === "topup" ? "positive" : "warning"}>
+                        {t.type === "topup" ? "儲值" : "消費"}
+                      </Badge>
+                    </Td>
+                    <Td className="text-muted">{t.detail}</Td>
+                    <Td
+                      className={`text-right tabular-nums ${
+                        t.type === "topup" ? "text-positive" : ""
+                      }`}
                     >
-                      刪除
-                    </button>
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </TableWrap>
-          <Pagination
-            page={topups.current}
-            pageCount={topups.pageCount}
-            total={ledger.length}
-            pageSize={pageSize}
-            onPage={setTopupsPage}
-            unit="筆"
-          />
-        </>
-      )}
+                      {t.type === "topup" ? "+" : "-"}NT$ {t.amount}
+                    </Td>
+                    <Td className="text-right tabular-nums">
+                      NT$ {t.balanceAfter}
+                    </Td>
+                    <Td className="whitespace-nowrap text-muted">{t.at}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableWrap>
+            <Pagination
+              page={topups.current}
+              pageCount={topups.pageCount}
+              total={ledger.length}
+              pageSize={pageSize}
+              onPage={setTopupsPage}
+              unit="筆"
+            />
+          </>
+        ))}
 
-      {tab === "favorites" && (
-        <>
-          <TableWrap>
-            <thead>
-              <tr>
-                <Th>品項</Th>
-                <Th>分類</Th>
-                <Th>主食</Th>
-                <Th>肉類</Th>
-                <Th>收藏時間</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {favorites.rows.map((f) => {
-                const item = itemById(f.itemId);
-                if (!item) return null;
-                return (
+      {tab === "favorites" &&
+        (favorites.length === 0 ? (
+          <p className="text-sm text-muted">尚未收藏任何品項。</p>
+        ) : (
+          <>
+            <TableWrap>
+              <thead>
+                <tr>
+                  <Th>品項</Th>
+                  <Th>分類</Th>
+                  <Th>標籤</Th>
+                  <Th>收藏時間</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {favoritesPaged.rows.map((f) => (
                   <tr key={f.itemId}>
                     <Td className="font-medium">
-                      <span className="mr-1.5">{item.emoji}</span>
-                      {item.name}
+                      <span className="mr-1.5">{f.emoji}</span>
+                      {f.itemName}
                     </Td>
-                    <Td className="text-muted">{item.category}</Td>
+                    <Td className="text-muted">{f.categoryName}</Td>
                     <Td className="text-muted">
-                      {itemTagForGroup(item, "staple")}
+                      {f.tags.length ? f.tags.join("、") : "—"}
                     </Td>
-                    <Td className="text-muted">
-                      {itemTagForGroup(item, "meat")}
-                    </Td>
-                    <Td className="whitespace-nowrap text-muted">{f.at}</Td>
+                    <Td className="whitespace-nowrap text-muted">{formatAt(f.at)}</Td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </TableWrap>
-          <Pagination
-            page={favorites.current}
-            pageCount={favorites.pageCount}
-            total={insight.favorites.length}
-            pageSize={pageSize}
-            onPage={setFavoritesPage}
-            unit="項"
-          />
-        </>
-      )}
+                ))}
+              </tbody>
+            </TableWrap>
+            <Pagination
+              page={favoritesPaged.current}
+              pageCount={favoritesPaged.pageCount}
+              total={favorites.length}
+              pageSize={pageSize}
+              onPage={setFavoritesPage}
+              unit="項"
+            />
+          </>
+        ))}
 
       {tab === "comments" &&
-        (insight.comments.length === 0 ? (
+        (comments.length === 0 ? (
           <p className="text-sm text-muted">尚未留下任何評論。</p>
         ) : (
           <>
@@ -242,22 +247,20 @@ export function MemberInsightTabs({
                 </tr>
               </thead>
               <tbody>
-                {comments.rows.map((c, i) => (
-                  <tr key={i}>
-                    <Td className="font-medium">
-                      {itemById(c.itemId)?.name ?? c.itemId}
-                    </Td>
+                {commentsPaged.rows.map((c) => (
+                  <tr key={c.itemId}>
+                    <Td className="font-medium">{c.itemName}</Td>
                     <Td className="text-muted">{c.text}</Td>
                     <Td className="text-warning">{stars(c.stars)}</Td>
-                    <Td className="whitespace-nowrap text-muted">{c.at}</Td>
+                    <Td className="whitespace-nowrap text-muted">{formatAt(c.at)}</Td>
                   </tr>
                 ))}
               </tbody>
             </TableWrap>
             <Pagination
-              page={comments.current}
-              pageCount={comments.pageCount}
-              total={insight.comments.length}
+              page={commentsPaged.current}
+              pageCount={commentsPaged.pageCount}
+              total={comments.length}
               pageSize={pageSize}
               onPage={setCommentsPage}
               unit="筆"
@@ -265,41 +268,42 @@ export function MemberInsightTabs({
           </>
         ))}
 
-      {tab === "ratings" && (
-        <>
-          <TableWrap>
-            <thead>
-              <tr>
-                <Th>品項</Th>
-                <Th>評分</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {ratings.rows.map((r, i) => (
-                <tr key={i}>
-                  <Td className="font-medium">
-                    {itemById(r.itemId)?.name ?? r.itemId}
-                  </Td>
-                  <Td>
-                    <span className="text-warning">{stars(r.stars)}</span>
-                    <span className="ml-2 tabular-nums text-muted">
-                      {r.stars}/5
-                    </span>
-                  </Td>
+      {tab === "ratings" &&
+        (ratings.length === 0 ? (
+          <p className="text-sm text-muted">尚無評分紀錄。</p>
+        ) : (
+          <>
+            <TableWrap>
+              <thead>
+                <tr>
+                  <Th>品項</Th>
+                  <Th>評分</Th>
                 </tr>
-              ))}
-            </tbody>
-          </TableWrap>
-          <Pagination
-            page={ratings.current}
-            pageCount={ratings.pageCount}
-            total={insight.ratings.length}
-            pageSize={pageSize}
-            onPage={setRatingsPage}
-            unit="筆"
-          />
-        </>
-      )}
+              </thead>
+              <tbody>
+                {ratingsPaged.rows.map((r) => (
+                  <tr key={r.itemId}>
+                    <Td className="font-medium">{r.itemName}</Td>
+                    <Td>
+                      <span className="text-warning">{stars(r.stars)}</span>
+                      <span className="ml-2 tabular-nums text-muted">
+                        {r.stars}/5
+                      </span>
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableWrap>
+            <Pagination
+              page={ratingsPaged.current}
+              pageCount={ratingsPaged.pageCount}
+              total={ratings.length}
+              pageSize={pageSize}
+              onPage={setRatingsPage}
+              unit="筆"
+            />
+          </>
+        ))}
     </div>
   );
 }

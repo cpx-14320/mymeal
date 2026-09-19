@@ -3,35 +3,45 @@
 import { useState } from "react";
 import { Card, Badge } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
-import {
-  itemKindLabel,
-  supplierById,
-  itemStatById,
-  itemComments,
-  type CatalogItem,
-} from "@/lib/mock";
+import type { CatalogItemView } from "@/lib/models/catalog-item";
+import type { ItemStat, ItemReviewEntry } from "@/lib/models/item-review";
+import { getItemReviewsAction } from "@/app/(app)/catalog/actions";
 
 function stars(n: number) {
   return "★".repeat(n) + "☆".repeat(5 - n);
 }
 
+function formatAt(at: Date) {
+  return new Date(at).toLocaleDateString("zh-TW");
+}
+
 /**
  * 共用的品項卡片——所有品項頁、我的收藏頁、本週餐點都用這張卡片，
- * 樣式以「所有品項」為主：emoji、類型／評分徽章、價格＋評論數，
- * 評論用彈窗顯示（元件自己管理開關，父層不用管）。
+ * 樣式以「所有品項」為主：emoji、分類徽章、評分＋價格＋評論數，
+ * 評論用彈窗顯示，開啟時才向後端拿這個品項的評論列表。
  */
 export function ItemCard({
   item,
+  stat,
   isFavorited,
   onToggleFavorite,
 }: {
-  item: CatalogItem;
+  item: CatalogItemView;
+  stat?: ItemStat;
   isFavorited: boolean;
   onToggleFavorite: () => void;
 }) {
   const [showComments, setShowComments] = useState(false);
-  const stat = itemStatById(item.id);
-  const comments = showComments ? itemComments(item.id) : [];
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [comments, setComments] = useState<ItemReviewEntry[]>([]);
+
+  async function openComments() {
+    setShowComments(true);
+    setLoadingComments(true);
+    const rows = await getItemReviewsAction(item.id);
+    setComments(rows);
+    setLoadingComments(false);
+  }
 
   return (
     <>
@@ -44,7 +54,7 @@ export function ItemCard({
             <div>
               <p className="font-medium">{item.name}</p>
               <p className="text-xs text-muted">
-                {supplierById(item.supplierId)?.name ?? item.category}
+                {item.supplierName ?? item.categoryName}
               </p>
             </div>
             <button
@@ -58,8 +68,8 @@ export function ItemCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge tone="brand">{itemKindLabel[item.kind]}</Badge>
-            {stat?.avgRating !== null && stat?.avgRating !== undefined && (
+            <Badge tone="brand">{item.categoryName}</Badge>
+            {stat?.avgRating != null && (
               <Badge tone="warning">★ {stat.avgRating.toFixed(1)}</Badge>
             )}
           </div>
@@ -70,7 +80,7 @@ export function ItemCard({
             </span>
             <button
               type="button"
-              onClick={() => setShowComments(true)}
+              onClick={openComments}
               className="cursor-pointer text-sm text-muted hover:text-ink"
             >
               評論({stat?.commentCount ?? 0})
@@ -90,7 +100,9 @@ export function ItemCard({
           onClose={() => setShowComments(false)}
         />
         <div className="flex-1 overflow-y-auto p-4">
-          {comments.length === 0 ? (
+          {loadingComments ? (
+            <p className="text-sm text-muted">載入中…</p>
+          ) : comments.length === 0 ? (
             <p className="text-sm text-muted">尚未有任何評論。</p>
           ) : (
             <ul className="space-y-3">
@@ -101,7 +113,7 @@ export function ItemCard({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium">{c.memberName}</p>
-                    <p className="text-xs text-muted">{c.at}</p>
+                    <p className="text-xs text-muted">{formatAt(c.at)}</p>
                   </div>
                   <p className="text-warning">{stars(c.stars)}</p>
                   <p className="mt-1 text-sm text-muted">{c.text}</p>

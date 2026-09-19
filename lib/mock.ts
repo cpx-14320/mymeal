@@ -3,6 +3,8 @@
  * 對應 v0.3 模型：品項總表 / 店家 / 模板（分類 → 品項）。
  */
 
+import type { AdminNavKey } from "@/components/layout/nav";
+
 export type ItemKind = "meal" | "drink" | "snack" | "other";
 
 export const itemKindLabel: Record<ItemKind, string> = {
@@ -209,85 +211,7 @@ export const tagGroups: TagGroup[] = [
 
 export const allTagOptions = () => tagGroups.flatMap((g) => g.options);
 
-/* ── 蓋台廣告（前台全螢幕蓋版） ───────────────────────
-   進入前台時蓋住畫面的廣告：可設圖片、連結、倒數秒數、
-   顯示頻率與排程區間。排程結束或關閉即不顯示。            */
-
-export type PromoFrequency = "always" | "daily" | "once";
-
-export interface Interstitial {
-  id: string;
-  name: string; // 只在後台顯示的名稱
-  enabled: boolean;
-  imageUrl: string;
-  linkUrl?: string; // 空＝圖片不可點
-  dismissSeconds: number; // 0＝不自動關，需手動
-  frequency: PromoFrequency;
-  startAt: string; // "2026-09-01T00:00"
-  endAt: string; // "2026-12-31T23:59"
-}
-
-const demoBanner =
-  "data:image/svg+xml;charset=utf-8," +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="880" height="495"><rect width="880" height="495" fill="#b5730f"/><rect y="360" width="880" height="135" fill="#00000022"/><text x="60" y="170" font-family="system-ui,sans-serif" font-size="58" font-weight="700" fill="#ffffff">本週新開團</text><text x="60" y="240" font-family="system-ui,sans-serif" font-size="34" fill="#ffe9c9">下午茶專區・星巴克揪團上線</text><text x="60" y="430" font-family="system-ui,sans-serif" font-size="28" fill="#ffffff">點我看看 &#8594;</text></svg>`,
-  );
-
-export const interstitials: Interstitial[] = [
-  {
-    id: "ad1",
-    name: "下午茶專區上線",
-    enabled: true,
-    imageUrl: demoBanner,
-    linkUrl: "/menu",
-    dismissSeconds: 8,
-    frequency: "always",
-    startAt: "2026-09-01T00:00",
-    endAt: "2026-12-31T23:59",
-  },
-  {
-    id: "ad2",
-    name: "尾牙訂餐公告",
-    enabled: true,
-    imageUrl: "",
-    linkUrl: "/group-orders",
-    dismissSeconds: 5,
-    frequency: "daily",
-    startAt: "2026-12-15T09:00",
-    endAt: "2026-12-20T18:00",
-  },
-  {
-    id: "ad3",
-    name: "系統維護通知",
-    enabled: false,
-    imageUrl: "",
-    linkUrl: "",
-    dismissSeconds: 0,
-    frequency: "once",
-    startAt: "2026-08-01T00:00",
-    endAt: "2026-08-02T00:00",
-  },
-];
-
-export const interstitialById = (id: string) =>
-  interstitials.find((a) => a.id === id);
-
-export function interstitialStatus(
-  a: Interstitial,
-  now: Date = new Date(),
-): "showing" | "scheduled" | "ended" | "disabled" {
-  if (!a.enabled) return "disabled";
-  if (now < new Date(a.startAt)) return "scheduled";
-  if (now > new Date(a.endAt)) return "ended";
-  return "showing";
-}
-
-/** 目前該顯示在前台的蓋台廣告（已開啟、在排程內、且有圖片） */
-export function activeInterstitial(now: Date = new Date()): Interstitial | undefined {
-  return interstitials.find(
-    (a) => interstitialStatus(a, now) === "showing" && a.imageUrl.trim() !== "",
-  );
-}
+/* ── 蓋台廣告：已改用真資料庫，見 lib/models/interstitial.ts ── */
 
 /* ── 模板（分類 → 品項） ─────────────────────────── */
 
@@ -499,90 +423,79 @@ export const memberDepts = [
 export const memberUnits = ["三樓", "五樓", "七樓", "九樓"];
 
 /* ── 會員權限（組別） ──────────────────────────────────
-   組別＝權限鍵的組合，指派給會員；不同會員可以套用同一個組別。 */
+   組別＝權限鍵的組合，指派給會員；不同會員可以套用同一個組別。
+   權限鍵跟後台側欄連結一對一對應（見 nav.ts 的 adminNav）：
+   有這把權限鍵，側欄才會顯示對應連結、也才能瀏覽該頁面；
+   「總覽」是後台的固定首頁，不受權限鍵管控，所有能進後台的人都看得到。
+   （側欄實際依權限顯示/隱藏的邏輯之後再接上，這裡先把資料模型對齊。） */
 
 export interface PermissionGroup {
-  key: string;
+  key: AdminNavKey;
   label: string;
 }
 
-export const permissionGroups: PermissionGroup[] = [
-  { key: "menu", label: "菜單 menu.*" },
-  { key: "schedule", label: "排餐 schedule.*" },
-  { key: "grouporder", label: "團購 grouporder.*" },
-  { key: "order", label: "訂單 order.*" },
-  { key: "finance_topup", label: "儲值審核 finance.topup.*" },
-  { key: "finance_wallet", label: "錢包調整 finance.wallet.adjust" },
-  { key: "report", label: "報表 report.*" },
-  { key: "user", label: "會員 user.*" },
-  { key: "gamification", label: "任務經驗 gamification.*" },
-  { key: "audit", label: "稽核 system.audit" },
-  { key: "rbac", label: "會員權限 rbac.*" },
-  { key: "settings", label: "系統設定 system.settings" },
-];
-
-export type PermissionLevel = "none" | "own" | "full";
-
-export interface MemberGroup {
+/** 權限鍵分類——比照後台側欄的分組（見 nav.ts 的 adminNav），
+ *  讓「編輯權限」的勾選介面跟側欄一樣好對照。 */
+export interface PermissionCategory {
   key: string;
-  name: string;
-  permissions: Record<string, PermissionLevel>;
+  label: string;
+  items: PermissionGroup[];
 }
 
-function perms(
-  levels: Partial<Record<string, PermissionLevel>>,
-): Record<string, PermissionLevel> {
-  const all: Record<string, PermissionLevel> = {};
-  for (const p of permissionGroups) all[p.key] = levels[p.key] ?? "none";
-  return all;
-}
-
-export const memberGroups: MemberGroup[] = [
-  { key: "general", name: "一般使用者", permissions: perms({}) },
+export const permissionCategories: PermissionCategory[] = [
   {
-    key: "catering_admin",
-    name: "餐飲管理員",
-    permissions: perms({
-      menu: "full",
-      schedule: "full",
-      grouporder: "full",
-      order: "full",
-      report: "full",
-    }),
+    key: "catalog",
+    label: "菜單與訂餐",
+    items: [
+      { key: "zones", label: "訂餐專區" },
+      { key: "templates", label: "模板" },
+      { key: "suppliers", label: "店家" },
+      { key: "itemClassification", label: "分類與標籤" },
+      { key: "items", label: "品項" },
+      { key: "grouporders", label: "團訂" },
+    ],
   },
   {
-    key: "finance_admin",
-    name: "財務管理員",
-    permissions: perms({
-      finance_topup: "full",
-      finance_wallet: "full",
-      report: "full",
-      audit: "full",
-    }),
+    key: "finance",
+    label: "財務",
+    items: [
+      { key: "topups", label: "儲值審核" },
+      { key: "wallets", label: "錢包與交易" },
+    ],
   },
   {
-    key: "support_admin",
-    name: "客服管理員",
-    permissions: perms({
-      grouporder: "full",
-      order: "full",
-      user: "full",
-      gamification: "own",
-    }),
+    key: "people",
+    label: "會員與權限",
+    items: [
+      { key: "members", label: "會員列表" },
+      { key: "memberInsights", label: "會員洞察" },
+      { key: "roles", label: "會員權限" },
+      { key: "orgUnits", label: "部門與單位" },
+    ],
   },
   {
-    key: "super_admin",
-    name: "超級管理員",
-    permissions: perms(
-      Object.fromEntries(permissionGroups.map((p) => [p.key, "full"])),
-    ),
+    key: "engagement",
+    label: "互動與行銷",
+    items: [
+      { key: "gamification", label: "任務與經驗" },
+      { key: "promos", label: "蓋台廣告" },
+    ],
+  },
+  {
+    key: "system",
+    label: "系統",
+    items: [
+      { key: "itemStats", label: "餐點統計" },
+      { key: "reports", label: "報表" },
+      { key: "audit", label: "稽核" },
+      { key: "settings", label: "系統設定" },
+    ],
   },
 ];
 
-export const memberRoles = memberGroups.map((g) => g.name);
-
-export const memberGroupByKey = (key: string) =>
-  memberGroups.find((g) => g.key === key);
+export const permissionGroups: PermissionGroup[] = permissionCategories.flatMap(
+  (c) => c.items,
+);
 
 function memberTimestamp(
   day: number,
@@ -1139,6 +1052,110 @@ export function memberInsightSummary(id: string) {
     ratingCount: insight.ratings.length,
     balance: insight.balance,
   };
+}
+
+/* ── 任務與經驗值（遊戏化） ────────────────────────────
+   task_type 沿用舊系統 enum('topup','order','favorite','comment','rating')。
+   任務/規則/等級的「設定」本身已經是真資料（見 lib/models/gamification.ts，
+   後台 /admin/tasks 直接編輯那三個 collection）；但會員的 exp 不另外存一份歷程，
+   直接從既有的 orders/topups/ratings/comments/favorites 數量依規則算出來
+   （簡化：忽略每日/每週/每月上限，只算「總計」，避免無中生有一份任務完成歷程）。
+   下面這幾個函式改成吃 config 參數（呼叫端從 gamification.ts 撈真資料傳進來），
+   不再各自 import 寫死的假規則。 */
+
+export type TaskType = "topup" | "order" | "favorite" | "comment" | "rating";
+export const taskTypeLabel: Record<TaskType, string> = {
+  topup: "儲值",
+  order: "訂餐",
+  favorite: "收藏",
+  comment: "留言",
+  rating: "評分",
+};
+
+export type TaskPeriod = "daily" | "weekly" | "monthly";
+export const taskPeriodLabel: Record<TaskPeriod, string> = {
+  daily: "每日",
+  weekly: "每週",
+  monthly: "每月",
+};
+
+export interface TaskConfig {
+  id: string;
+  name: string;
+  type: TaskType;
+  period: TaskPeriod;
+  targetCount: number;
+  rewardPoints: number;
+  active: boolean;
+}
+
+export interface ExpRuleConfig {
+  id: string;
+  type: TaskType;
+  expPerAction: number;
+}
+
+export interface LevelConfig {
+  id: string;
+  name: string;
+  minExp: number;
+}
+
+function memberActivityCounts(id: string): Record<TaskType, number> {
+  const insight = memberInsightsMap[id];
+  return {
+    order: insight.orders.length,
+    topup: insight.topups.length,
+    rating: insight.ratings.length,
+    comment: insight.comments.length,
+    favorite: insight.favorites.length,
+  };
+}
+
+/** 會員總 exp：依 expRules 把該會員各類動作次數換算成經驗值加總（不套用上限，只看總量）。 */
+export function memberExp(id: string, expRules: ExpRuleConfig[]): number {
+  const countByType = memberActivityCounts(id);
+  return expRules.reduce((sum, rule) => sum + countByType[rule.type] * rule.expPerAction, 0);
+}
+
+export interface MemberLevelInfo {
+  exp: number;
+  level: LevelConfig;
+  levelIndex: number;
+  next: LevelConfig | null;
+  expToNext: number | null;
+  progressInLevel: number; // 0~1，在目前這一級裡的進度
+}
+
+/** 依 exp 換算目前等級、距下一級還差多少 exp。 */
+export function memberLevelInfo(
+  id: string,
+  expRules: ExpRuleConfig[],
+  levels: LevelConfig[],
+): MemberLevelInfo {
+  const exp = memberExp(id, expRules);
+  const sorted = [...levels].sort((a, b) => a.minExp - b.minExp);
+  let levelIndex = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    if (exp >= sorted[i].minExp) levelIndex = i;
+  }
+  const level = sorted[levelIndex];
+  const next = sorted[levelIndex + 1] ?? null;
+  const expToNext = next ? next.minExp - exp : null;
+  const progressInLevel = next ? (exp - level.minExp) / (next.minExp - level.minExp) : 1;
+  return { exp, level, levelIndex, next, expToNext, progressInLevel };
+}
+
+/** 會員目前各任務的期間內完成進度——簡化模擬（沒有另存任務完成歷程），
+ *  用會員既有活動數量對任務目標取餘數，做出看起來合理、每個會員都不同的進度展示。 */
+export function memberTaskProgress(id: string, tasks: TaskConfig[]) {
+  const countByType = memberActivityCounts(id);
+  return tasks
+    .filter((t) => t.active)
+    .map((t) => ({
+      task: t,
+      progress: countByType[t.type] % (t.targetCount + 1),
+    }));
 }
 
 /* ── 餐點統計 ──────────────────────────────────────────

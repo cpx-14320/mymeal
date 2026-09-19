@@ -2,14 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { activeInterstitial, type Interstitial } from "@/lib/mock";
+import type { InterstitialView } from "@/lib/models/interstitial";
+import { getEnabledInterstitialsAction } from "@/app/(app)/interstitial-actions";
 
 const shownOnPrefixes = ["/group-orders", "/menu"];
+
+/** 「開啟」＋現在時間落在排程區間內＋有圖片，才算候選（跟後台 /admin/promos 的規則一致）。 */
+function isShowing(a: InterstitialView, now: Date): boolean {
+  if (!a.enabled) return false;
+  if (a.imageUrl.trim() === "") return false;
+  if (now < new Date(a.startAt)) return false;
+  if (now > new Date(a.endAt)) return false;
+  return true;
+}
 
 /**
  * 前台蓋台廣告：進站時全螢幕蓋住畫面，倒數後自動消失。
  * 只在「開團訂餐」與「本週餐點」顯示，避免切到其他頁面時一直被打斷。設定來自後台「蓋台廣告」。
- * 目前為介面預覽：資料取自 lib/mock，之後接資料庫。
+ * 候選清單（已開啟的廣告）來自真資料庫，排程時間窗依使用者本機時間判斷，留在前端算。
  */
 export function InterstitialOverlay() {
   const pathname = usePathname();
@@ -17,35 +27,45 @@ export function InterstitialOverlay() {
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
 
-  const [ad, setAd] = useState<Interstitial | null>(null);
+  const [ad, setAd] = useState<InterstitialView | null>(null);
   const [left, setLeft] = useState(0);
   const [open, setOpen] = useState(false);
 
-  // 決定要不要顯示（掛載後才判斷時間，避免 SSR 不一致）
+  // 掛載後才抓候選並判斷時間，避免 SSR 不一致
   useEffect(() => {
     if (!onFront) return;
-    const a = activeInterstitial();
-    if (!a) return;
+    let cancelled = false;
 
-    try {
-      const today = new Date().toISOString().slice(0, 10);
-      const key =
-        a.frequency === "once"
-          ? `mymeal-ad-${a.id}`
-          : a.frequency === "daily"
-            ? `mymeal-ad-${a.id}-${today}`
-            : null;
-      if (key) {
-        if (localStorage.getItem(key)) return;
-        localStorage.setItem(key, "1");
+    getEnabledInterstitialsAction().then((candidates) => {
+      if (cancelled) return;
+      const now = new Date();
+      const a = candidates.find((c) => isShowing(c, now));
+      if (!a) return;
+
+      try {
+        const today = now.toISOString().slice(0, 10);
+        const key =
+          a.frequency === "once"
+            ? `mymeal-ad-${a.id}`
+            : a.frequency === "daily"
+              ? `mymeal-ad-${a.id}-${today}`
+              : null;
+        if (key) {
+          if (localStorage.getItem(key)) return;
+          localStorage.setItem(key, "1");
+        }
+      } catch {
+        /* 私密視窗等情況忽略 */
       }
-    } catch {
-      /* 私密視窗等情況忽略 */
-    }
 
-    setAd(a);
-    setLeft(a.dismissSeconds);
-    setOpen(true);
+      setAd(a);
+      setLeft(a.dismissSeconds);
+      setOpen(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [onFront]);
 
   // 鎖背景捲動 + Esc 關閉

@@ -16,8 +16,33 @@ import {
   templates,
   templateKindLabel,
   itemById,
+  itemStatById,
   supplierById,
+  itemKindLabel,
+  type CatalogItem,
 } from "@/lib/mock";
+import type { CatalogItemView } from "@/lib/models/catalog-item";
+
+/** 本週餐點頁還是吃 mock 模板/品項（跟團訂功能綁在一起，還沒接資料庫），
+ *  這裡轉成 ItemCard 現在要的真資料形狀，只是欄位轉接，資料來源本身沒變。 */
+function toItemView(it: CatalogItem): CatalogItemView {
+  return {
+    id: it.id,
+    name: it.name,
+    kindId: "",
+    kindName: itemKindLabel[it.kind],
+    categoryId: "",
+    categoryName: it.category,
+    supplierId: it.supplierId,
+    supplierName: supplierById(it.supplierId)?.name,
+    price: it.price,
+    tags: it.tags,
+    emoji: it.emoji,
+    imageUrl: it.imageUrl,
+    active: it.active,
+    createdBy: "系統",
+  };
+}
 
 const bento = templateById("t1")!;
 const weekdayDates = ["09/08", "09/09", "09/10", "09/11", "09/12"];
@@ -87,10 +112,16 @@ export default function MenuPage() {
                 {sec.itemIds.map((iid) => {
                   const it = itemById(iid);
                   if (!it) return null;
+                  const mockStat = itemStatById(it.id);
                   return (
                     <ItemCard
                       key={iid}
-                      item={it}
+                      item={toItemView(it)}
+                      stat={
+                        mockStat
+                          ? { avgRating: mockStat.avgRating, commentCount: mockStat.commentCount }
+                          : undefined
+                      }
                       isFavorited={favorited.has(it.id)}
                       onToggleFavorite={() => toggleFavorite(it.id)}
                     />
@@ -170,8 +201,6 @@ export default function MenuPage() {
           </section>
         </div>
       )}
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，資料為範例。</p>
     </PageContainer>
   );
 }

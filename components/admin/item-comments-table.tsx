@@ -8,7 +8,8 @@ import {
   Pagination,
   PageSizeSelect,
 } from "@/components/ui/primitives";
-import type { ItemCommentEntry } from "@/lib/mock";
+import { formatTaiwanDateTime } from "@/lib/date";
+import type { ItemReviewEntry } from "@/lib/models/item-review";
 
 function stars(n: number) {
   return "★".repeat(n) + "☆".repeat(5 - n);
@@ -17,7 +18,7 @@ function stars(n: number) {
 export function ItemCommentsTable({
   comments,
 }: {
-  comments: ItemCommentEntry[];
+  comments: ItemReviewEntry[];
 }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -58,7 +59,7 @@ export function ItemCommentsTable({
               <Td className="font-medium">{c.memberName}</Td>
               <Td className="text-muted">{c.text}</Td>
               <Td className="text-warning">{stars(c.stars)}</Td>
-              <Td className="whitespace-nowrap text-muted">{c.at}</Td>
+              <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(c.at)}</Td>
             </tr>
           ))}
         </tbody>

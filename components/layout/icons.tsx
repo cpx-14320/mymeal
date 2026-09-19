@@ -20,6 +20,17 @@ function Base({ children, ...props }: IconProps & { children: ReactNode }) {
   );
 }
 
+/** 前台側欄動態店家連結用（後台新增店家就會多一個，見 sidebar.tsx）——不是固定的 NavKey，單獨匯出。 */
+export function StoreIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M4 9h16v11H4z" />
+      <path d="M4 9l1.6-4.5A2 2 0 0 1 7.5 3h9a2 2 0 0 1 1.9 1.5L20 9" />
+      <path d="M9 20v-5h6v5" />
+    </Base>
+  );
+}
+
 export const navIcons: Record<NavKey, (props: IconProps) => ReactElement> = {
   menu: (props) => (
     <Base {...props}>
@@ -112,15 +123,7 @@ export const adminNavIcons: Record<
       <path d="M10 5h4" />
     </Base>
   ),
-  itemCategories: (props) => (
-    <Base {...props}>
-      <rect x="3" y="3" width="8" height="8" rx="1" />
-      <rect x="13" y="3" width="8" height="8" rx="1" />
-      <rect x="3" y="13" width="8" height="8" rx="1" />
-      <rect x="13" y="13" width="8" height="8" rx="1" />
-    </Base>
-  ),
-  itemTags: (props) => (
+  itemClassification: (props) => (
     <Base {...props}>
       <path d="M12 3h6a2 2 0 0 1 2 2v6l-9 9-8-8 9-9z" />
       <circle cx="15.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" />
@@ -172,6 +175,12 @@ export const adminNavIcons: Record<
     <Base {...props}>
       <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
       <path d="M9 12l2 2 4-4" />
+    </Base>
+  ),
+  orgUnits: (props) => (
+    <Base {...props}>
+      <rect x="4" y="3" width="16" height="18" rx="1" />
+      <path d="M9 3v18M4 9h5M4 14h5" />
     </Base>
   ),
   gamification: (props) => (

@@ -70,8 +70,6 @@ export default function TopupPage() {
           </div>
         </CardBody>
       </Card>
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，表單尚未串接後端。</p>
     </PageContainer>
   );
 }

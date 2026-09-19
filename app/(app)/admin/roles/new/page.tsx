@@ -1,9 +1,9 @@
-import { Section, Button, ButtonLink } from "@/components/ui/primitives";
-import { GroupForm } from "@/components/admin/group-form";
+import { Section, ButtonLink } from "@/components/ui/primitives";
+import { RoleForm } from "@/components/admin/role-form";
 
 export const metadata = { title: "新增組別" };
 
-export default function NewGroupPage() {
+export default function NewRolePage() {
   return (
     <Section
       title="新增組別"
@@ -14,16 +14,7 @@ export default function NewGroupPage() {
         </ButtonLink>
       }
     >
-      <GroupForm />
-
-      <div className="mt-4 flex justify-end gap-2">
-        <ButtonLink href="/admin/roles" variant="ghost">
-          取消
-        </ButtonLink>
-        <Button>建立組別</Button>
-      </div>
-
-      <p className="mt-3 text-xs text-muted">＊此頁為介面預覽，表單尚未串接後端。</p>
+      <RoleForm />
     </Section>
   );
 }

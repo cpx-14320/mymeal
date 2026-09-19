@@ -9,9 +9,19 @@ import {
   Pagination,
   PageSizeSelect,
 } from "@/components/ui/primitives";
-import { members, memberInsightSummary } from "@/lib/mock";
+import type { MemberListItem } from "@/lib/models/member";
 
-export function MemberInsightsTable() {
+export function MemberInsightsTable({
+  members,
+  favoriteCounts,
+  ratingCounts,
+  commentCounts,
+}: {
+  members: MemberListItem[];
+  favoriteCounts: Record<string, number>;
+  ratingCounts: Record<string, number>;
+  commentCounts: Record<string, number>;
+}) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
@@ -47,21 +57,26 @@ export function MemberInsightsTable() {
           </tr>
         </thead>
         <tbody>
-          {rows.map((m) => {
-            const s = memberInsightSummary(m.id);
-            return (
+          {rows.length === 0 ? (
+            <tr>
+              <Td colSpan={9} className="text-center text-muted">
+                目前沒有會員資料。
+              </Td>
+            </tr>
+          ) : (
+            rows.map((m) => (
               <tr key={m.id}>
                 <Td className="font-medium">{m.name}</Td>
                 <Td className="text-muted">{m.account}</Td>
-                <Td className="text-right tabular-nums">{s.orderCount}</Td>
-                <Td className="text-right tabular-nums">{s.mealCount}</Td>
-                <Td className="text-right tabular-nums">{s.favoriteCount}</Td>
-                <Td className="text-right tabular-nums">{s.commentCount}</Td>
-                <Td className="text-right tabular-nums">{s.ratingCount}</Td>
-                <Td className="text-right tabular-nums">NT$ {s.balance}</Td>
+                <Td className="text-right tabular-nums">0</Td>
+                <Td className="text-right tabular-nums">0</Td>
+                <Td className="text-right tabular-nums">{favoriteCounts[m.id] ?? 0}</Td>
+                <Td className="text-right tabular-nums">{commentCounts[m.id] ?? 0}</Td>
+                <Td className="text-right tabular-nums">{ratingCounts[m.id] ?? 0}</Td>
+                <Td className="text-right tabular-nums">NT$ 0</Td>
                 <Td className="text-right">
                   <ButtonLink
-                    href={`/admin/members/insights/${m.id}`}
+                    href={`/admin/insights/${m.id}`}
                     variant="secondary"
                     size="sm"
                   >
@@ -69,8 +84,8 @@ export function MemberInsightsTable() {
                   </ButtonLink>
                 </Td>
               </tr>
-            );
-          })}
+            ))
+          )}
         </tbody>
       </TableWrap>
 
@@ -82,8 +97,6 @@ export function MemberInsightsTable() {
         onPage={setPage}
         unit="人"
       />
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，資料為範例。</p>
     </div>
   );
 }

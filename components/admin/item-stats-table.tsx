@@ -9,10 +9,9 @@ import {
   Pagination,
   PageSizeSelect,
 } from "@/components/ui/primitives";
-import { itemStatsList } from "@/lib/mock";
+import type { CatalogItemStat } from "@/lib/models/catalog-item";
 
-export function ItemStatsTable() {
-  const [stats] = useState(() => itemStatsList());
+export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
@@ -77,8 +76,6 @@ export function ItemStatsTable() {
         pageSize={pageSize}
         onPage={setPage}
       />
-
-      <p className="text-xs text-muted">＊此頁為介面預覽，資料為範例。</p>
     </div>
   );
 }

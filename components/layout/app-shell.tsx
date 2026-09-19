@@ -7,10 +7,13 @@ import { Footer } from "./footer";
 import { CloseIcon } from "./icons";
 import { GoTopButton } from "./go-top-button";
 import { InterstitialOverlay } from "@/components/interstitial-overlay";
+import { AnnouncementBanner } from "@/components/announcement-banner";
 import { LoginModal } from "./login-modal";
 import { LoginModalContext } from "./login-modal-context";
+import { logoutAction } from "@/app/login/actions";
+import type { SupplierNavItem } from "./nav";
 
-const DEMO_AUTH_KEY = "mymeal-demo-authed";
+export const DEMO_AUTH_KEY = "mymeal-demo-authed";
 
 /**
  * 全站外框：Header（置頂）＋ Sidebar（桌機固定 / 行動版抽屜）＋ Footer。
@@ -21,7 +24,17 @@ const DEMO_AUTH_KEY = "mymeal-demo-authed";
  * `authed` 目前是 Header 頭像按鈕控制的預覽用登入狀態（存 localStorage），
  * 跟 Sidebar 共用，用來預覽「登入後顯示會員錢包區塊」等畫面。
  */
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  suppliers = [],
+  announcement = "",
+}: {
+  children: ReactNode;
+  /** 已上架的店家，前台側欄用來動態多顯示一個連結（見 sidebar.tsx）；後台新增店家就會同步出現。 */
+  suppliers?: SupplierNavItem[];
+  /** 後台「系統設定」的公告文字；空字串就不顯示。 */
+  announcement?: string;
+}) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [authed, setAuthed] = useState(false);
@@ -58,6 +71,17 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }
 
+  /** 真正的登出：清掉伺服器 session cookie，並跟著清掉這份預覽用的登入狀態。 */
+  async function logout() {
+    setAuthed(false);
+    try {
+      localStorage.setItem(DEMO_AUTH_KEY, "0");
+    } catch {
+      /* 私密視窗等情況忽略 */
+    }
+    await logoutAction();
+  }
+
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -79,12 +103,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           mounted={mounted}
           authed={authed}
           onToggleAuth={toggleAuth}
+          onLogout={logout}
         />
+
+        <AnnouncementBanner announcement={announcement} />
 
         <div className="mx-auto flex w-full max-w-[1400px] flex-1">
           {/* 桌機：固定側欄 */}
           <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 border-r border-line bg-surface lg:block">
-            <Sidebar previewMode={previewMode} isAuthed={mounted && authed} />
+            <Sidebar previewMode={previewMode} isAuthed={mounted && authed} suppliers={suppliers} />
           </aside>
 
           {/* 行動版：抽屜 */}
@@ -116,6 +143,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Sidebar
                     previewMode={previewMode}
                     isAuthed={mounted && authed}
+                    suppliers={suppliers}
                     onNavigate={() => setDrawerOpen(false)}
                   />
                 </div>

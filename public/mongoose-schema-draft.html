@@ -1,0 +1,877 @@
+<title>MyMeal Mongoose Schema 草案</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --page: #faf8f5; --surface: #ffffff; --surface-2: #f4f0ea; --surface-3: #ece5d8;
+    --ink: #1c1a17; --muted: #6b6459; --faint: #a39c8d;
+    --line: #e7e1d8; --line-strong: #d8cfc0;
+    --brand: #b5730f; --brand-fg: #ffffff; --brand-soft: #fdf3e0;
+    --positive: #1f7a4d; --positive-soft: #e6f3ec;
+    --warning: #9a6a12; --warning-soft: #fbf0dc;
+    --danger: #b23c2e; --danger-soft: #fbe9e6;
+    --code-bg: #f1ece1;
+    --shadow: 0 1px 2px rgba(28,26,23,.04), 0 8px 24px -12px rgba(28,26,23,.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #14120f; --surface: #1b1916; --surface-2: #232019; --surface-3: #2b271d;
+      --ink: #ece7de; --muted: #a79f8f; --faint: #766f61;
+      --line: #322c22; --line-strong: #3d3527;
+      --brand: #e0a63e; --brand-fg: #241a08; --brand-soft: #2a2213;
+      --positive: #6fce9c; --positive-soft: #16261f;
+      --warning: #e0b45e; --warning-soft: #2a2314;
+      --danger: #ef9587; --danger-soft: #2c1a17;
+      --code-bg: #241f16;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #14120f; --surface: #1b1916; --surface-2: #232019; --surface-3: #2b271d;
+    --ink: #ece7de; --muted: #a79f8f; --faint: #766f61;
+    --line: #322c22; --line-strong: #3d3527;
+    --brand: #e0a63e; --brand-fg: #241a08; --brand-soft: #2a2213;
+    --positive: #6fce9c; --positive-soft: #16261f;
+    --warning: #e0b45e; --warning-soft: #2a2314;
+    --danger: #ef9587; --danger-soft: #2c1a17;
+    --code-bg: #241f16;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    line-height: 1.7; font-size: 15px;
+  }
+  code, .mono, .fname, .ftype, .coll-name { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+  h1, h2, h3, h4 { text-wrap: balance; line-height: 1.35; margin: 0; }
+  a { color: var(--brand); }
+  img { max-width: 100%; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.hero { padding-bottom: 32px; border-bottom: 1px solid var(--line); margin-bottom: 40px; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--brand); text-transform: uppercase; }
+  h1 { font-size: 30px; font-weight: 900; margin-top: 8px; }
+  .lede { color: var(--muted); font-size: 15.5px; margin-top: 10px; max-width: 70ch; }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  nav.toc a {
+    font-size: 12.5px; font-weight: 600; text-decoration: none;
+    color: var(--muted); background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+  }
+  nav.toc a:hover { color: var(--brand); border-color: var(--brand); }
+
+  section { margin: 56px 0; scroll-margin-top: 20px; }
+  section > h2 { font-size: 22px; font-weight: 800; display: flex; align-items: baseline; gap: 10px; }
+  section > h2 .num { font-family: "JetBrains Mono", monospace; font-size: 14px; color: var(--faint); font-weight: 600; }
+  section > p.desc { color: var(--muted); margin-top: 8px; max-width: 74ch; }
+  h3.group-title {
+    font-size: 13px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--faint); margin: 36px 0 4px;
+  }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 16px; font-size: 13.5px; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .03em;
+    color: var(--muted); text-transform: uppercase;
+    background: var(--surface-2); padding: 9px 12px; border-bottom: 1px solid var(--line-strong);
+  }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  .fname { color: var(--brand); font-weight: 600; }
+  .fnote { color: var(--muted); font-size: 12.5px; }
+  tbody tr:hover { background: var(--surface-2); }
+
+  .coll-card { margin-top: 28px; }
+  .coll-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 16px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap;
+  }
+  .coll-name { font-size: 17px; font-weight: 800; }
+  .coll-name .db { color: var(--faint); font-weight: 500; }
+  .coll-purpose { font-size: 13px; color: var(--muted); max-width: 60ch; }
+  .coll-body { padding: 4px 20px 20px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; margin-left: 6px; white-space: nowrap; }
+  .tag.embed { background: var(--brand-soft); color: var(--brand); }
+  .tag.ref { background: var(--positive-soft); color: var(--positive); }
+  .tag.append { background: var(--warning-soft); color: var(--warning); }
+  .tag.impl { background: var(--positive-soft); color: var(--positive); }
+  .tag.adjust { background: var(--warning-soft); color: var(--warning); }
+  .tag.new { background: var(--brand-soft); color: var(--brand); }
+  .tag.pending { background: var(--danger-soft); color: var(--danger); }
+
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 12.5px; line-height: 1.6;
+  }
+  code { font-size: 0.92em; }
+  :not(pre) > code { background: var(--code-bg); padding: 1px 5px; border-radius: 5px; }
+
+  .note {
+    background: var(--brand-soft); border: 1px solid var(--line); border-left: 3px solid var(--brand);
+    border-radius: 8px; padding: 12px 16px; font-size: 13.5px; color: var(--ink); margin-top: 16px;
+  }
+  .note b { color: var(--brand); }
+  .note.warn { background: var(--warning-soft); border-left-color: var(--warning); }
+  .note.warn b { color: var(--warning); }
+  .note.danger { background: var(--danger-soft); border-left-color: var(--danger); }
+  .note.danger b { color: var(--danger); }
+
+  .diff-list { display: grid; gap: 10px; margin-top: 16px; }
+  .diff {
+    display: flex; gap: 12px; padding: 12px 16px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
+  }
+  .diff b { display: block; margin-bottom: 2px; }
+  .diff .ex { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  .rel-list { display: grid; gap: 4px; margin-top: 14px; font-size: 13px; }
+  .rel-list div { padding: 4px 0; }
+
+  footer.page-end { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--faint); font-size: 12.5px; }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">MyMeal · 內部規劃文件</p>
+    <h1>Mongoose Schema 草案</h1>
+    <p class="lede">
+      延伸自 <a href="/data-model-reference.html">data-model-reference.html</a>
+      （規劃①～⑥，先讀那份了解命名規則跟決策脈絡）——這份把裡面「③ 各 Collection 詳細欄位」
+      轉成可以直接抄進 <code>lib/models/</code> 的 Mongoose schema 程式碼。
+      <b>整份都是草案，還沒有寫進專案</b>，先給你確認欄位／命名沒問題，之後再一次動手實作＋搬資料。
+    </p>
+    <nav class="toc">
+      <a href="#diff">① 跟現有實作的落差</a>
+      <a href="#pending">② 待你決定的事</a>
+      <a href="#member-group">③ member 群組</a>
+      <a href="#menu-group">④ menu 群組</a>
+      <a href="#order-group">⑤ 訂單與錢包</a>
+      <a href="#other-group">⑥ 其他</a>
+      <a href="#next">⑦ 確認後要做的事</a>
+    </nav>
+  </header>
+
+  <section id="diff">
+    <h2><span class="num">01</span> 跟現有實作的落差</h2>
+    <p class="desc">
+      這次設計前重新讀了規劃文件的命名規則，發現我這次對話裡已經動手做的
+      <code>member</code> / <code>department</code> / <code>unit</code> 三張表，
+      跟規劃文件的決定有幾個地方對不上。列出來讓你決定要不要照規劃文件調整。
+    </p>
+    <div class="diff-list">
+      <div class="diff">
+        <div>
+          <b>Collection 命名：<code>department</code>/<code>unit</code> vs. <code>member_departments</code>/<code>member_units</code></b>
+          <div class="ex">規劃文件的命名規則 08：同群組的表要共用 <code>member_</code> 前綴（比照舊系統 <code>訂餐網站資料表.xlsx</code> 的 <code>member_balance</code>、<code>member_permissions</code> 分組習慣）。目前實作沒加前綴，用的是單數 <code>department</code>/<code>unit</code>。</div>
+        </div>
+      </div>
+      <div class="diff">
+        <div>
+          <b>member.role（自由字串）vs. member.roleKey（參照 member_roles.key）</b>
+          <div class="ex">目前 <code>role</code> 是自由文字，值直接存角色顯示名稱（例："超級管理員"）。規劃文件建議改成 <code>roleKey</code> 參照獨立的 <code>member_roles</code> collection，角色改名不用動 member 表，也才能真的做「後台－會員權限」那個管理頁。</div>
+        </div>
+      </div>
+      <div class="diff">
+        <div>
+          <b>member 缺少 <code>extension</code>（分機）、<code>balance</code>（錢包餘額快取）欄位</b>
+          <div class="ex">規劃文件裡這兩個欄位已經定案，目前實作沒有。<code>balance</code> 要等 wallet_ledger 做出來才有意義寫入，<code>extension</code> 現在就可以補。</div>
+        </div>
+      </div>
+      <div class="diff">
+        <div>
+          <b>department / unit 缺少 <code>active</code> 欄位</b>
+          <div class="ex">規劃文件：停用的部門/單位不能再被指派，但既有資料不用動（沿用歷史紀錄）。目前實作刪除部門/單位是直接刪除（已加保護：底下還有會員擋刪除），沒有「停用但保留」這個中間狀態。</div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      這些落差<b>都还没有强制你选</b>——下面每張表的 schema 我先照規劃文件的版本設計（比較完整），
+      有牽涉到要不要調整既有實作的地方，會在表格上方用<span class="tag adjust">需調整</span>標出來。
+      你可以選「照規劃文件調整」或「維持現況、只把新表接上」，兩種我都能做。
+    </div>
+  </section>
+
+  <section id="pending">
+    <h2><span class="num">02</span> 待你決定的事</h2>
+    <div class="diff-list">
+      <div class="diff">
+        <div>
+          <b>權限模型：boolean 有/無 vs. none/own/full 三段式</b>
+          <div class="ex">
+            目前 <code>lib/mock.ts</code> 的 <code>permissionCategories</code> 跟 <code>/admin/roles</code> 頁面實際渲染的是 boolean 矩陣（✓ / –）。
+            <code>data-model-reference.html</code> 提案改成三段式（<code>none/own/full</code>），可以表達「只能看自己的」這種中間權限，但 <code>/admin/roles</code> 頁面的 UI 也要跟著改（現在是打勾格子，不是下拉選單）。
+            <b>下面 <code>member_roles</code> 的 schema 先用 boolean（照現有 UI，改動範圍小），如果要換成三段式我可以重新設計。</b>
+          </div>
+        </div>
+      </div>
+      <div class="diff">
+        <div>
+          <b>遊戏化系統（任務／經驗值／等級）——沿用規劃文件的決定，這次<b>不設計</b></b>
+          <div class="ex"><code>daily_tasks</code>／<code>exp_rules</code>／<code>member_levels</code>／<code>member_experience</code> 等表，規劃文件明確標記「還沒定案要不要做」，這份草案延續同樣的決定跳過。之後要做再說。</div>
+        </div>
+      </div>
+      <div class="diff">
+        <div>
+          <b>新發現的缺口：<code>system_settings</code>（系統設定）</b>
+          <div class="ex"><code>/admin/settings</code> 頁面（訂餐規則、Email 網域白名單、開通方式、取餐地點、公告）現在完全沒接後端，規劃文件的 17 個 collection 裡也沒有涵蓋——這份草案新增一張 <code>system_settings</code>（單例文件）補上，見 ⑥。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="member-group">
+    <h2><span class="num">03</span> member 群組</h2>
+    <p class="desc">會員本身、組織階層、角色權限。<code>member</code> 已經是真的 collection；其餘三張是新設計。</p>
+
+    <h3 class="group-title">member（既有，需調整）</h3>
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">member</span></div>
+        <div class="coll-purpose"><span class="tag impl">已實作</span><span class="tag adjust">建議調整</span> 目前在 lib/models/member.ts；下面標 🆕 的是規劃文件裡有、目前實作沒有的欄位</div>
+      </div>
+      <div class="coll-body">
+<pre>const memberSchema = new Schema&lt;MemberDocument&gt;(
+  {
+    account: { type: String, required: true, unique: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true, select: false },
+    name: { type: String, required: true, trim: true },
+    employeeId: { type: String, required: true, unique: true, trim: true },
+    extension: { type: String },                              // 🆕 分機，選填
+    departmentId: { type: Schema.Types.ObjectId, ref: "MemberDepartment", required: true },
+    unitId: { type: Schema.Types.ObjectId, ref: "MemberUnit", required: true },
+    roleKey: { type: String, ref: "MemberRole", required: true, default: "general" }, // 🆕 取代 role 自由字串
+    memberCode: { type: String, required: true, unique: true },
+    referredByCode: { type: String },
+    referredByName: { type: String },
+    status: { type: String, enum: ["pending", "active", "suspended"], required: true, default: "active" },
+    balance: { type: Number, required: true, default: 0 },     // 🆕 錢包餘額快取，隨 wallet_ledger 一起寫
+    avatarUrl: { type: String },
+    lastLoginAt: { type: Date },
+  },
+  { timestamps: true, collection: "member" },
+);</pre>
+      </div>
+    </div>
+
+    <h3 class="group-title">member_departments（新設計，取代現有 department）</h3>
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">member_departments</span></div>
+        <div class="coll-purpose"><span class="tag new">新設計</span> 對應現有 department.ts，改名＋補 active 欄位</div>
+      </div>
+      <div class="coll-body">
+<pre>interface MemberDepartmentDocument {
+  _id: Types.ObjectId;
+  name: string;
+  active: boolean;   // 停用後不能再被指派，但保留歷史資料
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const memberDepartmentSchema = new Schema&lt;MemberDepartmentDocument&gt;(
+  {
+    name: { type: String, required: true, unique: true, trim: true },
+    active: { type: Boolean, required: true, default: true },
+  },
+  { timestamps: true, collection: "member_departments" },
+);</pre>
+      </div>
+    </div>
+
+    <h3 class="group-title">member_units（新設計，取代現有 unit）</h3>
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">member_units</span></div>
+        <div class="coll-purpose"><span class="tag new">新設計</span> 對應現有 unit.ts，改名＋補 active 欄位</div>
+      </div>
+      <div class="coll-body">
+<pre>interface MemberUnitDocument {
+  _id: Types.ObjectId;
+  name: string;
+  departmentId: Types.ObjectId;  // ref MemberDepartment
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const memberUnitSchema = new Schema&lt;MemberUnitDocument&gt;(
+  {
+    name: { type: String, required: true, trim: true },
+    departmentId: { type: Schema.Types.ObjectId, ref: "MemberDepartment", required: true },
+    active: { type: Boolean, required: true, default: true },
+  },
+  { timestamps: true, collection: "member_units" },
+);
+memberUnitSchema.index({ departmentId: 1, name: 1 }, { unique: true });</pre>
+      </div>
+    </div>
+
+    <h3 class="group-title">member_roles（新設計）</h3>
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">member_roles</span></div>
+        <div class="coll-purpose"><span class="tag new">新設計</span> 權限模型用 boolean（見 ②「待你決定的事」）</div>
+      </div>
+      <div class="coll-body">
+<pre>interface MemberRoleDocument {
+  _id: Types.ObjectId;
+  key: string;                          // unique，例 "catering_admin"；member.roleKey 參照這個欄位
+  name: string;                          // 顯示名稱，例 "餐飲管理員"
+  permissions: Record&lt;string, boolean&gt;;  // { zones: true, templates: true, ... }，鍵對應 nav.ts 的 AdminNavKey
+  isSystemRole: boolean;                  // 系統內建角色（如「一般使用者」）不能被刪除
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const memberRoleSchema = new Schema&lt;MemberRoleDocument&gt;(
+  {
+    key: { type: String, required: true, unique: true, trim: true },
+    name: { type: String, required: true, trim: true },
+    permissions: { type: Schema.Types.Mixed, required: true, default: {} },
+    isSystemRole: { type: Boolean, required: true, default: false },
+  },
+  { timestamps: true, collection: "member_roles" },
+);</pre>
+        <div class="note">初始資料沿用 <code>lib/mock.ts</code> 的 <code>memberGroups</code>（一般使用者／餐飲管理員／財務管理員／客服管理員／超級管理員），<code>isSystemRole: true</code> 給「一般使用者」跟「超級管理員」。</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="menu-group">
+    <h2><span class="num">04</span> menu 群組</h2>
+    <p class="desc">店家、分類、標籤、品項、模板、訂餐專區——全部新設計，目前都還是 <code>lib/mock.ts</code> 假資料。</p>
+
+    <h3 class="group-title">suppliers</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>interface SupplierDocument {
+  _id: Types.ObjectId;
+  name: string;
+  type: string;    // 店家類型，自由文字（便當店/咖啡/手搖飲…）
+  phone: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const supplierSchema = new Schema&lt;SupplierDocument&gt;(
+  {
+    name: { type: String, required: true, trim: true },
+    type: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    active: { type: Boolean, required: true, default: true },
+  },
+  { timestamps: true, collection: "suppliers" },
+);</pre>
+      </div>
+    </div>
+
+    <h3 class="group-title">menu_categories</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>interface MenuCategoryDocument {
+  _id: Types.ObjectId;
+  name: string;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const menuCategorySchema = new Schema&lt;MenuCategoryDocument&gt;(
+  {
+    name: { type: String, required: true, unique: true, trim: true },
+    sortOrder: { type: Number, required: true, default: 0 },
+  },
+  { timestamps: true, collection: "menu_categories" },
+);</pre>
+      </div>
+    </div>
+
+    <h3 class="group-title">menu_tags</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>interface MenuTagGroupDocument {
+  _id: Types.ObjectId;
+  name: string;           // 例 "肉類"
+  multi: boolean;          // 可否複選
+  options: string[];       // 內嵌選項列表，例 ["雞","豬","牛","羊","魚","海鮮"]
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const menuTagGroupSchema = new Schema&lt;MenuTagGroupDocument&gt;(
+  {
+    name: { type: String, required: true, trim: true },
+    multi: { type: Boolean, required: true, default: false },
+    options: { type: [String], required: true, default: [] },
+  },
+  { timestamps: true, collection: "menu_tags" },
+);</pre>
+      </div>
+    </div>
+
+    <h3 class="group-title">menu_items</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>type ItemKind = "meal" | "drink" | "snack";
+
+interface MenuItemDocument {
+  _id: Types.ObjectId;
+  name: string;
+  price: number;
+  kind: ItemKind;
+  categoryId: Types.ObjectId;      // ref MenuCategory
+  supplierId?: Types.ObjectId;      // ref Supplier
+  tags: string[];                    // 值取自 menu_tags.options，不強制外鍵
+  emoji: string;                     // 沒圖時的縮圖備用
+  imageUrl?: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const menuItemSchema = new Schema&lt;MenuItemDocument&gt;(
+  {
+    name: { type: String, required: true, trim: true },
+    price: { type: Number, required: true, min: 0 },
+    kind: { type: String, enum: ["meal", "drink", "snack"], required: true },
+    categoryId: { type: Schema.Types.ObjectId, ref: "MenuCategory", required: true },
+    supplierId: { type: Schema.Types.ObjectId, ref: "Supplier" },
+    tags: { type: [String], required: true, default: [] },
+    emoji: { type: String, required: true },
+    imageUrl: { type: String },
+    active: { type: Boolean, required: true, default: true },
+  },
+  { timestamps: true, collection: "menu_items" },
+);</pre>
+        <div class="note warn"><b>刪除行為（沿用規劃文件的決定）：</b>刪除／下架品項時，要連動刪除它在 <code>item_reviews</code>、<code>favorites</code> 的所有紀錄，避免留下參照到不存在品項的孤兒資料。實作時用 pre-hook 或 CRUD 函式裡手動處理，Mongoose 沒有內建 cascade。</div>
+      </div>
+    </div>
+
+    <h3 class="group-title">menu_templates</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>type TemplateKind = "bento" | "drinks" | "tea" | "other";
+
+interface TemplateSection {
+  name: string;                  // 例 "星期一"、"飲料"
+  itemIds: Types.ObjectId[];     // ref MenuItem
+}
+
+interface MenuTemplateDocument {
+  _id: Types.ObjectId;
+  name: string;
+  kind: TemplateKind;
+  supplierId?: Types.ObjectId;   // ref Supplier
+  sections: TemplateSection[];    // 內嵌，不拆表：順序有意義、只在模板底下才有意義
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const templateSectionSchema = new Schema&lt;TemplateSection&gt;(
+  {
+    name: { type: String, required: true, trim: true },
+    itemIds: { type: [Schema.Types.ObjectId], ref: "MenuItem", required: true, default: [] },
+  },
+  { _id: false },
+);
+
+const menuTemplateSchema = new Schema&lt;MenuTemplateDocument&gt;(
+  {
+    name: { type: String, required: true, trim: true },
+    kind: { type: String, enum: ["bento", "drinks", "tea", "other"], required: true },
+    supplierId: { type: Schema.Types.ObjectId, ref: "Supplier" },
+    sections: { type: [templateSectionSchema], required: true, default: [] },
+    active: { type: Boolean, required: true, default: true },
+  },
+  { timestamps: true, collection: "menu_templates" },
+);</pre>
+      </div>
+    </div>
+
+    <h3 class="group-title">order_zones</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>interface OrderZoneDocument {
+  _id: Types.ObjectId;
+  name: string;
+  slug: string;                    // unique，前台網址 /z/{slug}
+  description: string;
+  icon: string;
+  templateIds: Types.ObjectId[];   // ref MenuTemplate，多對多
+  active: boolean;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const orderZoneSchema = new Schema&lt;OrderZoneDocument&gt;(
+  {
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    description: { type: String, default: "" },
+    icon: { type: String, default: "" },
+    templateIds: { type: [Schema.Types.ObjectId], ref: "MenuTemplate", required: true, default: [] },
+    active: { type: Boolean, required: true, default: true },
+    sortOrder: { type: Number, required: true, default: 0 },
+  },
+  { timestamps: true, collection: "order_zones" },
+);</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="order-group">
+    <h2><span class="num">05</span> 訂單與錢包</h2>
+    <p class="desc">開團訂餐、錢包歷程、儲值審核、評論、收藏——這幾張表彼此關聯最緊密。</p>
+
+    <h3 class="group-title">group_orders</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>type RiceLevel = "normal" | "half" | "none";
+type GroupOrderStatus = "open" | "closed" | "completed";
+type PaymentMethod = "wallet" | "cash" | "voucher" | "free";
+type PaymentStatus = "unpaid" | "pending" | "paid" | "failed";
+
+interface GroupOrderLine {
+  memberId: Types.ObjectId;   // ref Member
+  memberName: string;          // 下單當下的姓名快照
+  itemId: Types.ObjectId;      // ref MenuItem
+  itemName: string;             // 下單當下的名稱快照
+  price: number;                 // 下單當下的單價快照
+  qty: number;
+  rice: RiceLevel;
+  note: string;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;  // 四段式：轉帳確認中等中間狀態，不是單純 boolean
+}
+
+interface GroupOrderDocument {
+  _id: Types.ObjectId;
+  name: string;
+  templateId: Types.ObjectId;    // ref MenuTemplate
+  unitId: Types.ObjectId;         // ref MemberUnit
+  hostMemberId: Types.ObjectId;   // ref Member（團主）
+  date: Date;
+  deadline: Date;
+  status: GroupOrderStatus;
+  lines: GroupOrderLine[];         // 內嵌，逐人訂購明細
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const groupOrderLineSchema = new Schema&lt;GroupOrderLine&gt;(
+  {
+    memberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
+    memberName: { type: String, required: true },
+    itemId: { type: Schema.Types.ObjectId, ref: "MenuItem", required: true },
+    itemName: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    qty: { type: Number, required: true, min: 1 },
+    rice: { type: String, enum: ["normal", "half", "none"], required: true, default: "normal" },
+    note: { type: String, default: "" },
+    paymentMethod: { type: String, enum: ["wallet", "cash", "voucher", "free"], required: true },
+    paymentStatus: { type: String, enum: ["unpaid", "pending", "paid", "failed"], required: true, default: "unpaid" },
+  },
+  { _id: false },
+);
+
+const groupOrderSchema = new Schema&lt;GroupOrderDocument&gt;(
+  {
+    name: { type: String, required: true, trim: true },
+    templateId: { type: Schema.Types.ObjectId, ref: "MenuTemplate", required: true },
+    unitId: { type: Schema.Types.ObjectId, ref: "MemberUnit", required: true },
+    hostMemberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
+    date: { type: Date, required: true },
+    deadline: { type: Date, required: true },
+    status: { type: String, enum: ["open", "closed", "completed"], required: true, default: "open" },
+    lines: { type: [groupOrderLineSchema], required: true, default: [] },
+  },
+  { timestamps: true, collection: "group_orders" },
+);</pre>
+        <div class="note"><b>已決定不做：</b>舊系統 <code>group_order_items</code> 的 <code>disliked</code>／<code>likes_count</code>／<code>disliked_confirmed_by</code>（按讚/踩機制），沿用規劃文件的決定，這裡不會有對應欄位。</div>
+      </div>
+    </div>
+
+    <h3 class="group-title">wallet_ledger（只增不改）</h3>
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">wallet_ledger</span></div>
+        <div class="coll-purpose"><span class="tag append">只增不改</span> 儲值／消費／退款／調整都是一筆歷程，每次寫入同步更新 member.balance</div>
+      </div>
+      <div class="coll-body">
+<pre>type LedgerType = "topup" | "order" | "refund" | "adjustment";
+type LedgerReferenceType = "group_order" | "topup_request" | "manual";
+
+interface WalletLedgerDocument {
+  _id: Types.ObjectId;
+  memberId: Types.ObjectId;         // ref Member
+  type: LedgerType;
+  amount: number;                     // 正負號代表入帳/扣款
+  balanceBefore: number;
+  balanceAfter: number;                // 快照，不用每次重算
+  referenceType?: LedgerReferenceType;
+  referenceId?: Types.ObjectId;        // 依 referenceType 對應 group_orders._id / topup_requests._id
+  note?: string;
+  at: Date;
+}
+
+const walletLedgerSchema = new Schema&lt;WalletLedgerDocument&gt;(
+  {
+    memberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
+    type: { type: String, enum: ["topup", "order", "refund", "adjustment"], required: true },
+    amount: { type: Number, required: true },
+    balanceBefore: { type: Number, required: true },
+    balanceAfter: { type: Number, required: true },
+    referenceType: { type: String, enum: ["group_order", "topup_request", "manual"] },
+    referenceId: { type: Schema.Types.ObjectId },
+    note: { type: String },
+    at: { type: Date, required: true, default: Date.now },
+  },
+  { timestamps: false, collection: "wallet_ledger" },
+);
+walletLedgerSchema.index({ memberId: 1, at: -1 });</pre>
+        <div class="note warn"><b>只增不改：</b>寫入後不能再 update；要修正就再補一筆反向紀錄（例如手動調整 -95 來抵銷一筆錯誤扣款），CRUD 層不提供 update/delete 函式，只提供「新增一筆」。</div>
+      </div>
+    </div>
+
+    <h3 class="group-title">topup_requests</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>type TopupStatus = "pending" | "approved" | "rejected";
+
+interface TopupRequestDocument {
+  _id: Types.ObjectId;
+  memberId: Types.ObjectId;          // ref Member
+  amount: number;
+  method: string;                      // "現金"/"銀行轉帳"/"信用卡"
+  bankCode?: string;                    // 銀行轉帳末五碼，其他方式留空
+  status: TopupStatus;
+  requestedAt: Date;
+  reviewedAt?: Date;
+  reviewedByMemberId?: Types.ObjectId;  // ref Member（審核的管理員）
+}
+
+const topupRequestSchema = new Schema&lt;TopupRequestDocument&gt;(
+  {
+    memberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
+    amount: { type: Number, required: true, min: 1 },
+    method: { type: String, required: true },
+    bankCode: { type: String },
+    status: { type: String, enum: ["pending", "approved", "rejected"], required: true, default: "pending" },
+    requestedAt: { type: Date, required: true, default: Date.now },
+    reviewedAt: { type: Date },
+    reviewedByMemberId: { type: Schema.Types.ObjectId, ref: "Member" },
+  },
+  { timestamps: false, collection: "topup_requests" },
+);</pre>
+        <div class="note">核准時：① 把這筆 status 改成 approved 並填 reviewedAt/reviewedByMemberId、② 在 wallet_ledger 補一筆 <code>type: "topup"</code>、<code>referenceType: "topup_request"</code> 的歷程、③ 更新 member.balance——這三步要包在同一個 transaction 裡。</div>
+      </div>
+    </div>
+
+    <h3 class="group-title">item_reviews</h3>
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">item_reviews</span></div>
+        <div class="coll-purpose">合併 mock 裡分開的 comment／rating——一筆評論本來就該同時帶星等</div>
+      </div>
+      <div class="coll-body">
+<pre>interface ItemReviewDocument {
+  _id: Types.ObjectId;
+  memberId: Types.ObjectId;  // ref Member
+  itemId: Types.ObjectId;     // ref MenuItem
+  stars: number;                // 1–5
+  text?: string;                // 只評分不留言時可空白
+  at: Date;
+}
+
+const itemReviewSchema = new Schema&lt;ItemReviewDocument&gt;(
+  {
+    memberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
+    itemId: { type: Schema.Types.ObjectId, ref: "MenuItem", required: true },
+    stars: { type: Number, required: true, min: 1, max: 5 },
+    text: { type: String },
+    at: { type: Date, required: true, default: Date.now },
+  },
+  { timestamps: false, collection: "item_reviews" },
+);
+itemReviewSchema.index({ memberId: 1, itemId: 1 }, { unique: true });</pre>
+        <div class="note">一人對同一品項只能有一筆評論，重複評論改成「更新既有那筆」。可見性：評論公開（誰評論了什麼、星等、內容，任何人瀏覽品項都看得到）。</div>
+      </div>
+    </div>
+
+    <h3 class="group-title">favorites</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>interface FavoriteDocument {
+  _id: Types.ObjectId;
+  memberId: Types.ObjectId;  // ref Member
+  itemId: Types.ObjectId;     // ref MenuItem
+  at: Date;
+}
+
+const favoriteSchema = new Schema&lt;FavoriteDocument&gt;(
+  {
+    memberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
+    itemId: { type: Schema.Types.ObjectId, ref: "MenuItem", required: true },
+    at: { type: Date, required: true, default: Date.now },
+  },
+  { timestamps: false, collection: "favorites" },
+);
+favoriteSchema.index({ memberId: 1, itemId: 1 }, { unique: true });</pre>
+        <div class="note">可見性：只記錄不公開，誰收藏了什麼只有本人跟後台看得到。取消收藏＝整筆刪除，不是加一個 active 欄位。</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="other-group">
+    <h2><span class="num">06</span> 其他</h2>
+
+    <h3 class="group-title">interstitials（蓋台廣告）</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+<pre>type PromoFrequency = "always" | "daily" | "once";
+
+interface InterstitialDocument {
+  _id: Types.ObjectId;
+  name: string;            // 只在後台顯示
+  enabled: boolean;
+  imageUrl: string;
+  linkUrl?: string;
+  dismissSeconds: number;   // 0＝需手動關閉
+  frequency: PromoFrequency;
+  startAt: Date;
+  endAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const interstitialSchema = new Schema&lt;InterstitialDocument&gt;(
+  {
+    name: { type: String, required: true, trim: true },
+    enabled: { type: Boolean, required: true, default: false },
+    imageUrl: { type: String, default: "" },
+    linkUrl: { type: String },
+    dismissSeconds: { type: Number, required: true, default: 0 },
+    frequency: { type: String, enum: ["always", "daily", "once"], required: true, default: "always" },
+    startAt: { type: Date, required: true },
+    endAt: { type: Date, required: true },
+  },
+  { timestamps: true, collection: "interstitials" },
+);</pre>
+      </div>
+    </div>
+
+    <h3 class="group-title">audit_logs（只增不改）</h3>
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">audit_logs</span></div>
+        <div class="coll-purpose"><span class="tag append">只增不改</span> 後台任何有影響性的操作都寫一筆</div>
+      </div>
+      <div class="coll-body">
+<pre>interface AuditLogDocument {
+  _id: Types.ObjectId;
+  actorMemberId: Types.ObjectId;   // ref Member（操作者）
+  action: string;                     // 例 "member.suspend"、"topup.approve"
+  targetType: string;                  // 被操作對象所屬的 collection 名稱
+  targetId: Types.ObjectId;
+  detail?: Record&lt;string, unknown&gt;;    // 變更前後差異，視需要記錄
+  risk: boolean;                        // 高風險操作（手動調整餘額/停權/指派角色…）額外標記，對應 /admin/audit 頁的篩選
+  at: Date;
+}
+
+const auditLogSchema = new Schema&lt;AuditLogDocument&gt;(
+  {
+    actorMemberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
+    action: { type: String, required: true },
+    targetType: { type: String, required: true },
+    targetId: { type: Schema.Types.ObjectId, required: true },
+    detail: { type: Schema.Types.Mixed },
+    risk: { type: Boolean, required: true, default: false },
+    at: { type: Date, required: true, default: Date.now },
+  },
+  { timestamps: false, collection: "audit_logs" },
+);
+auditLogSchema.index({ at: -1 });</pre>
+      </div>
+    </div>
+
+    <h3 class="group-title">system_settings（新增，規劃文件沒涵蓋到）</h3>
+    <div class="card coll-card">
+      <div class="coll-head">
+        <div><span class="coll-name">system_settings</span></div>
+        <div class="coll-purpose"><span class="tag new">新設計</span> 單例文件（整個 collection 只會有 1 筆），對應 /admin/settings 頁面</div>
+      </div>
+      <div class="coll-body">
+<pre>interface SystemSettingsDocument {
+  _id: Types.ObjectId;
+  orderDeadlineRule: string;                          // 例 "前一工作日 17:00"
+  minThresholdPolicy: "auto_cancel_refund" | "host_decides";
+  emailDomainWhitelist: string[];                       // 例 ["@company.com"]
+  activationMethod: "self_verify" | "admin_review";
+  pickupLocations: string[];                             // 例 ["3F 茶水間","5F 空中花園"]
+  announcement: string;                                   // 顯示在首頁/菜單頁上方
+  updatedAt: Date;
+  updatedByMemberId?: Types.ObjectId;                     // ref Member，最後修改者
+}
+
+const systemSettingsSchema = new Schema&lt;SystemSettingsDocument&gt;(
+  {
+    orderDeadlineRule: { type: String, required: true, default: "前一工作日 17:00" },
+    minThresholdPolicy: { type: String, enum: ["auto_cancel_refund", "host_decides"], required: true, default: "auto_cancel_refund" },
+    emailDomainWhitelist: { type: [String], required: true, default: [] },
+    activationMethod: { type: String, enum: ["self_verify", "admin_review"], required: true, default: "self_verify" },
+    pickupLocations: { type: [String], required: true, default: [] },
+    announcement: { type: String, default: "" },
+    updatedByMemberId: { type: Schema.Types.ObjectId, ref: "Member" },
+  },
+  { timestamps: true, collection: "system_settings" },
+);</pre>
+        <div class="note">存取方式建議固定用同一個 <code>_id</code>（例如字串 <code>"singleton"</code>）做 upsert，避免不小心插入第二筆設定文件。</div>
+      </div>
+    </div>
+
+    <h3 class="group-title">沒有獨立 collection 的部分</h3>
+    <div class="card coll-card">
+      <div class="coll-body">
+        <table>
+          <thead><tr><th>頁面／功能</th><th>怎麼算</th></tr></thead>
+          <tbody>
+            <tr><td>後台－餐點統計（/admin/item-stats）</td><td class="fnote">對 group_orders.lines 依 itemId 聚合 qty／對 item_reviews 依 itemId 聚合星等平均，即時查詢，不落地存</td></tr>
+            <tr><td>後台－報表（/admin/reports）</td><td class="fnote">對 group_orders 依日期/店家/類型聚合，即時查詢，不落地存</td></tr>
+            <tr><td>後台－會員洞察（/admin/members/insights）</td><td class="fnote">對 group_orders.lines／favorites／item_reviews／wallet_ledger 依 memberId 篩選彙總，不另存一份</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2><span class="num">07</span> 確認後要做的事</h2>
+    <p class="desc">你看過沒問題、也回答完 ② 的兩個決定後，實作會分這幾步：</p>
+    <table>
+      <thead><tr><th>步驟</th><th>內容</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">1</td><td>（如果決定調整）把 <code>department</code>/<code>unit</code> 改名成 <code>member_departments</code>/<code>member_units</code>、補 <code>active</code> 欄位；<code>member.role</code> 改成 <code>roleKey</code>、補 <code>extension</code>/<code>balance</code>；寫 migration script</td></tr>
+        <tr><td class="fname">2</td><td>建 <code>member_roles</code>，把 <code>lib/mock.ts</code> 的 <code>memberGroups</code> 種進去，<code>/admin/roles</code> 接上真資料</td></tr>
+        <tr><td class="fname">3</td><td>建 menu 群組五張表（suppliers/menu_categories/menu_tags/menu_items/menu_templates/order_zones），把 mock 品項資料搬過去，<code>/admin/items</code>、<code>/admin/suppliers</code>、<code>/admin/templates</code>、<code>/admin/zones</code> 接上</td></tr>
+        <tr><td class="fname">4</td><td>建 group_orders，前台開團／點餐、後台團訂列表接上；同時做 wallet_ledger 扣款邏輯</td></tr>
+        <tr><td class="fname">5</td><td>建 topup_requests + wallet_ledger 核准流程，<code>/admin/topups</code>、<code>/admin/wallets</code> 接上</td></tr>
+        <tr><td class="fname">6</td><td>建 item_reviews、favorites、interstitials、audit_logs、system_settings，個別接上對應頁面</td></tr>
+      </tbody>
+    </table>
+    <div class="note">範圍很大，建議照上面順序分批做，每批做完就實際打頁面驗證（跟這次 member/department/unit 一樣），不要一次全上。</div>
+  </section>
+
+  <footer class="page-end">
+    ＊此頁為 schema 草案，尚未寫進專案。目前真的建在 MongoDB 上的只有 member / department / unit。
+  </footer>
+</div>
