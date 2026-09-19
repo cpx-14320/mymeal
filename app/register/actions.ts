@@ -3,6 +3,7 @@
 import { createMember, findMemberByCode } from "@/lib/models/member";
 import { createSession } from "@/lib/session";
 import { listDepartments, listUnits } from "@/lib/models/org";
+import { getSettings } from "@/lib/models/settings";
 
 export interface RegisterState {
   error?: string;
@@ -33,6 +34,15 @@ export async function registerAction(
 
   if (!email || !password || !name || !employeeId || !dept || !unit) {
     return { error: "請填寫所有必填欄位。" };
+  }
+  const settings = await getSettings();
+  const allowedDomains = settings.emailWhitelist
+    .split(",")
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+  const emailLower = email.toLowerCase();
+  if (allowedDomains.length > 0 && !allowedDomains.some((d) => emailLower.endsWith(d))) {
+    return { error: `Email 需使用公司網域（${settings.emailWhitelist}）。` };
   }
   if (password.length < 8) {
     return { error: "密碼至少需要 8 碼。" };

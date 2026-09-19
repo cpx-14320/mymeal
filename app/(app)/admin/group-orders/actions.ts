@@ -26,6 +26,7 @@ export async function createGroupOrderAction(
     hostId: String(formData.get("hostId") ?? ""),
     date: String(formData.get("date") ?? "").trim().replaceAll("-", "/"),
     deadline: String(formData.get("deadline") ?? "").trim(),
+    pickupLocation: String(formData.get("pickupLocation") ?? "").trim(),
   };
 
   try {

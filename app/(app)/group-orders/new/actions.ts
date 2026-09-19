@@ -18,10 +18,11 @@ export async function openGroupOrderAction(
   const unitId = String(formData.get("unitId") ?? "");
   const date = String(formData.get("date") ?? "").trim().replaceAll("-", "/");
   const deadline = String(formData.get("deadline") ?? "").trim().replace("T", " ");
+  const pickupLocation = String(formData.get("pickupLocation") ?? "").trim();
 
   let groupOrderId: string;
   try {
-    const result = await createGroupOrder({ name, templateId, unitId, hostId, date, deadline });
+    const result = await createGroupOrder({ name, templateId, unitId, hostId, date, deadline, pickupLocation });
     groupOrderId = result.id;
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };

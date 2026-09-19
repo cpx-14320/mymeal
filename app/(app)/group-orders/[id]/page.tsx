@@ -96,8 +96,9 @@ export default async function GroupOrderDetailPage({
         actions={<Badge tone={statusMap[group.status].tone}>{statusMap[group.status].label}</Badge>}
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <Stat label="截止時間" value={group.deadline || "—"} />
+        <Stat label="取餐地點" value={group.pickupLocation || "—"} />
         <Stat label="目前份數" value={`${group.qty} 份`} hint={`NT$ ${group.amount}`} />
         <Stat label="所屬單位" value={group.unitName || "—"} hint={`團主：${group.hostName}`} />
       </div>

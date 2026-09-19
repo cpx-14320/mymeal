@@ -5,16 +5,18 @@ import { listGroupOrders } from "@/lib/models/group-order";
 import { listTemplates } from "@/lib/models/template";
 import { listDepartments, listUnits } from "@/lib/models/org";
 import { listMembers } from "@/lib/models/member";
+import { getSettings } from "@/lib/models/settings";
 
 export const metadata = { title: "團訂" };
 
 export default async function AdminGroupOrdersPage() {
-  const [rows, templates, departments, units, members] = await Promise.all([
+  const [rows, templates, departments, units, members, settings] = await Promise.all([
     listGroupOrders(),
     listTemplates(),
     listDepartments(),
     listUnits(),
     listMembers(),
+    getSettings(),
   ]);
 
   return (
@@ -28,6 +30,9 @@ export default async function AdminGroupOrdersPage() {
           templates={templates.filter((t) => t.active).map((t) => ({ id: t.id, name: t.name }))}
           units={units.map((u) => ({ id: u.id, name: u.name, departmentName: u.departmentName }))}
           members={members.map((m) => ({ id: m.id, name: m.name }))}
+          pickupLocations={settings.pickupLocations}
+          deadlineDefaultHint={settings.orderDeadlineDefault}
+          underMinPolicy={settings.underMinPolicy}
         />
       </Section>
 

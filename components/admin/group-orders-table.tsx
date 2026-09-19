@@ -9,6 +9,7 @@ import {
   CardBody,
   Field,
   inputClass,
+  Note,
   TableWrap,
   Th,
   Td,
@@ -41,11 +42,17 @@ function CreateGroupOrderForm({
   templates,
   units,
   members,
+  pickupLocations,
+  deadlineDefaultHint,
+  underMinPolicy,
   onDone,
 }: {
   templates: { id: string; name: string }[];
   units: { id: string; name: string; departmentName: string }[];
   members: { id: string; name: string }[];
+  pickupLocations: string[];
+  deadlineDefaultHint: string;
+  underMinPolicy: string;
   onDone: () => void;
 }) {
   const router = useRouter();
@@ -100,10 +107,24 @@ function CreateGroupOrderForm({
                 ))}
               </select>
             </Field>
-            <Field label="截止時間" hint="自由文字，例：今天 17:00 截止">
+            <Field label="截止時間" hint={`自由文字，例：今天 17:00 截止｜系統預設：${deadlineDefaultHint}`}>
               <input className={inputClass} name="deadline" placeholder="今天 17:00 截止" />
             </Field>
+            <Field label="取餐地點">
+              {pickupLocations.length === 0 ? (
+                <input className={inputClass} name="pickupLocation" placeholder="例：3F 茶水間" />
+              ) : (
+                <select className={inputClass} name="pickupLocation" defaultValue={pickupLocations[0]}>
+                  {pickupLocations.map((loc) => (
+                    <option key={loc} value={loc}>
+                      {loc}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
           </div>
+          <Note>未達最低訂購門檻時的處理方式（依後台「系統設定」）：{underMinPolicy}</Note>
 
           {state.error && <p className="text-sm text-danger">{state.error}</p>}
 
@@ -124,11 +145,17 @@ export function GroupOrdersTable({
   templates,
   units,
   members,
+  pickupLocations,
+  deadlineDefaultHint,
+  underMinPolicy,
 }: {
   rows: GroupOrderListItem[];
   templates: { id: string; name: string }[];
   units: { id: string; name: string; departmentName: string }[];
   members: { id: string; name: string }[];
+  pickupLocations: string[];
+  deadlineDefaultHint: string;
+  underMinPolicy: string;
 }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
@@ -210,6 +237,9 @@ export function GroupOrdersTable({
           templates={templates}
           units={units}
           members={members}
+          pickupLocations={pickupLocations}
+          deadlineDefaultHint={deadlineDefaultHint}
+          underMinPolicy={underMinPolicy}
           onDone={() => setCreating(false)}
         />
       )}

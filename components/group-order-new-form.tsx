@@ -25,11 +25,17 @@ export function GroupOrderNewForm({
   hostUnitId,
   templates,
   units,
+  pickupLocations,
+  deadlineDefaultHint,
+  underMinPolicy,
 }: {
   hostId: string;
   hostUnitId: string;
   templates: TemplateDetail[];
   units: UnitOption[];
+  pickupLocations: string[];
+  deadlineDefaultHint: string;
+  underMinPolicy: string;
 }) {
   const boundAction = openGroupOrderAction.bind(null, hostId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
@@ -69,10 +75,24 @@ export function GroupOrderNewForm({
               <Field label="取餐日期">
                 <input className={inputClass} type="date" name="date" required />
               </Field>
-              <Field label="截止時間">
+              <Field label="截止時間" hint={`系統預設：${deadlineDefaultHint}`}>
                 <input className={inputClass} type="datetime-local" name="deadline" />
               </Field>
+              <Field label="取餐地點">
+                {pickupLocations.length === 0 ? (
+                  <input className={inputClass} name="pickupLocation" placeholder="例：3F 茶水間" />
+                ) : (
+                  <select className={inputClass} name="pickupLocation" defaultValue={pickupLocations[0]}>
+                    {pickupLocations.map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
             </div>
+            <Note>未達最低訂購門檻時的處理方式（依後台「系統設定」）：{underMinPolicy}</Note>
           </CardBody>
         </Card>
 

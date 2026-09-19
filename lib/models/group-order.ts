@@ -32,6 +32,7 @@ export interface GroupOrderDocument {
   hostId: Types.ObjectId; // ref Member
   date: string; // "YYYY/MM/DD"
   deadline: string;
+  pickupLocation: string;
   status: GroupOrderStatus;
   lines: OrderLineSubdoc[];
   createdAt: Date;
@@ -58,6 +59,7 @@ const groupOrderSchema = new Schema<GroupOrderDocument>(
     hostId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
     date: { type: String, required: true },
     deadline: { type: String, default: "" },
+    pickupLocation: { type: String, default: "" },
     status: { type: String, enum: ["open", "closed", "completed"], required: true, default: "open" },
     lines: { type: [orderLineSchema], required: true, default: [] },
   },
@@ -86,6 +88,7 @@ export interface GroupOrderListItem {
   hostName: string;
   date: string;
   deadline: string;
+  pickupLocation: string;
   status: GroupOrderStatus;
   qty: number;
   amount: number;
@@ -107,6 +110,7 @@ type PopulatedGroupOrderDoc = {
   hostId: PopulatedRef | null;
   date: string;
   deadline: string;
+  pickupLocation: string;
   status: GroupOrderStatus;
   lines: OrderLineSubdoc[];
 };
@@ -126,6 +130,7 @@ function toGroupOrderListItem(d: PopulatedGroupOrderDoc): GroupOrderListItem {
     hostName: d.hostId?.name ?? "（已刪除會員）",
     date: d.date,
     deadline: d.deadline,
+    pickupLocation: d.pickupLocation,
     status: d.status,
     qty: totals.qty,
     amount: totals.amount,
@@ -199,6 +204,7 @@ export async function findGroupOrderById(id: string): Promise<GroupOrderDetail |
     hostName: d.hostId?.name ?? "（已刪除會員）",
     date: d.date,
     deadline: d.deadline,
+    pickupLocation: d.pickupLocation,
     status: d.status,
     qty: totals.qty,
     amount: totals.amount,
@@ -224,6 +230,7 @@ export interface CreateGroupOrderInput {
   hostId: string;
   date: string;
   deadline?: string;
+  pickupLocation?: string;
   status?: GroupOrderStatus;
 }
 
@@ -242,6 +249,7 @@ export async function createGroupOrder(input: CreateGroupOrderInput) {
     hostId: new Types.ObjectId(input.hostId),
     date: input.date,
     deadline: input.deadline ?? "",
+    pickupLocation: input.pickupLocation ?? "",
     status: input.status ?? "open",
     lines: [],
   });
