@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/primitives";
 import { GroupOrderForm, type OrderableDish } from "@/components/group-order-form";
 import { GroupOrderExportButton } from "@/components/group-order-export-button";
+import { GroupOrderHostActions } from "@/components/group-order-host-actions";
 import { findGroupOrderById, getMemberFrequentItems, type RiceLevel } from "@/lib/models/group-order";
 import { findTemplateById } from "@/lib/models/template";
 import { findMemberById } from "@/lib/models/member";
@@ -184,6 +185,12 @@ export default async function GroupOrderDetailPage({
         </TableWrap>
       </div>
 
+      {memberId === group.hostId && (
+        <div className="flex justify-end">
+          <GroupOrderHostActions groupOrderId={group.id} status={group.status} deadline={group.deadline} />
+        </div>
+      )}
+
       <div className="flex flex-wrap justify-end gap-2">
         <ButtonLink href="/group-orders" variant="ghost">
           返回列表
@@ -194,7 +201,6 @@ export default async function GroupOrderDetailPage({
           filename={`${group.name}_訂購彙總.csv`}
         />
         <Button variant="danger">取消整團</Button>
-        <Button>提前結單</Button>
       </div>
     </PageContainer>
   );

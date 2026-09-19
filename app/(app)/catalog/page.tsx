@@ -5,13 +5,22 @@ import { ItemGrid } from "@/components/item-grid";
 import { listItemCategories } from "@/lib/models/item-category";
 import { listCatalogItems } from "@/lib/models/catalog-item";
 import { getItemStatsByItems } from "@/lib/models/item-review";
+import { listFavoritesByMember } from "@/lib/models/favorite";
+import { getSessionMemberId } from "@/lib/session";
 
 export const metadata: Metadata = { title: "所有品項" };
 
 export default async function CatalogPage() {
-  const [categories, allItems] = await Promise.all([listItemCategories(), listCatalogItems()]);
+  const [categories, allItems, memberId] = await Promise.all([
+    listItemCategories(),
+    listCatalogItems(),
+    getSessionMemberId(),
+  ]);
   const items = allItems.filter((it) => it.active);
-  const stats = await getItemStatsByItems(items.map((it) => it.id));
+  const [stats, favorites] = await Promise.all([
+    getItemStatsByItems(items.map((it) => it.id)),
+    memberId ? listFavoritesByMember(memberId) : Promise.resolve([]),
+  ]);
 
   return (
     <PageContainer>
@@ -22,7 +31,12 @@ export default async function CatalogPage() {
 
       <ItemCarousel />
 
-      <ItemGrid items={items} stats={stats} categories={categories} />
+      <ItemGrid
+        items={items}
+        stats={stats}
+        categories={categories}
+        initialFavoriteIds={favorites.map((f) => f.itemId)}
+      />
     </PageContainer>
   );
 }

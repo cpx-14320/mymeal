@@ -10,22 +10,13 @@ import {
   PillTabs,
   Pagination,
 } from "@/components/ui/primitives";
-import {
-  groupOrders,
-  groupOrderTotals,
-  templateById,
-  templateKindLabel,
-  unitById,
-  departmentById,
-  units,
-  dateToSlug,
-  type GroupOrder,
-} from "@/lib/mock";
+import type { GroupOrderListItem, GroupOrderStatus } from "@/lib/models/group-order";
+import { dateToSlug } from "@/lib/date";
 
-const statusMap = {
-  open: { label: "開放中", tone: "positive" as const },
-  closed: { label: "已截止", tone: "warning" as const },
-  completed: { label: "已完成", tone: "neutral" as const },
+const statusMap: Record<GroupOrderStatus, { label: string; tone: "positive" | "warning" | "neutral" }> = {
+  open: { label: "開放中", tone: "positive" },
+  closed: { label: "已截止", tone: "warning" },
+  completed: { label: "已完成", tone: "neutral" },
 };
 
 const weekdayNames = ["日", "一", "二", "三", "四", "五", "六"];
@@ -36,31 +27,38 @@ function formatDateWithWeekday(dateStr: string) {
   return `${dateStr}（${weekdayNames[date.getDay()]}）`;
 }
 
-const isDrinkKind = (g: GroupOrder) => {
-  const kind = templateById(g.templateId)?.kind;
-  return kind === "drinks" || kind === "tea";
-};
-
 const dayPageSizeOptions = [7, 14, 31] as const;
 
-const filters: { label: string; test: (g: GroupOrder) => boolean }[] = [
-  { label: "全部", test: () => true },
-  { label: "便當", test: (g) => templateById(g.templateId)?.kind === "bento" },
-  { label: "飲料・下午茶", test: isDrinkKind },
-  { label: "開放中", test: (g) => g.status === "open" },
-  { label: "我開的團", test: (g) => g.host === "林佩珊" },
-];
+type Filter = "all" | "open" | "mine" | string; // string = kindName
 
-export function GroupOrdersList() {
-  const [filterLabel, setFilterLabel] = useState("全部");
+export function GroupOrdersList({
+  rows,
+  units,
+  kindByTemplateId,
+  currentMemberId,
+}: {
+  rows: GroupOrderListItem[];
+  units: { id: string; name: string }[];
+  kindByTemplateId: Record<string, string>;
+  currentMemberId: string;
+}) {
+  const [filter, setFilter] = useState<Filter>("all");
   const [unitFilter, setUnitFilter] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(dayPageSizeOptions[0]);
 
-  const activeFilter =
-    filters.find((f) => f.label === filterLabel) ?? filters[0];
-  const filtered = groupOrders
-    .filter(activeFilter.test)
+  const kindOf = (g: GroupOrderListItem) => kindByTemplateId[g.templateId] ?? "";
+  const kindNames = [...new Set(rows.map(kindOf).filter(Boolean))];
+
+  const matchesFilter = (g: GroupOrderListItem) => {
+    if (filter === "all") return true;
+    if (filter === "open") return g.status === "open";
+    if (filter === "mine") return g.hostId === currentMemberId;
+    return kindOf(g) === filter;
+  };
+
+  const filtered = rows
+    .filter(matchesFilter)
     .filter((g) => !unitFilter || g.unitId === unitFilter)
     .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -71,27 +69,30 @@ export function GroupOrdersList() {
   const current = Math.min(page, pageCount);
   const dateStart = (current - 1) * pageSize;
   const pageDates = new Set(uniqueDates.slice(dateStart, dateStart + pageSize));
-  const rows = filtered.filter((g) => pageDates.has(g.date));
+  const pageRows = filtered.filter((g) => pageDates.has(g.date));
 
-  const dateGroups: { date: string; items: GroupOrder[] }[] = [];
-  for (const g of rows) {
+  const dateGroups: { date: string; items: GroupOrderListItem[] }[] = [];
+  for (const g of pageRows) {
     const last = dateGroups[dateGroups.length - 1];
     if (last && last.date === g.date) last.items.push(g);
     else dateGroups.push({ date: g.date, items: [g] });
   }
 
+  const tabs: { key: Filter; label: string; count: number }[] = [
+    { key: "all", label: "全部", count: rows.length },
+    ...kindNames.map((k) => ({ key: k, label: k, count: rows.filter((g) => kindOf(g) === k).length })),
+    { key: "open", label: "開放中", count: rows.filter((g) => g.status === "open").length },
+    { key: "mine", label: "我開的團", count: rows.filter((g) => g.hostId === currentMemberId).length },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PillTabs
-          tabs={filters.map((f) => ({
-            key: f.label,
-            label: f.label,
-            count: groupOrders.filter(f.test).length,
-          }))}
-          value={filterLabel}
+          tabs={tabs}
+          value={filter}
           onChange={(key) => {
-            setFilterLabel(key);
+            setFilter(key);
             setPage(1);
           }}
         />
@@ -134,92 +135,81 @@ export function GroupOrdersList() {
         </div>
       </div>
 
-      <div className="space-y-6">
-        {dateGroups.map(({ date, items }) => {
-          const byTemplate = new Map<string, GroupOrder[]>();
-          for (const it of items) {
-            const arr = byTemplate.get(it.templateId) ?? [];
-            arr.push(it);
-            byTemplate.set(it.templateId, arr);
-          }
+      {dateGroups.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted">目前沒有符合條件的團。</p>
+      ) : (
+        <div className="space-y-6">
+          {dateGroups.map(({ date, items }) => {
+            const byTemplate = new Map<string, GroupOrderListItem[]>();
+            for (const it of items) {
+              const arr = byTemplate.get(it.templateId) ?? [];
+              arr.push(it);
+              byTemplate.set(it.templateId, arr);
+            }
 
-          return (
-            <div key={date} className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold text-muted">
-                  {formatDateWithWeekday(date)}
-                </h2>
-                <Link
-                  href={`/group-orders/cluster/${dateToSlug(date)}`}
-                  className="text-xs font-medium text-brand hover:underline"
-                >
-                  查看所有 →
-                </Link>
-              </div>
+            return (
+              <div key={date} className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-muted">
+                    {formatDateWithWeekday(date)}
+                  </h2>
+                  <Link
+                    href={`/group-orders/cluster/${dateToSlug(date)}`}
+                    className="text-xs font-medium text-brand hover:underline"
+                  >
+                    查看所有 →
+                  </Link>
+                </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {[...byTemplate.entries()].map(([templateId, group]) => {
-                  const tpl = templateById(templateId);
-                  return (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {[...byTemplate.entries()].map(([templateId, group]) => (
                     <Fragment key={templateId}>
-                      {group.map((g) => {
-                        const unit = unitById(g.unitId);
-                        const dept = unit ? departmentById(unit.departmentId) : undefined;
-                        const totals = groupOrderTotals(g);
-                        return (
-                          <Card key={g.id}>
-                            <CardBody className="space-y-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <Link
-                                    href={`/group-orders/${g.id}`}
-                                    className="font-semibold hover:text-brand"
-                                  >
-                                    {g.name}
-                                  </Link>
-                                  <p className="mt-0.5 text-sm text-muted">
-                                    {tpl?.name}
-                                    {dept && unit ? `．${dept.name} ${unit.name}` : ""}
-                                  </p>
-                                </div>
-                                <div className="flex shrink-0 gap-1.5">
-                                  <Badge tone={isDrinkKind(g) ? "positive" : "brand"}>
-                                    {tpl ? templateKindLabel[tpl.kind] : ""}
-                                  </Badge>
-                                  <Badge tone={statusMap[g.status].tone}>
-                                    {statusMap[g.status].label}
-                                  </Badge>
-                                </div>
+                      {group.map((g) => (
+                        <Card key={g.id}>
+                          <CardBody className="space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <Link
+                                  href={`/group-orders/${g.id}`}
+                                  className="font-semibold hover:text-brand"
+                                >
+                                  {g.name}
+                                </Link>
+                                <p className="mt-0.5 text-sm text-muted">
+                                  {g.templateName}
+                                  {g.sectionName ? `（${g.sectionName}）` : ""}
+                                  {g.departmentName && g.unitName ? `．${g.departmentName} ${g.unitName}` : ""}
+                                </p>
                               </div>
+                              <div className="flex shrink-0 gap-1.5">
+                                {kindOf(g) && <Badge tone="brand">{kindOf(g)}</Badge>}
+                                <Badge tone={statusMap[g.status].tone}>{statusMap[g.status].label}</Badge>
+                              </div>
+                            </div>
 
-                              <dl className="grid grid-cols-2 gap-y-1 text-sm">
-                                <dt className="text-muted">團主</dt>
-                                <dd>{g.host}</dd>
-                                <dt className="text-muted">已點份數</dt>
-                                <dd className="tabular-nums">{totals.qty}</dd>
-                                <dt className="text-muted">截止</dt>
-                                <dd>{g.deadline}</dd>
-                              </dl>
+                            <dl className="grid grid-cols-2 gap-y-1 text-sm">
+                              <dt className="text-muted">團主</dt>
+                              <dd>{g.hostName}</dd>
+                              <dt className="text-muted">已點份數</dt>
+                              <dd className="tabular-nums">{g.qty}</dd>
+                              <dt className="text-muted">截止</dt>
+                              <dd>{g.deadline || "—"}</dd>
+                            </dl>
 
-                              <ButtonLink
-                                href={`/group-orders/${g.id}`}
-                                variant="secondary"
-                                className="w-full"
-                              >
-                                {g.status === "open" ? "查看 / 加入" : "查看明細"}
-                              </ButtonLink>
-                            </CardBody>
-                          </Card>
-                        );
-                      })}
+                            <ButtonLink href={`/group-orders/${g.id}`} variant="secondary" className="w-full">
+                              {g.status === "open" ? "查看 / 加入" : "查看明細"}
+                            </ButtonLink>
+                          </CardBody>
+                        </Card>
+                      ))}
                     </Fragment>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <Pagination
         page={current}

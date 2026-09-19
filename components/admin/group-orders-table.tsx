@@ -1,15 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Button,
   Badge,
-  Card,
-  CardBody,
-  Field,
-  inputClass,
-  Note,
   TableWrap,
   Th,
   Td,
@@ -18,12 +12,7 @@ import {
   PillTabs,
 } from "@/components/ui/primitives";
 import type { GroupOrderListItem, GroupOrderStatus } from "@/lib/models/group-order";
-import {
-  createGroupOrderAction,
-  setGroupOrdersStatusAction,
-  deleteGroupOrdersAction,
-  type CreateGroupOrderState,
-} from "@/app/(app)/admin/group-orders/actions";
+import { setGroupOrdersStatusAction, deleteGroupOrdersAction } from "@/app/(app)/admin/group-orders/actions";
 
 const statusMap: Record<GroupOrderStatus, { label: string; tone: "positive" | "warning" | "neutral" }> = {
   open: { label: "開放中", tone: "positive" },
@@ -38,131 +27,12 @@ const filters: { label: string; test: (r: GroupOrderListItem) => boolean }[] = [
   { label: "已完成", test: (r) => r.status === "completed" },
 ];
 
-function CreateGroupOrderForm({
-  templates,
-  units,
-  members,
-  pickupLocations,
-  deadlineDefaultHint,
-  underMinPolicy,
-  onDone,
-}: {
-  templates: { id: string; name: string }[];
-  units: { id: string; name: string; departmentName: string }[];
-  members: { id: string; name: string }[];
-  pickupLocations: string[];
-  deadlineDefaultHint: string;
-  underMinPolicy: string;
-  onDone: () => void;
-}) {
-  const router = useRouter();
-  const [state, formAction, pending] = useActionState<CreateGroupOrderState, FormData>(
-    createGroupOrderAction,
-    {},
-  );
-
-  if (state.success) {
-    router.refresh();
-    onDone();
-  }
-
-  return (
-    <Card>
-      <CardBody>
-        <form action={formAction} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="團名">
-              <input className={inputClass} name="name" placeholder="例：業務一組 週三便當團" required />
-            </Field>
-            <Field label="取餐日期">
-              <input className={inputClass} type="date" name="date" required />
-            </Field>
-            <Field label="模板">
-              <select className={inputClass} name="templateId" required>
-                {templates.length === 0 && <option value="">（尚無模板）</option>}
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="單位">
-              <select className={inputClass} name="unitId" required>
-                {units.length === 0 && <option value="">（尚無單位）</option>}
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.departmentName} {u.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="團主">
-              <select className={inputClass} name="hostId" required>
-                {members.length === 0 && <option value="">（尚無會員）</option>}
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="截止時間" hint={`自由文字，例：今天 17:00 截止｜系統預設：${deadlineDefaultHint}`}>
-              <input className={inputClass} name="deadline" placeholder="今天 17:00 截止" />
-            </Field>
-            <Field label="取餐地點">
-              {pickupLocations.length === 0 ? (
-                <input className={inputClass} name="pickupLocation" placeholder="例：3F 茶水間" />
-              ) : (
-                <select className={inputClass} name="pickupLocation" defaultValue={pickupLocations[0]}>
-                  {pickupLocations.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-          </div>
-          <Note>未達最低訂購門檻時的處理方式（依後台「系統設定」）：{underMinPolicy}</Note>
-
-          {state.error && <p className="text-sm text-danger">{state.error}</p>}
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={onDone}>
-              取消
-            </Button>
-            <Button disabled={pending}>{pending ? "建立中…" : "建立團訂"}</Button>
-          </div>
-        </form>
-      </CardBody>
-    </Card>
-  );
-}
-
-export function GroupOrdersTable({
-  rows,
-  templates,
-  units,
-  members,
-  pickupLocations,
-  deadlineDefaultHint,
-  underMinPolicy,
-}: {
-  rows: GroupOrderListItem[];
-  templates: { id: string; name: string }[];
-  units: { id: string; name: string; departmentName: string }[];
-  members: { id: string; name: string }[];
-  pickupLocations: string[];
-  deadlineDefaultHint: string;
-  underMinPolicy: string;
-}) {
+export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [filterLabel, setFilterLabel] = useState("全部");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const activeFilter = filters.find((f) => f.label === filterLabel) ?? filters[0];
@@ -218,31 +88,14 @@ export function GroupOrdersTable({
             setPage(1);
           }}
         />
-        <div className="flex items-center gap-2">
-          <PageSizeSelect
-            value={pageSize}
-            onChange={(n) => {
-              setPageSize(n);
-              setPage(1);
-            }}
-          />
-          <Button variant="secondary" onClick={() => setCreating((v) => !v)}>
-            代開團
-          </Button>
-        </div>
-      </div>
-
-      {creating && (
-        <CreateGroupOrderForm
-          templates={templates}
-          units={units}
-          members={members}
-          pickupLocations={pickupLocations}
-          deadlineDefaultHint={deadlineDefaultHint}
-          underMinPolicy={underMinPolicy}
-          onDone={() => setCreating(false)}
+        <PageSizeSelect
+          value={pageSize}
+          onChange={(n) => {
+            setPageSize(n);
+            setPage(1);
+          }}
         />
-      )}
+      </div>
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-sm">
@@ -309,7 +162,7 @@ export function GroupOrdersTable({
           {pageRows.length === 0 ? (
             <tr>
               <Td colSpan={9} className="text-center text-muted">
-                還沒有任何團訂，點「代開團」建立第一筆。
+                還沒有任何團訂。
               </Td>
             </tr>
           ) : (

@@ -61,6 +61,21 @@ export async function listFavoritesByMember(memberId: string): Promise<FavoriteV
     });
 }
 
+/** 收藏／取消收藏切換：依資料庫目前真的狀態決定動作（不靠前端傳目前狀態），回傳切換後的結果。 */
+export async function toggleFavorite(memberId: string, itemId: string): Promise<{ favorited: boolean }> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) throw new Error("請先登入。");
+  if (!Types.ObjectId.isValid(itemId)) throw new Error("無效的品項。");
+
+  const existing = await Favorite.findOne({ memberId, itemId });
+  if (existing) {
+    await Favorite.deleteOne({ _id: existing._id });
+    return { favorited: false };
+  }
+  await Favorite.create({ memberId, itemId });
+  return { favorited: true };
+}
+
 /** 給會員洞察列表頁用：一次算出多位會員各自的收藏數量，避免逐筆查詢。 */
 export async function countFavoritesByMembers(memberIds: string[]): Promise<Record<string, number>> {
   await connectMongo();

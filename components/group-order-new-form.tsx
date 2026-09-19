@@ -10,7 +10,6 @@ import {
   inputClass,
   Button,
   ButtonLink,
-  Badge,
   EmptyState,
 } from "@/components/ui/primitives";
 import type { TemplateDetail } from "@/lib/models/template";
@@ -64,9 +63,9 @@ export function GroupOrderNewForm({
       <form action={formAction} className="space-y-6">
         <Card>
           <CardBody className="space-y-5">
-            <p className="text-sm font-semibold text-muted">1 · 開團設定</p>
+            <p className="font-medium">開團設定</p>
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="團名" hint="讓同事看得懂是哪一團">
+              <Field label="團名">
                 <input className={inputClass} name="name" placeholder="例：三樓週三團" required />
               </Field>
               <Field label="部門">
@@ -118,7 +117,7 @@ export function GroupOrderNewForm({
 
         <Card>
           <CardBody className="space-y-5">
-            <p className="text-sm font-semibold text-muted">2 · 選模板</p>
+            <p className="font-medium">選模板</p>
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label="模板">
                 <select
@@ -139,7 +138,7 @@ export function GroupOrderNewForm({
                   ))}
                 </select>
               </Field>
-              <Field label="分類" hint="例如：星期一。同事只能點這個分類底下的品項">
+              <Field label="分類">
                 <select
                   className={inputClass}
                   name="sectionId"
@@ -164,12 +163,7 @@ export function GroupOrderNewForm({
         {selectedTemplate && (
           <Card>
             <CardBody className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-muted">3 · 菜單預覽</p>
-                <Badge>
-                  來自「{selectedTemplate.name}」{selectedSection ? `．${selectedSection.name}` : ""}
-                </Badge>
-              </div>
+              <p className="font-medium">菜單預覽</p>
 
               {!selectedSection || selectedSection.items.length === 0 ? (
                 <p className="text-sm text-muted">這個分類還沒有品項。</p>
@@ -180,7 +174,6 @@ export function GroupOrderNewForm({
                       <span className="flex items-center gap-2">
                         <span>{it.emoji}</span>
                         <span className="font-medium">{it.name}</span>
-                        {it.supplierName && <span className="text-xs text-muted">{it.supplierName}</span>}
                       </span>
                       <span className="text-sm tabular-nums text-muted">NT$ {it.price}</span>
                     </li>

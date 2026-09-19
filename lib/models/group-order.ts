@@ -189,17 +189,7 @@ export interface GroupOrderDetail extends GroupOrderListItem {
   }[];
 }
 
-export async function findGroupOrderById(id: string): Promise<GroupOrderDetail | null> {
-  await connectMongo();
-  if (!Types.ObjectId.isValid(id)) return null;
-  await Promise.all([import("@/lib/models/org"), import("@/lib/models/member"), import("@/lib/models/template")]);
-
-  const d = await GroupOrder.findById(id)
-    .populate<{ templateId: PopulatedRef | null }>("templateId")
-    .populate<{ unitId: PopulatedUnit | null }>({ path: "unitId", populate: { path: "departmentId" } })
-    .populate<{ hostId: PopulatedRef | null }>("hostId");
-  if (!d) return null;
-
+function toGroupOrderDetail(d: PopulatedGroupOrderDoc): GroupOrderDetail {
   const totals = orderLineTotals(d.lines);
   return {
     id: String(d._id),
@@ -233,6 +223,50 @@ export async function findGroupOrderById(id: string): Promise<GroupOrderDetail |
       paid: l.paid,
     })),
   };
+}
+
+export async function findGroupOrderById(id: string): Promise<GroupOrderDetail | null> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(id)) return null;
+  await Promise.all([import("@/lib/models/org"), import("@/lib/models/member"), import("@/lib/models/template")]);
+
+  const d = await GroupOrder.findById(id)
+    .populate<{ templateId: PopulatedRef | null }>("templateId")
+    .populate<{ unitId: PopulatedUnit | null }>({ path: "unitId", populate: { path: "departmentId" } })
+    .populate<{ hostId: PopulatedRef | null }>("hostId");
+  if (!d) return null;
+
+  return toGroupOrderDetail(d as unknown as PopulatedGroupOrderDoc);
+}
+
+/* ── 依部門彙總（部門負責人視角）用的「單位彙總」頁 ── */
+
+export interface ClusterableTemplate {
+  templateId: string;
+  templateName: string;
+  orders: GroupOrderDetail[];
+}
+
+/** 某一天裡有開團的每個模板（不論該模板當天是 1 團還是多團），含完整明細——彙總／匯出頁用。 */
+export async function getClusterableTemplatesForDate(date: string): Promise<ClusterableTemplate[]> {
+  await connectMongo();
+  await Promise.all([import("@/lib/models/org"), import("@/lib/models/member"), import("@/lib/models/template")]);
+
+  const docs = await GroupOrder.find({ date })
+    .sort({ createdAt: 1 })
+    .populate<{ templateId: PopulatedRef | null }>("templateId")
+    .populate<{ unitId: PopulatedUnit | null }>({ path: "unitId", populate: { path: "departmentId" } })
+    .populate<{ hostId: PopulatedRef | null }>("hostId");
+
+  const details = docs.map((d) => toGroupOrderDetail(d as unknown as PopulatedGroupOrderDoc));
+
+  const map = new Map<string, ClusterableTemplate>();
+  for (const d of details) {
+    const existing = map.get(d.templateId);
+    if (existing) existing.orders.push(d);
+    else map.set(d.templateId, { templateId: d.templateId, templateName: d.templateName, orders: [d] });
+  }
+  return [...map.values()];
 }
 
 export interface CreateGroupOrderInput {
@@ -287,6 +321,18 @@ export async function setGroupOrdersStatus(ids: string[], status: GroupOrderStat
   return result.modifiedCount;
 }
 
+/** 團主自己「提前結單／重新開放／調整截止時間」用：一次改狀態＋截止時間（狀態可省略，只改時間）。 */
+export async function setGroupOrderStatusAndDeadline(
+  id: string,
+  patch: { status?: GroupOrderStatus; deadline?: string },
+) {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(id)) throw new Error("無效的 id");
+  const doc = await GroupOrder.findByIdAndUpdate(id, { $set: patch }, { new: true });
+  if (!doc) throw new Error("找不到這個團，可能已被刪除。");
+  return { id, status: doc.status, deadline: doc.deadline };
+}
+
 export async function deleteGroupOrders(ids: string[]): Promise<number> {
   await connectMongo();
   const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
@@ -335,6 +381,19 @@ export async function toggleLinePaid(groupOrderId: string, lineId: string, paid:
   await GroupOrder.updateOne(
     { _id: groupOrderId, "lines._id": lineId },
     { $set: { "lines.$.paid": paid } },
+  );
+}
+
+/** 一次標記同一個人在這個團裡的所有訂單行——單位彙總頁「點人名切換已付款」用，一個人可能點了不只一筆。 */
+export async function setMemberLinesPaid(groupOrderId: string, lineIds: string[], paid: boolean) {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(groupOrderId)) throw new Error("無效的 id");
+  const objIds = lineIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return;
+  await GroupOrder.updateOne(
+    { _id: groupOrderId },
+    { $set: { "lines.$[line].paid": paid } },
+    { arrayFilters: [{ "line._id": { $in: objIds } }] },
   );
 }
 

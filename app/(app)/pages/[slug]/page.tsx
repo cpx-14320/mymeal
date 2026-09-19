@@ -7,6 +7,8 @@ import { findSupplierBySlug } from "@/lib/models/supplier";
 import { listCatalogItemsBySupplier } from "@/lib/models/catalog-item";
 import { listItemCategories } from "@/lib/models/item-category";
 import { getItemStatsByItems } from "@/lib/models/item-review";
+import { listFavoritesByMember } from "@/lib/models/favorite";
+import { getSessionMemberId } from "@/lib/session";
 
 export async function generateMetadata({
   params,
@@ -27,9 +29,16 @@ export default async function SupplierPage({
   const supplier = await findSupplierBySlug(slug);
   if (!supplier) notFound();
 
-  const [allItems, categories] = await Promise.all([listCatalogItemsBySupplier(supplier.id), listItemCategories()]);
+  const [allItems, categories, memberId] = await Promise.all([
+    listCatalogItemsBySupplier(supplier.id),
+    listItemCategories(),
+    getSessionMemberId(),
+  ]);
   const items = allItems.filter((it) => it.active);
-  const stats = await getItemStatsByItems(items.map((it) => it.id));
+  const [stats, favorites] = await Promise.all([
+    getItemStatsByItems(items.map((it) => it.id)),
+    memberId ? listFavoritesByMember(memberId) : Promise.resolve([]),
+  ]);
 
   return (
     <PageContainer>
@@ -39,7 +48,12 @@ export default async function SupplierPage({
       ) : (
         <>
           <TopItemsCarousel items={items} stats={stats} />
-          <ItemGrid items={items} stats={stats} categories={categories} />
+          <ItemGrid
+            items={items}
+            stats={stats}
+            categories={categories}
+            initialFavoriteIds={favorites.map((f) => f.itemId)}
+          />
         </>
       )}
     </PageContainer>

@@ -1,19 +1,27 @@
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { PageContainer, PageHeader } from "@/components/ui/primitives";
 import { ItemGrid } from "@/components/item-grid";
 import { listItemCategories } from "@/lib/models/item-category";
 import { listCatalogItems } from "@/lib/models/catalog-item";
 import { getItemStatsByItems } from "@/lib/models/item-review";
+import { listFavoritesByMember } from "@/lib/models/favorite";
+import { getSessionMemberId } from "@/lib/session";
 
 export const metadata: Metadata = { title: "我的收藏" };
 
-// 收藏功能還沒接真資料（見 lib/models/favorite.ts），先固定沒有任何收藏。
-const favoriteItemIds: string[] = [];
-
 export default async function FavoritesPage() {
-  const [categories, allItems] = await Promise.all([listItemCategories(), listCatalogItems()]);
+  const memberId = await getSessionMemberId();
+  if (!memberId) redirect("/login");
+
+  const [categories, allItems, favorites] = await Promise.all([
+    listItemCategories(),
+    listCatalogItems(),
+    listFavoritesByMember(memberId),
+  ]);
   const items = allItems.filter((it) => it.active);
   const stats = await getItemStatsByItems(items.map((it) => it.id));
+  const favoriteItemIds = favorites.map((f) => f.itemId);
 
   return (
     <PageContainer>

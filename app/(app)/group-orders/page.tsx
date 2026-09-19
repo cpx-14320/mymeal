@@ -1,10 +1,23 @@
 import type { Metadata } from "next";
 import { PageContainer, PageHeader, ButtonLink } from "@/components/ui/primitives";
 import { GroupOrdersList } from "@/components/group-orders-list";
+import { listGroupOrders } from "@/lib/models/group-order";
+import { listTemplates } from "@/lib/models/template";
+import { listUnits } from "@/lib/models/org";
+import { getSessionMemberId } from "@/lib/session";
 
 export const metadata: Metadata = { title: "開團訂餐" };
 
-export default function GroupOrdersPage() {
+export default async function GroupOrdersPage() {
+  const [rows, templates, units, memberId] = await Promise.all([
+    listGroupOrders(),
+    listTemplates(),
+    listUnits(),
+    getSessionMemberId(),
+  ]);
+
+  const kindByTemplateId = Object.fromEntries(templates.map((t) => [t.id, t.kindName]));
+
   return (
     <PageContainer>
       <PageHeader
@@ -13,7 +26,12 @@ export default function GroupOrdersPage() {
         actions={<ButtonLink href="/group-orders/new">開團</ButtonLink>}
       />
 
-      <GroupOrdersList />
+      <GroupOrdersList
+        rows={rows}
+        units={units.map((u) => ({ id: u.id, name: u.name }))}
+        kindByTemplateId={kindByTemplateId}
+        currentMemberId={memberId ?? ""}
+      />
     </PageContainer>
   );
 }

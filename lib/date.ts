@@ -24,3 +24,7 @@ export function todayTaiwanDateString(): string {
   const get = (type: string) => parts.find((p) => p.type === type)!.value;
   return `${get("year")}/${get("month")}/${get("day")}`;
 }
+
+/** group_orders.date（"YYYY/MM/DD"）跟網址 slug（"YYYY-MM-DD"）互轉，「/」不能放在路由 segment 裡。 */
+export const dateToSlug = (date: string) => date.replaceAll("/", "-");
+export const slugToDate = (slug: string) => slug.replaceAll("-", "/");

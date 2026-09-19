@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardBody,
@@ -11,28 +12,25 @@ import {
   Th,
   Td,
 } from "@/components/ui/primitives";
-import {
-  groupOrderTotals,
-  unitById,
-  departmentById,
-  riceLevelLabel,
-  summarizeOrderLines,
-  type GroupOrder,
-} from "@/lib/mock";
+import { riceLevelLabel, summarizeOrderLines } from "@/lib/mock";
+import type { GroupOrderDetail } from "@/lib/models/group-order";
 import { downloadCsv } from "@/lib/csv-export";
+import { setMemberPaidAction } from "@/app/(app)/group-orders/cluster/actions";
 
 export function GroupOrderClusterView({
   orders,
   templateName,
   date,
 }: {
-  orders: GroupOrder[];
+  orders: GroupOrderDetail[];
   templateName: string;
   date: string;
 }) {
+  const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(orders.map((o) => o.unitId)),
   );
+  const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const toggleUnit = (unitId: string) =>
     setSelected((prev) => {
@@ -46,19 +44,11 @@ export function GroupOrderClusterView({
   const toggleAll = () =>
     setSelected(allSelected ? new Set() : new Set(orders.map((o) => o.unitId)));
 
-  const [paidMembers, setPaidMembers] = useState<Set<string>>(() => new Set());
   const paidKey = (orderId: string, memberId: string) => `${orderId}-${memberId}`;
-  const togglePaid = (key: string) =>
-    setPaidMembers((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
 
   // 同一個人在同一團裡的多筆餐點合併成一列（rowSpan），付款狀態也是以「人」為單位標記
-  const memberGroupsByOrder = (o: GroupOrder) => {
-    const groups: { memberId: string; memberName: string; lines: GroupOrder["lines"] }[] = [];
+  const memberGroupsByOrder = (o: GroupOrderDetail) => {
+    const groups: { memberId: string; memberName: string; lines: GroupOrderDetail["lines"] }[] = [];
     for (const l of o.lines) {
       const last = groups[groups.length - 1];
       if (last && last.memberId === l.memberId) last.lines.push(l);
@@ -67,24 +57,29 @@ export function GroupOrderClusterView({
     return groups;
   };
 
+  async function toggleMemberPaid(order: GroupOrderDetail, memberId: string, lineIds: string[], nextPaid: boolean) {
+    const key = paidKey(order.id, memberId);
+    setBusyKey(key);
+    await setMemberPaidAction(order.id, lineIds, nextPaid);
+    setBusyKey(null);
+    router.refresh();
+  }
+
   const selectedOrders = orders.filter((o) => selected.has(o.unitId));
   const combinedTotals = selectedOrders.reduce(
-    (acc, o) => {
-      const t = groupOrderTotals(o);
-      return { qty: acc.qty + t.qty, amount: acc.amount + t.amount };
-    },
+    (acc, o) => ({ qty: acc.qty + o.qty, amount: acc.amount + o.amount }),
     { qty: 0, amount: 0 },
   );
-  const selectedMemberKeys = selectedOrders.flatMap((o) =>
-    memberGroupsByOrder(o).map((g) => paidKey(o.id, g.memberId)),
+  const selectedMemberGroups = selectedOrders.flatMap((o) =>
+    memberGroupsByOrder(o).map((g) => ({ order: o, group: g })),
   );
-  const paidCount = selectedMemberKeys.filter((k) => paidMembers.has(k)).length;
+  const paidCount = selectedMemberGroups.filter(({ group }) => group.lines.every((l) => l.paid)).length;
 
-  const buildUnitBlock = (o: GroupOrder): (string | number)[][] => {
+  const buildUnitBlock = (o: GroupOrderDetail): (string | number)[][] => {
     const summary = summarizeOrderLines(o.lines);
     const totalQty = summary.reduce((sum, s) => sum + s.totalQty, 0);
     return [
-      [o.host],
+      [o.hostName],
       ["餐點", "飯量", "數量"],
       ...summary.map((s) => [s.itemName, s.riceBreakdown, s.totalQty]),
       ["合計", "", totalQty],
@@ -109,7 +104,7 @@ export function GroupOrderClusterView({
         />
         <Stat
           label="已付款"
-          value={`${paidCount} / ${selectedMemberKeys.length} 人`}
+          value={`${paidCount} / ${selectedMemberGroups.length} 人`}
           hint="點下方人名前的圖示切換"
         />
         <Stat label="模板／日期" value={templateName} hint={date} />
@@ -125,29 +120,24 @@ export function GroupOrderClusterView({
             </label>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            {orders.map((o) => {
-              const unit = unitById(o.unitId);
-              const dept = unit ? departmentById(unit.departmentId) : undefined;
-              const totals = groupOrderTotals(o);
-              return (
-                <label
-                  key={o.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 text-sm"
-                >
-                  <span className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(o.unitId)}
-                      onChange={() => toggleUnit(o.unitId)}
-                    />
-                    {dept?.name} {unit?.name}
-                  </span>
-                  <span className="tabular-nums text-muted">
-                    {totals.qty} 份．NT$ {totals.amount}
-                  </span>
-                </label>
-              );
-            })}
+            {orders.map((o) => (
+              <label
+                key={o.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 text-sm"
+              >
+                <span className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(o.unitId)}
+                    onChange={() => toggleUnit(o.unitId)}
+                  />
+                  {o.departmentName} {o.unitName}
+                </span>
+                <span className="tabular-nums text-muted">
+                  {o.qty} 份．NT$ {o.amount}
+                </span>
+              </label>
+            ))}
           </div>
           <div className="flex justify-end">
             <Button disabled={selected.size === 0} onClick={handleExport}>
@@ -186,34 +176,40 @@ export function GroupOrderClusterView({
               </tr>
             ) : (
               selectedOrders.flatMap((o) => {
-                const unit = unitById(o.unitId);
                 const memberGroups = memberGroupsByOrder(o);
                 return memberGroups.flatMap((mg, mgIndex) =>
                   mg.lines.map((l, li) => {
                     const key = paidKey(o.id, mg.memberId);
-                    const paid = paidMembers.has(key);
+                    const paid = mg.lines.every((line) => line.paid);
+                    const busy = busyKey === key;
                     return (
                       <tr key={`${o.id}-${mg.memberId}-${li}`}>
                         {mgIndex === 0 && li === 0 && (
                           <Td rowSpan={o.lines.length} className="align-middle">
-                            {unit?.name}
+                            {o.unitName}
                           </Td>
                         )}
                         {li === 0 && (
                           <Td rowSpan={mg.lines.length} className="align-middle">
                             <button
                               type="button"
-                              onClick={() => togglePaid(key)}
+                              disabled={busy}
+                              onClick={() =>
+                                toggleMemberPaid(
+                                  o,
+                                  mg.memberId,
+                                  mg.lines.map((line) => line.id),
+                                  !paid,
+                                )
+                              }
                               aria-label={paid ? "標記為未付款" : "標記為已付款"}
-                              className={`mr-1.5 ${
+                              className={`mr-1.5 disabled:opacity-50 ${
                                 paid ? "text-positive" : "text-muted hover:text-ink"
                               }`}
                             >
                               {paid ? "✓" : "○"}
                             </button>
-                            {mg.memberName === o.host
-                              ? `${mg.memberName}（團主）`
-                              : mg.memberName}
+                            {mg.memberId === o.hostId ? `${mg.memberName}（團主）` : mg.memberName}
                           </Td>
                         )}
                         <Td>{l.itemName}</Td>

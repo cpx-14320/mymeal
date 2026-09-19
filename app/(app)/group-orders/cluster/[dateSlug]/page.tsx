@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { PageContainer, PageHeader } from "@/components/ui/primitives";
 import { GroupOrderClusterTabs } from "@/components/group-order-cluster-tabs";
-import { clusterableTemplatesForDate, slugToDate } from "@/lib/mock";
+import { getClusterableTemplatesForDate } from "@/lib/models/group-order";
+import { slugToDate } from "@/lib/date";
 
 export async function generateMetadata({
   params,
@@ -20,7 +21,7 @@ export default async function GroupOrderClusterDatePage({
 }) {
   const { dateSlug } = await params;
   const date = slugToDate(dateSlug);
-  const templates = clusterableTemplatesForDate(date);
+  const templates = await getClusterableTemplatesForDate(date);
   if (templates.length === 0) notFound();
 
   return (

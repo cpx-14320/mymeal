@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { PillTabs, PageSizeSelect, Pagination } from "@/components/ui/primitives";
 import { ItemCard } from "@/components/item-card";
+import { useLoginModal } from "@/components/layout/login-modal-context";
+import { toggleFavoriteAction } from "@/app/(app)/favorite-actions";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
 import type { ItemStat } from "@/lib/models/item-review";
@@ -11,9 +13,8 @@ type Filter = "all" | string; // "all" 或分類名稱
 
 /**
  * 品項卡片列表——所有品項頁跟我的收藏頁共用同一個元件，以所有品項的樣式為主。
- * scope="all"：瀏覽全部品項（真資料庫），收藏只是視覺切換，還沒真的存進 favorites。
- * scope="favorites"：只顯示 initialFavoriteIds 裡的品項；目前恆為空（收藏還沒接真資料），
- * 取消收藏會直接從清單移除，重新整理後仍會是空的。
+ * scope="all"：瀏覽全部品項（真資料庫）。scope="favorites"：只顯示收藏的品項，取消收藏會直接從清單移除。
+ * 收藏切換是真的打 toggleFavoriteAction，未登入點愛心會跳出登入彈窗。
  */
 export function ItemGrid({
   scope = "all",
@@ -30,12 +31,12 @@ export function ItemGrid({
   categories: ItemCategoryOption[];
   defaultPageSize?: number;
 }) {
+  const { openLogin } = useLoginModal();
   const [filter, setFilter] = useState<Filter>("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
-  const [favorited, setFavorited] = useState<Set<string>>(
-    () => new Set(scope === "favorites" ? initialFavoriteIds : []),
-  );
+  const [favorited, setFavorited] = useState<Set<string>>(() => new Set(initialFavoriteIds));
+  const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
 
   const baseItems =
     scope === "favorites"
@@ -75,13 +76,26 @@ export function ItemGrid({
   const start = (current - 1) * pageSize;
   const pageRows = rows.slice(start, start + pageSize);
 
-  const toggleFavorite = (id: string) =>
-    setFavorited((prev) => {
+  async function toggleFavorite(id: string) {
+    if (pendingIds.has(id)) return;
+    setPendingIds((prev) => new Set(prev).add(id));
+    const result = await toggleFavoriteAction(id);
+    setPendingIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      next.delete(id);
       return next;
     });
+    if (result.error) {
+      openLogin();
+      return;
+    }
+    setFavorited((prev) => {
+      const next = new Set(prev);
+      if (result.favorited) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
 
   return (
     <>
@@ -116,6 +130,7 @@ export function ItemGrid({
               stat={stats[it.id]}
               isFavorited={favorited.has(it.id)}
               onToggleFavorite={() => toggleFavorite(it.id)}
+              favoritePending={pendingIds.has(it.id)}
             />
           ))}
         </div>

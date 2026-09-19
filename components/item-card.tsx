@@ -25,11 +25,13 @@ export function ItemCard({
   stat,
   isFavorited,
   onToggleFavorite,
+  favoritePending,
 }: {
   item: CatalogItemView;
   stat?: ItemStat;
   isFavorited: boolean;
   onToggleFavorite: () => void;
+  favoritePending?: boolean;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -61,7 +63,8 @@ export function ItemCard({
               type="button"
               aria-label={isFavorited ? "取消收藏" : "收藏"}
               onClick={onToggleFavorite}
-              className={`cursor-pointer ${isFavorited ? "text-brand" : "text-muted hover:text-brand"}`}
+              disabled={favoritePending}
+              className={`cursor-pointer disabled:opacity-50 ${isFavorited ? "text-brand" : "text-muted hover:text-brand"}`}
             >
               {isFavorited ? "♥" : "♡"}
             </button>
