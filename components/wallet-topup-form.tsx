@@ -15,7 +15,7 @@ import { createTopupRequestAction, type TopupState } from "@/app/(app)/wallet/to
 
 const initialState: TopupState = {};
 const quickAmounts = [100, 250, 500];
-const methods = ["銀行轉帳", "現金", "餐券"];
+const methods = ["餐券", "現金", "銀行轉帳"];
 
 export function TopupForm({ memberId }: { memberId: string }) {
   const boundAction = createTopupRequestAction.bind(null, memberId);

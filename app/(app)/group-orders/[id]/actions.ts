@@ -5,6 +5,9 @@ import {
   replaceMemberLines,
   findGroupOrderById,
   setGroupOrderStatusAndDeadline,
+  chargeWalletForGroupOrder,
+  cancelMemberLine,
+  deleteGroupOrders,
   type RiceLevel,
 } from "@/lib/models/group-order";
 import { getSessionMemberId } from "@/lib/session";
@@ -16,6 +19,8 @@ export interface SubmitOrderLineInput {
   qty: number;
   rice: RiceLevel;
   note?: string;
+  paymentMethod?: string;
+  bankCode?: string;
 }
 
 export interface SubmitOrderState {
@@ -38,6 +43,24 @@ export async function submitGroupOrderLinesAction(
   return { success: true };
 }
 
+/** 「我的訂單」頁取消單一筆用：只能取消自己的訂單，不用團主權限。 */
+export async function cancelMemberLineAction(
+  groupOrderId: string,
+  lineId: string,
+): Promise<SubmitOrderState> {
+  const memberId = await getSessionMemberId();
+  if (!memberId) return { error: "請先登入。" };
+  try {
+    await cancelMemberLine(groupOrderId, memberId, lineId);
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
+  }
+  revalidatePath("/orders");
+  revalidatePath(`/group-orders/${groupOrderId}`);
+  revalidatePath("/wallet");
+  return { success: true };
+}
+
 export interface HostActionState {
   error?: string;
   success?: boolean;
@@ -53,15 +76,17 @@ async function assertHost(groupOrderId: string) {
   return group;
 }
 
-/** 提前結單：開放中 → 已截止。 */
+/** 提前結單：開放中 → 已截止，同時把選「錢包扣款」的人實際扣款。 */
 export async function closeGroupOrderAction(groupOrderId: string): Promise<HostActionState> {
   try {
     await assertHost(groupOrderId);
     await setGroupOrderStatusAndDeadline(groupOrderId, { status: "closed" });
+    await chargeWalletForGroupOrder(groupOrderId);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
   revalidatePath(`/group-orders/${groupOrderId}`);
+  revalidatePath("/wallet");
   return { success: true };
 }
 
@@ -95,5 +120,17 @@ export async function updateGroupOrderDeadlineAction(
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
   revalidatePath(`/group-orders/${groupOrderId}`);
+  return { success: true };
+}
+
+/** 取消整團：直接刪除這筆團訂（含所有人已點的品項），只有團主能操作；刪除後前端要導回列表頁。 */
+export async function cancelGroupOrderAction(groupOrderId: string): Promise<HostActionState> {
+  try {
+    await assertHost(groupOrderId);
+    await deleteGroupOrders([groupOrderId]);
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
+  }
+  revalidatePath("/group-orders");
   return { success: true };
 }

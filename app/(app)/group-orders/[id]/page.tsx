@@ -6,7 +6,6 @@ import {
   Card,
   CardBody,
   Badge,
-  Button,
   ButtonLink,
   Stat,
   TableWrap,
@@ -75,14 +74,22 @@ export default async function GroupOrderDetailPage({
   const dishes = [...dishMap.values()];
 
   // 只推薦這個團的模板裡真的有賣的品項；已經點過的品項還是會顯示，方便直接在這裡調整數量。
+  // 只顯示一個——避免選項太多反而讓人猶豫，直接給這位會員點過最多次的那一道就好。
   const recommendedDishIds = frequentItems
     .filter((f) => dishMap.has(f.itemId))
     .map((f) => f.itemId)
-    .slice(0, 4);
+    .slice(0, 1);
 
   const existingLines = group.lines
     .filter((l) => l.memberId === memberId)
-    .map((l) => ({ itemId: l.itemId, qty: l.qty, rice: l.rice, note: l.note }));
+    .map((l) => ({
+      itemId: l.itemId,
+      qty: l.qty,
+      rice: l.rice,
+      note: l.note,
+      paymentMethod: l.paymentMethod,
+      bankCode: l.bankCode,
+    }));
 
   const lineGroups: { memberId: string; memberName: string; lines: typeof group.lines }[] = [];
   for (const l of group.lines) {
@@ -103,9 +110,8 @@ export default async function GroupOrderDetailPage({
         actions={<Badge tone={statusMap[group.status].tone}>{statusMap[group.status].label}</Badge>}
       />
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="截止時間" value={group.deadline || "—"} />
-        <Stat label="取餐地點" value={group.pickupLocation || "—"} />
         <Stat label="目前份數" value={`${group.qty} 份`} hint={`NT$ ${group.amount}`} />
         <Stat label="所屬單位" value={group.unitName || "—"} hint={`團主：${group.hostName}`} />
       </div>
@@ -200,7 +206,6 @@ export default async function GroupOrderDetailPage({
           host={group.hostName}
           filename={`${group.name}_訂購彙總.csv`}
         />
-        <Button variant="danger">取消整團</Button>
       </div>
     </PageContainer>
   );

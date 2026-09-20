@@ -8,6 +8,7 @@ import {
   closeGroupOrderAction,
   reopenGroupOrderAction,
   updateGroupOrderDeadlineAction,
+  cancelGroupOrderAction,
 } from "@/app/(app)/group-orders/[id]/actions";
 
 /** "YYYY-MM-DD HH:mm"（後端存的格式）轉成 datetime-local 欄位要的 "YYYY-MM-DDTHH:mm"；格式對不上就回傳空字串。 */
@@ -35,6 +36,7 @@ export function GroupOrderHostActions({
   const router = useRouter();
   const [editingDeadline, setEditingDeadline] = useState(false);
   const [reopening, setReopening] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
@@ -71,6 +73,15 @@ export function GroupOrderHostActions({
       setReopening(false);
       router.refresh();
     }
+  }
+
+  async function handleCancel() {
+    setPending(true);
+    setError(undefined);
+    const result = await cancelGroupOrderAction(groupOrderId);
+    setPending(false);
+    if (result.error) setError(result.error);
+    else router.push("/group-orders");
   }
 
   if (status === "completed") return null;
@@ -135,6 +146,22 @@ export function GroupOrderHostActions({
             重新開放
           </Button>
         ))}
+
+      {confirmingCancel ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm text-danger">確定要取消整團嗎？大家目前點的餐點都會一併刪除，無法復原。</p>
+          <Button type="button" variant="ghost" disabled={pending} onClick={() => setConfirmingCancel(false)}>
+            返回
+          </Button>
+          <Button variant="danger" disabled={pending} onClick={handleCancel}>
+            {pending ? "取消中…" : "確認取消整團"}
+          </Button>
+        </div>
+      ) : (
+        <Button variant="danger" disabled={pending} onClick={() => setConfirmingCancel(true)}>
+          取消整團
+        </Button>
+      )}
     </div>
   );
 }

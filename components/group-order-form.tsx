@@ -8,6 +8,7 @@ import { submitGroupOrderLinesAction } from "@/app/(app)/group-orders/[id]/actio
 
 const riceLevels: RiceLevel[] = ["normal", "half", "none"];
 const riceLevelLabel: Record<RiceLevel, string> = { normal: "正常", half: "半飯", none: "不要飯" };
+const paymentMethods = ["錢包扣款", "餐券", "現金", "銀行轉帳"];
 
 export interface OrderableDish {
   id: string;
@@ -21,6 +22,8 @@ export interface ExistingLine {
   qty: number;
   rice: RiceLevel;
   note: string;
+  paymentMethod: string;
+  bankCode: string;
 }
 
 interface DishOrder {
@@ -53,6 +56,8 @@ export function GroupOrderForm({
     return initial;
   });
   const [note, setNote] = useState(existingLines[0]?.note ?? "");
+  const [paymentMethod, setPaymentMethod] = useState(existingLines[0]?.paymentMethod || paymentMethods[0]);
+  const [bankCode, setBankCode] = useState(existingLines[0]?.bankCode ?? "");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
@@ -90,6 +95,8 @@ export function GroupOrderForm({
         qty: l.qty,
         rice: l.rice,
         note,
+        paymentMethod,
+        bankCode: paymentMethod === "銀行轉帳" ? bankCode : "",
       }));
 
     const result = await submitGroupOrderLinesAction(groupOrderId, memberId, memberName, lines);
@@ -224,6 +231,31 @@ export function GroupOrderForm({
           </div>
         </div>
       </div>
+      <div className="space-y-2">
+        <p className="text-sm font-medium">付款方式</p>
+        <div className="flex flex-wrap gap-4 text-sm">
+          {paymentMethods.map((m) => (
+            <label key={m} className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value={m}
+                checked={paymentMethod === m}
+                onChange={() => setPaymentMethod(m)}
+              />
+              {m}
+            </label>
+          ))}
+        </div>
+        {paymentMethod === "銀行轉帳" && (
+          <input
+            className={inputClass}
+            placeholder="請輸入匯款後5碼"
+            value={bankCode}
+            onChange={(e) => setBankCode(e.target.value)}
+          />
+        )}
+      </div>
       <input
         className={inputClass}
         placeholder="餐點備註（例：不要辣、不要香菜）"
@@ -233,7 +265,7 @@ export function GroupOrderForm({
       {error && <p className="text-sm text-danger">{error}</p>}
       <div className="flex justify-end gap-2">
         <Button disabled={pending} onClick={submit}>
-          {pending ? "送出中…" : "送出訂單"}
+          {pending ? "確認中…" : "確認餐點"}
         </Button>
       </div>
     </>

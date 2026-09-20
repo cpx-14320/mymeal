@@ -60,7 +60,7 @@ export function GroupOrdersList({
   const filtered = rows
     .filter(matchesFilter)
     .filter((g) => !unitFilter || g.unitId === unitFilter)
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   // 分頁以「天」為單位（而非卡片張數），跟畫面上依日期分區塊的呈現一致，
   // 也避免同一天的卡片被硬切到下一頁。

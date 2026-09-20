@@ -21,7 +21,10 @@ export interface OrderLineSubdoc {
   qty: number;
   note?: string;
   rice: RiceLevel;
-  paid: boolean;
+  paymentMethod: string; // 錢包扣款／餐券／現金／銀行轉帳，跟 note 一樣是這位會員整批點餐共用一個值，逐行重複存
+  bankCode: string; // 銀行轉帳時的匯款後5碼；其他付款方式留空
+  paid: boolean; // 後台手動標記「錢收到了」，跟下面 walletCharged 無關（現金/轉帳用這個，人工核對）
+  walletCharged: boolean; // 錢包扣款這筆是否已經真的扣過款——結單時只扣未扣過的，避免重新開放後再次結單被扣兩次
 }
 
 export interface GroupOrderDocument {
@@ -34,7 +37,6 @@ export interface GroupOrderDocument {
   hostId: Types.ObjectId; // ref Member
   date: string; // "YYYY/MM/DD"
   deadline: string;
-  pickupLocation: string;
   status: GroupOrderStatus;
   lines: OrderLineSubdoc[];
   createdAt: Date;
@@ -50,7 +52,10 @@ const orderLineSchema = new Schema<OrderLineSubdoc>({
   qty: { type: Number, required: true, default: 1 },
   note: { type: String, default: "" },
   rice: { type: String, enum: ["normal", "half", "none"], required: true, default: "normal" },
+  paymentMethod: { type: String, default: "" },
+  bankCode: { type: String, default: "" },
   paid: { type: Boolean, required: true, default: false },
+  walletCharged: { type: Boolean, required: true, default: false },
 });
 
 const groupOrderSchema = new Schema<GroupOrderDocument>(
@@ -63,7 +68,6 @@ const groupOrderSchema = new Schema<GroupOrderDocument>(
     hostId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
     date: { type: String, required: true },
     deadline: { type: String, default: "" },
-    pickupLocation: { type: String, default: "" },
     status: { type: String, enum: ["open", "closed", "completed"], required: true, default: "open" },
     lines: { type: [orderLineSchema], required: true, default: [] },
   },
@@ -94,7 +98,6 @@ export interface GroupOrderListItem {
   hostName: string;
   date: string;
   deadline: string;
-  pickupLocation: string;
   status: GroupOrderStatus;
   qty: number;
   amount: number;
@@ -118,7 +121,6 @@ type PopulatedGroupOrderDoc = {
   hostId: PopulatedRef | null;
   date: string;
   deadline: string;
-  pickupLocation: string;
   status: GroupOrderStatus;
   lines: OrderLineSubdoc[];
 };
@@ -140,7 +142,6 @@ function toGroupOrderListItem(d: PopulatedGroupOrderDoc): GroupOrderListItem {
     hostName: d.hostId?.name ?? "（已刪除會員）",
     date: d.date,
     deadline: d.deadline,
-    pickupLocation: d.pickupLocation,
     status: d.status,
     qty: totals.qty,
     amount: totals.amount,
@@ -152,7 +153,7 @@ export async function listGroupOrders(): Promise<GroupOrderListItem[]> {
   await Promise.all([import("@/lib/models/org"), import("@/lib/models/member"), import("@/lib/models/template")]);
 
   const docs = await GroupOrder.find({})
-    .sort({ date: 1, createdAt: 1 })
+    .sort({ date: -1, createdAt: -1 })
     .populate<{ templateId: PopulatedRef | null }>("templateId")
     .populate<{ unitId: PopulatedUnit | null }>({ path: "unitId", populate: { path: "departmentId" } })
     .populate<{ hostId: PopulatedRef | null }>("hostId");
@@ -185,6 +186,8 @@ export interface GroupOrderDetail extends GroupOrderListItem {
     qty: number;
     note: string;
     rice: RiceLevel;
+    paymentMethod: string;
+    bankCode: string;
     paid: boolean;
   }[];
 }
@@ -206,7 +209,6 @@ function toGroupOrderDetail(d: PopulatedGroupOrderDoc): GroupOrderDetail {
     hostName: d.hostId?.name ?? "（已刪除會員）",
     date: d.date,
     deadline: d.deadline,
-    pickupLocation: d.pickupLocation,
     status: d.status,
     qty: totals.qty,
     amount: totals.amount,
@@ -220,6 +222,8 @@ function toGroupOrderDetail(d: PopulatedGroupOrderDoc): GroupOrderDetail {
       qty: l.qty,
       note: l.note ?? "",
       rice: l.rice,
+      paymentMethod: l.paymentMethod ?? "",
+      bankCode: l.bankCode ?? "",
       paid: l.paid,
     })),
   };
@@ -277,7 +281,6 @@ export interface CreateGroupOrderInput {
   hostId: string;
   date: string;
   deadline?: string;
-  pickupLocation?: string;
   status?: GroupOrderStatus;
 }
 
@@ -306,7 +309,6 @@ export async function createGroupOrder(input: CreateGroupOrderInput) {
     hostId: new Types.ObjectId(input.hostId),
     date: input.date,
     deadline: input.deadline ?? "",
-    pickupLocation: input.pickupLocation ?? "",
     status: input.status ?? "open",
     lines: [],
   });
@@ -333,6 +335,42 @@ export async function setGroupOrderStatusAndDeadline(
   return { id, status: doc.status, deadline: doc.deadline };
 }
 
+/** 結單時用：把選「錢包扣款」但還沒真的扣過款的行，依人彙總金額各扣一次，並標記 walletCharged。
+ *  只挑 walletCharged=false 的行，所以同一團重新開放後再結一次單，不會對已扣過的行重複扣款。 */
+export async function chargeWalletForGroupOrder(groupOrderId: string): Promise<void> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(groupOrderId)) throw new Error("無效的團 id");
+  const doc = await GroupOrder.findById(groupOrderId);
+  if (!doc) throw new Error("找不到這個團，可能已被刪除。");
+
+  const unchargedLines = doc.lines.filter(
+    (l: OrderLineSubdoc) => l.paymentMethod === "錢包扣款" && !l.walletCharged,
+  );
+  if (unchargedLines.length === 0) return;
+
+  const totalsByMember = new Map<string, number>();
+  for (const l of unchargedLines) {
+    const key = String(l.memberId);
+    totalsByMember.set(key, (totalsByMember.get(key) ?? 0) + l.price * l.qty);
+  }
+
+  const { createLedgerEntry } = await import("@/lib/models/wallet");
+  for (const [memberId, total] of totalsByMember) {
+    if (total <= 0) continue;
+    await createLedgerEntry({
+      memberId,
+      type: "spend",
+      amount: -total,
+      detail: `開團訂餐扣款．${doc.name}`,
+      referenceType: "group_order",
+      referenceId: groupOrderId,
+    });
+  }
+
+  for (const l of unchargedLines) l.walletCharged = true;
+  await doc.save();
+}
+
 export async function deleteGroupOrders(ids: string[]): Promise<number> {
   await connectMongo();
   const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
@@ -341,12 +379,21 @@ export async function deleteGroupOrders(ids: string[]): Promise<number> {
   return result.deletedCount;
 }
 
-/** 某位會員在這團的點餐內容整批取代（沒有就新增、換掉品項清單就是刪舊建新）——前台送出訂單時用，尚未接 UI。 */
+/** 某位會員在這團的點餐內容整批取代（沒有就新增、換掉品項清單就是刪舊建新）——前台確認餐點時用。 */
 export async function replaceMemberLines(
   groupOrderId: string,
   memberId: string,
   memberName: string,
-  lines: { itemId: string; itemName: string; price: number; qty: number; note?: string; rice: RiceLevel }[],
+  lines: {
+    itemId: string;
+    itemName: string;
+    price: number;
+    qty: number;
+    note?: string;
+    rice: RiceLevel;
+    paymentMethod?: string;
+    bankCode?: string;
+  }[],
 ) {
   await connectMongo();
   if (!Types.ObjectId.isValid(groupOrderId) || !Types.ObjectId.isValid(memberId)) {
@@ -368,11 +415,51 @@ export async function replaceMemberLines(
       qty: l.qty,
       note: l.note ?? "",
       rice: l.rice,
+      paymentMethod: l.paymentMethod ?? "",
+      bankCode: l.bankCode ?? "",
       paid: false,
+      walletCharged: false,
     } as OrderLineSubdoc);
   }
   await doc.save();
   return { id: groupOrderId };
+}
+
+/** 「我的訂單」取消單一筆（一道菜）用：這道已經扣過錢包款的話先退款，再把這行從團訂裡移除。
+ *  已完成的團不能再取消——那已經是歷史紀錄，不是還在走的訂單。 */
+export async function cancelMemberLine(groupOrderId: string, memberId: string, lineId: string) {
+  await connectMongo();
+  if (
+    !Types.ObjectId.isValid(groupOrderId) ||
+    !Types.ObjectId.isValid(memberId) ||
+    !Types.ObjectId.isValid(lineId)
+  ) {
+    throw new Error("無效的 id");
+  }
+  const doc = await GroupOrder.findById(groupOrderId);
+  if (!doc) throw new Error("找不到這個團，可能已被刪除。");
+  if (doc.status === "completed") throw new Error("這個團已經完成，無法取消訂單。");
+
+  const memberObjId = new Types.ObjectId(memberId);
+  const line = doc.lines.find(
+    (l: OrderLineSubdoc) => String(l._id) === lineId && l.memberId.equals(memberObjId),
+  );
+  if (!line) throw new Error("找不到這筆訂單，可能已經被取消過了。");
+
+  if (line.walletCharged) {
+    const { createLedgerEntry } = await import("@/lib/models/wallet");
+    await createLedgerEntry({
+      memberId,
+      type: "refund",
+      amount: line.price * line.qty,
+      detail: `取消訂單退款．${doc.name}．${line.itemName}`,
+      referenceType: "group_order",
+      referenceId: groupOrderId,
+    });
+  }
+
+  doc.lines = doc.lines.filter((l: OrderLineSubdoc) => String(l._id) !== lineId);
+  await doc.save();
 }
 
 export async function toggleLinePaid(groupOrderId: string, lineId: string, paid: boolean) {
@@ -525,4 +612,49 @@ export async function getMemberOrderCount(memberId: string): Promise<number> {
     { $count: "count" },
   ]);
   return rows[0]?.count ?? 0;
+}
+
+/* ── 我的訂單（前台）── */
+
+export interface MemberOrderLine {
+  lineId: string;
+  groupOrderId: string;
+  groupOrderName: string;
+  templateName: string;
+  itemName: string;
+  qty: number;
+  price: number;
+  date: string; // 團訂的取餐日期 "YYYY/MM/DD"
+  status: GroupOrderStatus; // 直接沿用團訂狀態——這個 app 沒有另外的逐筆訂單審核流程
+}
+
+/** 「我的訂單」頁用：這位會員在所有團訂裡點過的每一行，含團訂本身的狀態／日期，新到舊排序。 */
+export async function listMemberOrderLines(memberId: string): Promise<MemberOrderLine[]> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return [];
+  const memberObjId = new Types.ObjectId(memberId);
+
+  const docs = await GroupOrder.find({ "lines.memberId": memberObjId })
+    .sort({ date: -1, createdAt: -1 })
+    .populate<{ templateId: PopulatedRef | null }>("templateId");
+
+  const rows: MemberOrderLine[] = [];
+  for (const d of docs) {
+    const templateName = (d.templateId as unknown as PopulatedRef | null)?.name ?? "（已刪除模板）";
+    for (const l of d.lines as OrderLineSubdoc[]) {
+      if (!l.memberId.equals(memberObjId)) continue;
+      rows.push({
+        lineId: String(l._id),
+        groupOrderId: String(d._id),
+        groupOrderName: d.name,
+        templateName,
+        itemName: l.itemName,
+        qty: l.qty,
+        price: l.price,
+        date: d.date,
+        status: d.status,
+      });
+    }
+  }
+  return rows;
 }
