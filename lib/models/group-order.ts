@@ -371,6 +371,41 @@ export async function chargeWalletForGroupOrder(groupOrderId: string): Promise<v
   await doc.save();
 }
 
+/** 重新開放時用：把已經扣過款的行全部退款＋重設 walletCharged，這樣不管會員在開放期間
+ *  改不改訂單、改成什麼，下次結單時 chargeWalletForGroupOrder 都會用當下最新的內容重新算、
+ *  重新扣一次——不用另外比對「訂單改了什麼」，用「退款重來」換掉「差異比對」的複雜度。 */
+export async function refundWalletForGroupOrder(groupOrderId: string): Promise<void> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(groupOrderId)) throw new Error("無效的團 id");
+  const doc = await GroupOrder.findById(groupOrderId);
+  if (!doc) throw new Error("找不到這個團，可能已被刪除。");
+
+  const chargedLines = doc.lines.filter((l: OrderLineSubdoc) => l.walletCharged);
+  if (chargedLines.length === 0) return;
+
+  const totalsByMember = new Map<string, number>();
+  for (const l of chargedLines) {
+    const key = String(l.memberId);
+    totalsByMember.set(key, (totalsByMember.get(key) ?? 0) + l.price * l.qty);
+  }
+
+  const { createLedgerEntry } = await import("@/lib/models/wallet");
+  for (const [memberId, total] of totalsByMember) {
+    if (total <= 0) continue;
+    await createLedgerEntry({
+      memberId,
+      type: "refund",
+      amount: total,
+      detail: `重新開放退款．${doc.name}`,
+      referenceType: "group_order",
+      referenceId: groupOrderId,
+    });
+  }
+
+  for (const l of chargedLines) l.walletCharged = false;
+  await doc.save();
+}
+
 export async function deleteGroupOrders(ids: string[]): Promise<number> {
   await connectMongo();
   const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
