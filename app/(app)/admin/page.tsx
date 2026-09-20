@@ -7,7 +7,6 @@ import { todayTaiwanDateString, formatTaiwanDateTime } from "@/lib/date";
 const groupStatusLabel: Record<string, { label: string; tone: "positive" | "warning" | "neutral" }> = {
   open: { label: "開放中", tone: "positive" },
   closed: { label: "已截止", tone: "warning" },
-  completed: { label: "已完成", tone: "neutral" },
 };
 
 export default async function AdminDashboard() {

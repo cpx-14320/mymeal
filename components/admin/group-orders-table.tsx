@@ -14,17 +14,18 @@ import {
 import type { GroupOrderListItem, GroupOrderStatus } from "@/lib/models/group-order";
 import { setGroupOrdersStatusAction, deleteGroupOrdersAction } from "@/app/(app)/admin/group-orders/actions";
 
-const statusMap: Record<GroupOrderStatus, { label: string; tone: "positive" | "warning" | "neutral" }> = {
+// "completed" 已經沒有任何操作會再設定它了（"設為已完成" 按鈕已移除），這裡改成
+// Partial，只保留還會真的出現的兩個狀態；萬一資料庫裡還有舊的 completed 團，
+// render 時用 fallback 顯示，不會因為查不到對應項目而壞掉。
+const statusMap: Partial<Record<GroupOrderStatus, { label: string; tone: "positive" | "warning" | "neutral" }>> = {
   open: { label: "開放中", tone: "positive" },
   closed: { label: "已截止", tone: "warning" },
-  completed: { label: "已完成", tone: "neutral" },
 };
 
 const filters: { label: string; test: (r: GroupOrderListItem) => boolean }[] = [
   { label: "全部", test: () => true },
   { label: "開放中", test: (r) => r.status === "open" },
   { label: "已截止", test: (r) => r.status === "closed" },
-  { label: "已完成", test: (r) => r.status === "completed" },
 ];
 
 export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
@@ -125,14 +126,6 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
             <button
               type="button"
               disabled={busy}
-              onClick={() => bulkSetStatus("completed")}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-            >
-              完成選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
               onClick={bulkDelete}
               className="rounded-lg border border-danger/40 px-3 py-1 font-semibold text-danger hover:bg-danger/10 disabled:opacity-50"
             >
@@ -189,7 +182,10 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
                 <Td className="text-right tabular-nums">{r.qty}</Td>
                 <Td className="text-right tabular-nums">NT$ {r.amount}</Td>
                 <Td>
-                  <Badge tone={statusMap[r.status].tone}>{statusMap[r.status].label}</Badge>
+                  {(() => {
+                    const s = statusMap[r.status] ?? { label: r.status, tone: "neutral" as const };
+                    return <Badge tone={s.tone}>{s.label}</Badge>;
+                  })()}
                 </Td>
               </tr>
             ))
