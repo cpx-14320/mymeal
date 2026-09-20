@@ -283,6 +283,7 @@ export function MemberInsightTabs({
                 <tr>
                   <Th>品項</Th>
                   <Th>評分</Th>
+                  <Th>時間</Th>
                 </tr>
               </thead>
               <tbody>
@@ -295,6 +296,7 @@ export function MemberInsightTabs({
                         {r.stars}/5
                       </span>
                     </Td>
+                    <Td className="whitespace-nowrap text-muted">{formatAt(r.at)}</Td>
                   </tr>
                 ))}
               </tbody>
