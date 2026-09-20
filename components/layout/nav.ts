@@ -68,7 +68,7 @@ export const primaryNav: NavItem[] = [
   },
   {
     key: "account",
-    label: "會員中心",
+    label: "會員資料",
     href: "/account",
     description: "個人資料與等級",
     requiresAuth: true,

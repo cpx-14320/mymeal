@@ -206,7 +206,7 @@ export function Sidebar({
           onClick={onNavigate}
           className="block border-b border-line px-4 py-3 hover:bg-surface-2"
         >
-          <p className="text-xs text-muted">會員錢包</p>
+          <p className="text-xs text-muted">目前餘額</p>
           <p className="mt-0.5 text-lg font-bold tabular-nums text-brand">
             NT$ {walletBalance}
           </p>
