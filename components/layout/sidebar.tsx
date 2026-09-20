@@ -284,15 +284,13 @@ export function Sidebar({
             pathname === item.href || pathname.startsWith(`${item.href}/`);
           const locked = !previewMode && item.requiresAuth && !isAuthed;
 
-          return (
+          const link = (
             <Link
               key={item.key}
               href={href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
               className={`group flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                item.requiresAdmin ? "mt-1 border-t border-line pt-3.5" : ""
-              } ${
                 active ? "bg-brand-soft text-ink" : "text-ink hover:bg-surface-2"
               }`}
             >
@@ -312,6 +310,17 @@ export function Sidebar({
               </span>
             </Link>
           );
+
+          // 分隔線畫在一個沒有圓角的純 div 上（跟上面「店家」區塊的分隔線同一種做法），
+          // 不要畫在有 rounded-lg 的連結本身上，不然線的兩端會被圓角修掉，兩條線看起來會不一樣長。
+          if (item.requiresAdmin) {
+            return (
+              <div key={item.key} className="mt-1 border-t border-line pt-3.5">
+                {link}
+              </div>
+            );
+          }
+          return link;
         })}
       </nav>
     </div>
