@@ -48,10 +48,10 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   const processedAll = [...approved, ...rejected].sort((a, b) => b.at.getTime() - a.at.getTime());
 
   const tabs: { key: Tab; label: string; count: number }[] = [
+    { key: "all", label: "全部", count: processedAll.length },
     { key: "pending", label: "待審核", count: pending.length },
     { key: "approved", label: "已核准", count: approved.length },
     { key: "rejected", label: "已退件", count: rejected.length },
-    { key: "all", label: "全部", count: processedAll.length },
   ];
 
   const tabDescription: Record<Tab, string> = {
