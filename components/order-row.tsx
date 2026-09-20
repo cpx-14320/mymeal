@@ -6,15 +6,14 @@ import Link from "next/link";
 import { Card, CardBody, Badge, Button, ButtonLink } from "@/components/ui/primitives";
 import { cancelMemberLineAction } from "@/app/(app)/group-orders/[id]/actions";
 
-export type OrderStatus = "pending" | "confirmed" | "fulfilled" | "cancelled";
+export type OrderStatus = "pending" | "confirmed" | "cancelled";
 
 export const orderStatusMap: Record<
   OrderStatus,
   { label: string; tone: "warning" | "positive" | "neutral" | "danger" }
 > = {
   pending: { label: "待確認", tone: "warning" },
-  confirmed: { label: "已確認", tone: "positive" },
-  fulfilled: { label: "已出餐", tone: "neutral" },
+  confirmed: { label: "已截止", tone: "positive" },
   cancelled: { label: "已取消", tone: "danger" },
 };
 
