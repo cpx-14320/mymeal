@@ -42,12 +42,11 @@ export function LoginModal({
       />
       <div className="space-y-4 overflow-y-auto p-4">
         <form action={formAction} className="space-y-4">
-          <Field label="公司 Email">
+          <Field label="帳號">
             <input
               className={inputClass}
-              type="email"
+              type="text"
               name="email"
-              placeholder="you@company.com"
               required
             />
           </Field>

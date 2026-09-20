@@ -41,12 +41,11 @@ export function LoginForm() {
       <Card>
         <CardBody>
           <form action={formAction} className="space-y-4">
-            <Field label="公司 Email">
+            <Field label="帳號">
               <input
                 className={inputClass}
-                type="email"
+                type="text"
                 name="email"
-                placeholder="you@company.com"
                 required
               />
             </Field>
@@ -55,7 +54,6 @@ export function LoginForm() {
                 className={inputClass}
                 type="password"
                 name="password"
-                placeholder="••••••••"
                 required
               />
             </Field>

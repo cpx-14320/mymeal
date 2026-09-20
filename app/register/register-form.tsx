@@ -85,12 +85,11 @@ export function RegisterForm({ departments, units }: RegisterFormProps) {
       <Card>
         <CardBody>
           <form action={formAction} className="space-y-4">
-            <Field label="帳號(公司email)">
+            <Field label="帳號">
               <input
                 className={inputClass}
-                type="email"
+                type="text"
                 name="email"
-                placeholder="you@example.com"
                 required
               />
             </Field>
@@ -114,10 +113,10 @@ export function RegisterForm({ departments, units }: RegisterFormProps) {
                 />
               </Field>
               <Field label="姓名">
-                <input className={inputClass} name="name" placeholder="請輸入姓名" required />
+                <input className={inputClass} name="name" required />
               </Field>
               <Field label="員工編號">
-                <input className={inputClass} name="employeeId" placeholder="A12345" required />
+                <input className={inputClass} name="employeeId" required />
               </Field>
               <Field label="部門">
                 <select
@@ -162,11 +161,7 @@ export function RegisterForm({ departments, units }: RegisterFormProps) {
             </div>
 
             <Field label="邀請碼（選填）">
-              <input
-                className={inputClass}
-                name="inviteCode"
-                placeholder="請輸入邀請碼"
-              />
+              <input className={inputClass} name="inviteCode" />
             </Field>
 
             {state.error && <p className="text-sm text-danger">{state.error}</p>}
