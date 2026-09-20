@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -18,17 +18,34 @@ import type { TemplateListItem } from "@/lib/models/template";
 import { formatTaiwanDateTime } from "@/lib/date";
 import { setTemplatesActiveAction, deleteTemplatesAction } from "@/app/(app)/admin/templates/actions";
 
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+
 export function TemplatesList({ templates }: { templates: TemplateListItem[] }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [year, setYear] = useState<number | "all">("all");
+  const [month, setMonth] = useState<number | "all">("all");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
 
-  const pageCount = Math.max(1, Math.ceil(templates.length / pageSize));
+  // 依「模板建立時間」篩選——目前模板沒有另外記錄「這是哪一週的菜單」，
+  // 以每週建立一個模板的實際節奏來看，建立時間可以直接當作篩選依據。
+  const years = useMemo(() => {
+    const all = templates.map((t) => t.createdAt.getFullYear());
+    return [...new Set(all)].sort((a, b) => b - a);
+  }, [templates]);
+
+  const filteredTemplates = templates.filter(
+    (t) =>
+      (year === "all" || t.createdAt.getFullYear() === year) &&
+      (month === "all" || t.createdAt.getMonth() + 1 === month),
+  );
+
+  const pageCount = Math.max(1, Math.ceil(filteredTemplates.length / pageSize));
   const current = Math.min(page, pageCount);
   const start = (current - 1) * pageSize;
-  const rows = templates.slice(start, start + pageSize);
+  const rows = filteredTemplates.slice(start, start + pageSize);
 
   const toggleOne = (id: string) =>
     setSelected((prev) => {
@@ -77,7 +94,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
       description="可重用的訂購藍圖：模板 → 分類 → 品項。開團時選一個模板 + 分類。"
       actions={<ButtonLink href="/admin/templates/new">新增模板</ButtonLink>}
     >
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-end gap-2 text-xs text-muted">
         <PageSizeSelect
           value={pageSize}
           onChange={(n) => {
@@ -85,6 +102,38 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
             setPage(1);
           }}
         />
+        <select
+          value={year}
+          onChange={(e) => {
+            setYear(e.target.value === "all" ? "all" : Number(e.target.value));
+            setPage(1);
+          }}
+          className="rounded-lg border border-line bg-surface px-2 py-1 text-xs text-ink outline-none focus:border-brand"
+          aria-label="篩選年份"
+        >
+          <option value="all">全部年份</option>
+          {years.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+        <select
+          value={month}
+          onChange={(e) => {
+            setMonth(e.target.value === "all" ? "all" : Number(e.target.value));
+            setPage(1);
+          }}
+          className="rounded-lg border border-line bg-surface px-2 py-1 text-xs text-ink outline-none focus:border-brand"
+          aria-label="篩選月份"
+        >
+          <option value="all">全部月份</option>
+          {MONTHS.map((m) => (
+            <option key={m} value={m}>
+              {m} 月
+            </option>
+          ))}
+        </select>
       </div>
 
       {selected.size > 0 && (
@@ -184,14 +233,16 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
           {rows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={9}>
-                還沒有模板，點右上角「新增模板」開始建立。
+                {templates.length === 0
+                  ? "還沒有模板，點右上角「新增模板」開始建立。"
+                  : "這個範圍內沒有模板。"}
               </Td>
             </tr>
           )}
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={templates.length} pageSize={pageSize} onPage={setPage} unit="個" />
+      <Pagination page={current} pageCount={pageCount} total={filteredTemplates.length} pageSize={pageSize} onPage={setPage} unit="個" />
     </Section>
   );
 }
