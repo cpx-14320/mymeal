@@ -148,3 +148,32 @@ export async function listReviewsForItem(itemId: string): Promise<ItemReviewEntr
       return { memberName: member.name, stars: d.stars, text: d.text, at: d.at };
     });
 }
+
+export interface MyReview {
+  stars: number;
+  text?: string;
+}
+
+/** 給前台評論表單用：這位會員對這個品項先前是否已經評論／評分過——有的話表單要顯示成編輯，不是空白新增。 */
+export async function getMemberReviewForItem(memberId: string, itemId: string): Promise<MyReview | null> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId) || !Types.ObjectId.isValid(itemId)) return null;
+  const doc = await ItemReview.findOne({ memberId, itemId });
+  return doc ? { stars: doc.stars, text: doc.text } : null;
+}
+
+/** 新增或更新這位會員對這個品項的評分／評論——同一人對同一品項只留一筆，重複送出視為修改既有那筆。 */
+export async function upsertReview(memberId: string, itemId: string, stars: number, text: string): Promise<void> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId) || !Types.ObjectId.isValid(itemId)) {
+    throw new Error("無效的會員或品項 id");
+  }
+  const trimmed = text.trim();
+  await ItemReview.findOneAndUpdate(
+    { memberId, itemId },
+    trimmed
+      ? { $set: { stars, text: trimmed, at: new Date() } }
+      : { $set: { stars, at: new Date() }, $unset: { text: "" } },
+    { upsert: true },
+  );
+}

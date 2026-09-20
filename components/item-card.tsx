@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Badge } from "@/components/ui/primitives";
+import { Card, Badge, Button } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
+import { useLoginModal } from "@/components/layout/login-modal-context";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
-import type { ItemStat, ItemReviewEntry } from "@/lib/models/item-review";
-import { getItemReviewsAction } from "@/app/(app)/catalog/actions";
+import type { ItemStat, ItemReviewEntry, MyReview } from "@/lib/models/item-review";
+import { getItemReviewsAction, submitItemReviewAction } from "@/app/(app)/catalog/actions";
 
 function stars(n: number) {
   return "★".repeat(n) + "☆".repeat(5 - n);
@@ -13,6 +14,25 @@ function stars(n: number) {
 
 function formatAt(at: Date) {
   return new Date(at).toLocaleDateString("zh-TW");
+}
+
+/** 1-5 星可點選的評分器，供下面的評論表單使用。 */
+function StarPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  return (
+    <div className="flex gap-1 text-2xl text-warning">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          aria-label={`${n} 星`}
+          onClick={() => onChange(n)}
+          className="cursor-pointer leading-none"
+        >
+          {n <= value ? "★" : "☆"}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 /**
@@ -33,16 +53,47 @@ export function ItemCard({
   onToggleFavorite: () => void;
   favoritePending?: boolean;
 }) {
+  const { openLogin } = useLoginModal();
   const [showComments, setShowComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [comments, setComments] = useState<ItemReviewEntry[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [myReview, setMyReview] = useState<MyReview | null>(null);
+  const [draftStars, setDraftStars] = useState(0);
+  const [draftText, setDraftText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [liveStat, setLiveStat] = useState(stat);
 
   async function openComments() {
     setShowComments(true);
     setLoadingComments(true);
-    const rows = await getItemReviewsAction(item.id);
-    setComments(rows);
+    setSubmitError(null);
+    const { entries, myReview: mine, isLoggedIn: loggedIn } = await getItemReviewsAction(item.id);
+    setComments(entries);
+    setIsLoggedIn(loggedIn);
+    setMyReview(mine);
+    setDraftStars(mine?.stars ?? 0);
+    setDraftText(mine?.text ?? "");
     setLoadingComments(false);
+  }
+
+  async function submitReview() {
+    if (draftStars < 1) {
+      setSubmitError("請先選擇星等");
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    const result = await submitItemReviewAction(item.id, draftStars, draftText);
+    setSubmitting(false);
+    if (result.error) {
+      setSubmitError(result.error);
+      return;
+    }
+    setComments(result.entries ?? []);
+    setMyReview({ stars: draftStars, text: draftText.trim() || undefined });
+    if (result.stat) setLiveStat(result.stat);
   }
 
   return (
@@ -72,8 +123,8 @@ export function ItemCard({
 
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge tone="brand">{item.categoryName}</Badge>
-            {stat?.avgRating != null && (
-              <Badge tone="warning">★ {stat.avgRating.toFixed(1)}</Badge>
+            {liveStat?.avgRating != null && (
+              <Badge tone="warning">★ {liveStat.avgRating.toFixed(1)}</Badge>
             )}
           </div>
 
@@ -86,7 +137,7 @@ export function ItemCard({
               onClick={openComments}
               className="cursor-pointer text-sm text-muted hover:text-ink"
             >
-              評論({stat?.commentCount ?? 0})
+              評論({liveStat?.commentCount ?? 0})
             </button>
           </div>
         </div>
@@ -125,6 +176,45 @@ export function ItemCard({
             </ul>
           )}
         </div>
+
+        {!loadingComments && (
+          <div className="space-y-2 border-t border-line p-4">
+            {isLoggedIn ? (
+              <>
+                <p className="text-sm font-medium">
+                  {myReview ? "修改我的評論" : "留下評論"}
+                </p>
+                <StarPicker value={draftStars} onChange={setDraftStars} />
+                <textarea
+                  value={draftText}
+                  onChange={(e) => setDraftText(e.target.value)}
+                  placeholder="想說點什麼嗎？（可留空，只給星等也可以）"
+                  rows={2}
+                  className="w-full rounded-lg border border-line bg-surface p-2 text-sm outline-none focus:border-brand"
+                />
+                <div className="flex items-center justify-between gap-2">
+                  {submitError && <p className="text-xs text-danger">{submitError}</p>}
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="ml-auto"
+                    onClick={submitReview}
+                    disabled={submitting}
+                  >
+                    {submitting ? "送出中…" : myReview ? "更新評論" : "送出評論"}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-muted">登入後才能留下評分與評論。</p>
+                <Button type="button" size="sm" onClick={openLogin}>
+                  登入
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
     </>
   );
