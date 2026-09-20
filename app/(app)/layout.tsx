@@ -19,6 +19,7 @@ export default async function AppGroupLayout({ children }: { children: ReactNode
       name: s.name,
       description: s.description,
       icon: s.icon,
+      iconSvg: s.iconSvg,
       slug: s.slug,
       openInNewTab: s.openInNewTab,
     }));

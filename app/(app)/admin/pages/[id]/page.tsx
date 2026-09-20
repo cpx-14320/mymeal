@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Section, ButtonLink } from "@/components/ui/primitives";
 import { SupplierForm } from "@/components/admin/supplier-form";
 import { findSupplierById } from "@/lib/models/supplier";
+import { listTemplates } from "@/lib/models/template";
 
 export const metadata = { title: "編輯店家" };
 
@@ -11,7 +12,7 @@ export default async function EditSupplierPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supplier = await findSupplierById(id);
+  const [supplier, templates] = await Promise.all([findSupplierById(id), listTemplates()]);
   if (!supplier) notFound();
 
   return (
@@ -24,7 +25,7 @@ export default async function EditSupplierPage({
         </ButtonLink>
       }
     >
-      <SupplierForm supplier={supplier} />
+      <SupplierForm supplier={supplier} templates={templates} />
     </Section>
   );
 }

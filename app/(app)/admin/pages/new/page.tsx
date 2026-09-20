@@ -1,9 +1,11 @@
 import { Section, ButtonLink } from "@/components/ui/primitives";
 import { SupplierForm } from "@/components/admin/supplier-form";
+import { listTemplates } from "@/lib/models/template";
 
 export const metadata = { title: "新增店家" };
 
-export default function NewSupplierPage() {
+export default async function NewSupplierPage() {
+  const templates = await listTemplates();
   return (
     <Section
       title="新增店家"
@@ -14,7 +16,7 @@ export default function NewSupplierPage() {
         </ButtonLink>
       }
     >
-      <SupplierForm />
+      <SupplierForm templates={templates} />
     </Section>
   );
 }

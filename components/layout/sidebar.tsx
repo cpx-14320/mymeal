@@ -248,7 +248,13 @@ export function Sidebar({
                     active ? "bg-brand-soft text-ink" : "text-ink hover:bg-surface-2"
                   }`}
                 >
-                  {supplier.icon ? (
+                  {supplier.iconSvg ? (
+                    <span
+                      className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center [&_svg]:h-full [&_svg]:w-full"
+                      // 後台「頁面設定」的圖示 SVG 只有管理員能填寫，不是公開使用者輸入，屬於可信任內容。
+                      dangerouslySetInnerHTML={{ __html: supplier.iconSvg }}
+                    />
+                  ) : supplier.icon ? (
                     <span className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center text-base leading-none">
                       {supplier.icon}
                     </span>

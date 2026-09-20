@@ -150,6 +150,24 @@ export async function listCatalogItemsBySupplier(supplierId: string): Promise<Ca
   return docs.map((d) => toView(d as unknown as Parameters<typeof toView>[0]));
 }
 
+/** 頁面套用模板時用：依一批品項 id 撈完整品項資料（模板 section 裡只存 id）。
+ *  同一個品項可能被多個 section 引用（例如星期一、星期三都排了同一道菜），
+ *  所以輸出依「第一次出現的順序」去重——呼叫端若要保留 section 內的重複顯示，
+ *  自行再用回傳的 Map 依 id 查詢即可，這支只保證每個 id 只回傳一筆。 */
+export async function listCatalogItemsByIds(ids: string[]): Promise<CatalogItemView[]> {
+  await connectMongo();
+  const uniqueIds = [...new Set(ids)];
+  const objIds = uniqueIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return [];
+  const docs = await CatalogItem.find({ _id: { $in: objIds } }).populate<{
+    kindId: PopulatedRef;
+    categoryId: PopulatedRef;
+    supplierId?: PopulatedRef;
+  }>(["kindId", "categoryId", "supplierId"]);
+  const byId = new Map(docs.map((d) => [String(d._id), toView(d as unknown as Parameters<typeof toView>[0])]));
+  return uniqueIds.map((id) => byId.get(id)).filter((v): v is CatalogItemView => !!v);
+}
+
 export async function findCatalogItemById(id: string): Promise<CatalogItemView | null> {
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) return null;

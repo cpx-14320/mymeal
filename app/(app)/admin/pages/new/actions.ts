@@ -15,13 +15,16 @@ function parseInput(formData: FormData): SupplierInput | { error: string } {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const icon = String(formData.get("icon") ?? "").trim();
+  const iconSvg = String(formData.get("iconSvg") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim().toLowerCase();
   const sortOrder = Number(formData.get("sortOrder") ?? 0);
   const openInNewTab = formData.get("openInNewTab") === "on";
+  const showTopItems = formData.get("showTopItems") === "on";
+  const templateId = String(formData.get("templateId") ?? "").trim() || undefined;
   if (!name || !slug) return { error: "請填寫所有必填欄位。" };
   if (!/^[a-z0-9-]+$/.test(slug)) return { error: "網址代稱只能使用小寫英文字母、數字與連字號（-）。" };
   if (!Number.isFinite(sortOrder)) return { error: "排序請輸入數字。" };
-  return { name, description, icon, slug, sortOrder, openInNewTab };
+  return { name, description, icon, iconSvg, slug, sortOrder, openInNewTab, showTopItems, templateId };
 }
 
 export async function createSupplierAction(

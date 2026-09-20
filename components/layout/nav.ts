@@ -19,6 +19,7 @@ export interface SupplierNavItem {
   name: string;
   description: string;
   icon: string;
+  iconSvg: string;
   slug: string;
   openInNewTab: boolean;
 }
@@ -37,13 +38,6 @@ export interface NavItem {
 
 /** 側欄主導覽 */
 export const primaryNav: NavItem[] = [
-  {
-    key: "menu",
-    label: "本週餐點",
-    href: "/menu",
-    description: "便當、飲料、下午茶",
-    requiresAuth: false,
-  },
   {
     key: "group",
     label: "開團訂餐",
