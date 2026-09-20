@@ -1102,21 +1102,9 @@ export interface LevelConfig {
   minExp: number;
 }
 
-function memberActivityCounts(id: string): Record<TaskType, number> {
-  const insight = memberInsightsMap[id];
-  return {
-    order: insight.orders.length,
-    topup: insight.topups.length,
-    rating: insight.ratings.length,
-    comment: insight.comments.length,
-    favorite: insight.favorites.length,
-  };
-}
-
-/** 會員總 exp：依 expRules 把該會員各類動作次數換算成經驗值加總（不套用上限，只看總量）。 */
-export function memberExp(id: string, expRules: ExpRuleConfig[]): number {
-  const countByType = memberActivityCounts(id);
-  return expRules.reduce((sum, rule) => sum + countByType[rule.type] * rule.expPerAction, 0);
+/** 會員總 exp：依 expRules 把該會員各類動作次數（真實累積次數）換算成經驗值加總（不套用上限，只看總量）。 */
+export function memberExp(counts: Record<TaskType, number>, expRules: ExpRuleConfig[]): number {
+  return expRules.reduce((sum, rule) => sum + (counts[rule.type] ?? 0) * rule.expPerAction, 0);
 }
 
 export interface MemberLevelInfo {
@@ -1130,11 +1118,11 @@ export interface MemberLevelInfo {
 
 /** 依 exp 換算目前等級、距下一級還差多少 exp。 */
 export function memberLevelInfo(
-  id: string,
+  counts: Record<TaskType, number>,
   expRules: ExpRuleConfig[],
   levels: LevelConfig[],
 ): MemberLevelInfo {
-  const exp = memberExp(id, expRules);
+  const exp = memberExp(counts, expRules);
   const sorted = [...levels].sort((a, b) => a.minExp - b.minExp);
   let levelIndex = 0;
   for (let i = 0; i < sorted.length; i++) {
@@ -1147,15 +1135,14 @@ export function memberLevelInfo(
   return { exp, level, levelIndex, next, expToNext, progressInLevel };
 }
 
-/** 會員目前各任務的期間內完成進度——簡化模擬（沒有另存任務完成歷程），
- *  用會員既有活動數量對任務目標取餘數，做出看起來合理、每個會員都不同的進度展示。 */
-export function memberTaskProgress(id: string, tasks: TaskConfig[]) {
-  const countByType = memberActivityCounts(id);
+/** 會員目前各任務的期間內完成進度——簡化模擬（沒有另存 daily/weekly/monthly 期間內的任務完成歷程），
+ *  用會員真實的累積活動次數對任務目標取餘數，做出看起來合理、會隨真實活動變化的進度展示。 */
+export function memberTaskProgress(counts: Record<TaskType, number>, tasks: TaskConfig[]) {
   return tasks
     .filter((t) => t.active)
     .map((t) => ({
       task: t,
-      progress: countByType[t.type] % (t.targetCount + 1),
+      progress: (counts[t.type] ?? 0) % (t.targetCount + 1),
     }));
 }
 

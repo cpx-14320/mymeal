@@ -9,7 +9,7 @@ import {
   Badge,
   Progress,
 } from "@/components/ui/primitives";
-import { currentMemberId, memberLevelInfo, memberTaskProgress } from "@/lib/mock";
+import { memberLevelInfo, memberTaskProgress } from "@/lib/mock";
 import { AccountTaskTabs } from "@/components/account-task-tabs";
 import { listDailyTasks, listExpRules, listMemberLevels } from "@/lib/models/gamification";
 import { getMemberLifetimeCounts, achievementProgress } from "@/lib/models/achievements";
@@ -40,12 +40,12 @@ export default async function AccountPage() {
     ["專屬碼", member.memberCode],
   ];
 
-  // exp／等級跟 daily/weekly/monthly 任務進度還沒有真的 period-bucketed 活動歷史可用
-  // （見 lib/mock.ts memberActivityCounts 的說明），這裡暫時仍用 mock 的示範會員資料，
-  // 不是這位真實登入者的資料。成就（achievement）任務不一樣，是真的累積次數，見下面。
-  const { exp, level, levelIndex, next, expToNext } = memberLevelInfo(currentMemberId, expRules, memberLevels);
+  // exp／等級跟 daily/weekly/monthly 任務進度沒有真的 period-bucketed 活動歷史可用
+  // （沒有另存「這週已完成幾次」這種紀錄），所以進度仍是用 lifetimeCounts 取餘數模擬；
+  // 但 lifetimeCounts 本身是這位真實登入者的累積次數，不再是 mock 示範會員的假資料。
+  const { exp, level, levelIndex, next, expToNext } = memberLevelInfo(lifetimeCounts, expRules, memberLevels);
   const periodicTasks = memberTaskProgress(
-    currentMemberId,
+    lifetimeCounts,
     dailyTasks.filter((t) => t.period !== "achievement"),
   );
   const achievements = achievementProgress(dailyTasks, lifetimeCounts);
