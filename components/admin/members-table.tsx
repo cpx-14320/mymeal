@@ -10,8 +10,7 @@ import {
   Th,
   Td,
   Pagination,
-  PageSizeSelect,
-  inputClass,
+  ListSearchBar,
 } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { MemberListItem, MemberStatus } from "@/lib/models/member";
@@ -117,24 +116,19 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <input
-          className={`${inputClass} w-64`}
-          placeholder="搜尋姓名／帳號／部門／單位"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-        />
-        <PageSizeSelect
-          value={pageSize}
-          onChange={(n) => {
-            setPageSize(n);
-            setPage(1);
-          }}
-        />
-      </div>
+      <ListSearchBar
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
+        searchPlaceholder="搜尋姓名／帳號／部門／單位"
+        pageSize={pageSize}
+        onPageSizeChange={(n) => {
+          setPageSize(n);
+          setPage(1);
+        }}
+      />
 
       {statusError && <p className="text-sm text-danger">{statusError}</p>}
 
@@ -277,7 +271,7 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
         total={filtered.length}
         pageSize={pageSize}
         onPage={setPage}
-        unit="人"
+        unit="筆"
       />
 
       <Modal

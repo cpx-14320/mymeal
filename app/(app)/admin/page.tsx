@@ -4,6 +4,8 @@ import { listGroupOrdersByDate } from "@/lib/models/group-order";
 import { listTopupRequests } from "@/lib/models/topup-request";
 import { todayTaiwanDateString, formatTaiwanDateTime } from "@/lib/date";
 
+export const metadata = { title: "總覽" };
+
 const groupStatusLabel: Record<string, { label: string; tone: "positive" | "warning" | "neutral" }> = {
   open: { label: "開放中", tone: "positive" },
   closed: { label: "已截止", tone: "warning" },

@@ -1,21 +1,15 @@
-import { Section, inputClass } from "@/components/ui/primitives";
+import { Section } from "@/components/ui/primitives";
 import { AuditTable } from "@/components/admin/audit-table";
+import { listAuditLogs } from "@/lib/models/audit-log";
 
-export const metadata = { title: "稽核" };
+export const metadata = { title: "稽核紀錄" };
 
-export default function AdminAuditPage() {
+export default async function AdminAuditPage() {
+  const logs = await listAuditLogs();
+
   return (
-    <Section
-      title="稽核紀錄"
-      description="所有後台操作與金流異動，僅新增、不可刪改。"
-      actions={
-        <input
-          className={`${inputClass} w-56`}
-          placeholder="搜尋操作者 / 對象"
-        />
-      }
-    >
-      <AuditTable />
+    <Section>
+      <AuditTable logs={logs} />
     </Section>
   );
 }

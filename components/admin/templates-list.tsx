@@ -14,6 +14,7 @@ import {
   Pagination,
   PageSizeSelect,
 } from "@/components/ui/primitives";
+import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import type { TemplateListItem } from "@/lib/models/template";
 import { formatTaiwanDateTime } from "@/lib/date";
 import { setTemplatesActiveAction, deleteTemplatesAction } from "@/app/(app)/admin/templates/actions";
@@ -89,11 +90,11 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
   }
 
   return (
-    <Section
-      title="模板"
-      description="可重用的訂購藍圖：模板 → 分類 → 品項。開團時選一個模板 + 分類。"
-      actions={<ButtonLink href="/admin/templates/new">新增模板</ButtonLink>}
-    >
+    <Section>
+      <AdminHeaderActions>
+        <ButtonLink href="/admin/templates/new">新增模板</ButtonLink>
+      </AdminHeaderActions>
+
       <div className="flex items-center justify-end gap-2 text-xs text-muted">
         <PageSizeSelect
           value={pageSize}
@@ -242,7 +243,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={filteredTemplates.length} pageSize={pageSize} onPage={setPage} unit="個" />
+      <Pagination page={current} pageCount={pageCount} total={filteredTemplates.length} pageSize={pageSize} onPage={setPage} unit="筆" />
     </Section>
   );
 }

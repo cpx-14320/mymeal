@@ -8,10 +8,7 @@ export default async function ItemStatsPage() {
   const stats = await listItemStats();
 
   return (
-    <Section
-      title="餐點統計"
-      description="彙總所有會員的訂餐、評分、評論，看哪個品項最受歡迎。"
-    >
+    <Section>
       <ItemStatsTable stats={stats} />
     </Section>
   );

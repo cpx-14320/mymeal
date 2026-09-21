@@ -97,7 +97,7 @@ export function MemberInsightsTable({
         total={members.length}
         pageSize={pageSize}
         onPage={setPage}
-        unit="人"
+        unit="筆"
       />
     </div>
   );

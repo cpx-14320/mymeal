@@ -18,7 +18,7 @@ export default async function NewItemPage() {
   return (
     <Section
       title="新增品項"
-      description="加進品項後，就能在模板裡選用。"
+      description="新增後，此品項會出現在「品項設定」列表中，供各模板挑選使用。"
       actions={
         <ButtonLink href="/admin/items" variant="ghost">
           返回列表

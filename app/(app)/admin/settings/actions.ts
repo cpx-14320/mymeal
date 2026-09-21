@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { updateSettings } from "@/lib/models/settings";
+import { createAuditLog } from "@/lib/models/audit-log";
+import { getCurrentActorName } from "@/lib/session";
 
 export interface SettingsActionState {
   error?: string;
@@ -35,7 +37,14 @@ export async function updateSettingsAction(
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
+  await createAuditLog({
+    actor: await getCurrentActorName(),
+    action: "修改系統設定",
+    risk: true,
+  });
+
   revalidatePath("/admin/settings");
+  revalidatePath("/admin/audit");
   revalidatePath("/", "layout");
   return { success: true };
 }

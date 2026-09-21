@@ -22,7 +22,7 @@ export interface NameListActionState {
 
 interface NameListCardProps {
   title: string;
-  description: string;
+  description?: string;
   placeholder: string;
   items: NameListItem[];
   createAction: (state: NameListFormState, formData: FormData) => Promise<NameListFormState>;
@@ -105,7 +105,7 @@ export function NameListCard({
       <CardBody className="space-y-4">
         <div>
           <p className="font-medium">{title}</p>
-          <p className="text-xs text-muted">{description}</p>
+          {description && <p className="text-xs text-muted">{description}</p>}
         </div>
 
         <form action={formAction} className="flex items-start gap-2">

@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updateMember, deleteMember, type MemberStatus } from "@/lib/models/member";
+import { updateMember, deleteMember, findMemberById, type MemberStatus } from "@/lib/models/member";
+import { createAuditLog } from "@/lib/models/audit-log";
+import { getCurrentActorName } from "@/lib/session";
 
 export interface UpdateMemberState {
   error?: string;
@@ -48,8 +50,15 @@ export async function updateMemberAction(
     return { error: "發生錯誤，請稍後再試。" };
   }
 
+  await createAuditLog({
+    actor: await getCurrentActorName(),
+    action: "編輯會員資料",
+    target: name,
+  });
+
   revalidatePath("/admin/members");
   revalidatePath(`/admin/members/${id}`);
+  revalidatePath("/admin/audit");
   return { success: true };
 }
 
@@ -59,9 +68,18 @@ export interface DeleteMemberState {
 }
 
 export async function deleteMemberAction(id: string): Promise<DeleteMemberState> {
+  const target = await findMemberById(id);
   const deleted = await deleteMember(id);
   if (!deleted) return { error: "找不到這位會員，可能已被刪除。" };
 
+  await createAuditLog({
+    actor: await getCurrentActorName(),
+    action: "刪除會員",
+    target: target?.name ?? id,
+    risk: true,
+  });
+
   revalidatePath("/admin/members");
+  revalidatePath("/admin/audit");
   return { success: true };
 }

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Section,
   Button,
-  Note,
   inputClass,
   TableWrap,
   Th,
@@ -14,6 +13,7 @@ import {
   PageSizeSelect,
   PillTabs,
 } from "@/components/ui/primitives";
+import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import type { WalletBalanceRow, WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
 import { formatTaiwanDateTime } from "@/lib/date";
 import { adjustBalanceAction } from "@/app/(app)/admin/wallets/actions";
@@ -131,28 +131,13 @@ export function WalletsTables({
   };
 
   return (
-    <Section
-      title="錢包與交易"
-      description={
-        tab === "balances" ? "各會員的餘額與累計儲值 / 消費。" : "所有錢包異動：訂餐扣款、儲值入帳、退款、手動調整。"
-      }
-      actions={
-        tab === "balances" ? (
-          <div className="flex gap-2">
-            <input
-              className={`${inputClass} w-48`}
-              placeholder="搜尋姓名 / 部門"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setBPage(1);
-              }}
-            />
-            <Button variant="secondary">匯出</Button>
-          </div>
-        ) : undefined
-      }
-    >
+    <Section>
+      {tab === "balances" && (
+        <AdminHeaderActions>
+          <Button variant="secondary">匯出</Button>
+        </AdminHeaderActions>
+      )}
+
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <PillTabs tabs={tabs} value={tab} onChange={setTab} />
         <PageSizeSelect value={pageSize} onChange={changeSize} />
@@ -160,6 +145,15 @@ export function WalletsTables({
 
       {tab === "balances" ? (
         <>
+          <input
+            className={`${inputClass} mb-3 w-64`}
+            placeholder="搜尋姓名 / 部門"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setBPage(1);
+            }}
+          />
           <TableWrap>
             <thead>
               <tr>
@@ -223,11 +217,8 @@ export function WalletsTables({
             total={filteredBalances.length}
             pageSize={pageSize}
             onPage={setBPage}
-            unit="人"
+            unit="筆"
           />
-          <div className="mt-3">
-            <Note>「調整餘額」為高風險操作（手動加值 / 扣款 / 退款），每次都需填寫備註並寫入稽核紀錄。</Note>
-          </div>
         </>
       ) : (
         <>
@@ -289,11 +280,6 @@ export function WalletsTables({
             </tbody>
           </TableWrap>
           <Pagination page={t.current} pageCount={t.pageCount} total={ledger.length} pageSize={pageSize} onPage={setTPage} />
-          <div className="mt-3">
-            <Note>
-              「調整」用於訂單金額結算有誤等情況：不會修改這筆歷史交易本身，而是寫入一筆新的「手動調整」紀錄來抵銷/補足差額，並需填寫備註；原始訂單記錄不會被改動。
-            </Note>
-          </div>
         </>
       )}
     </Section>

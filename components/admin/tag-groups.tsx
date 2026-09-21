@@ -267,6 +267,7 @@ export function AddTagGroupButton() {
 }
 
 export function TagGroupsManager({ groups }: { groups: TagGroupView[] }) {
+  if (groups.length === 0) return null;
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {groups.map((g) => (

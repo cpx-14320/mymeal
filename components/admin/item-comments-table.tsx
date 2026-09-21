@@ -71,7 +71,7 @@ export function ItemCommentsTable({
         total={comments.length}
         pageSize={pageSize}
         onPage={setPage}
-        unit="則"
+        unit="筆"
       />
     </div>
   );

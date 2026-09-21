@@ -359,9 +359,11 @@ export function GamificationManager({
 }) {
   return (
     <div className="space-y-8">
-      <TasksSection tasks={tasks} />
-      <ExpRulesSection rules={rules} />
-      <LevelsSection levels={levels} />
+      <Section>
+        <TasksSection tasks={tasks} />
+        <ExpRulesSection rules={rules} />
+        <LevelsSection levels={levels} />
+      </Section>
     </div>
   );
 }

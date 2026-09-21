@@ -9,7 +9,6 @@ import {
   Badge,
   Card,
   CardBody,
-  Note,
   Field,
   inputClass,
 } from "@/components/ui/primitives";
@@ -121,7 +120,6 @@ export function TemplateEditor({
     <div className="space-y-8">
       <Section
         title={template.name}
-        description="分類自由命名（星期一…／飲料…）；品項從「品項」挑。"
         actions={
           <div className="flex gap-2">
             <ButtonLink href="/admin/templates" variant="ghost">
@@ -141,13 +139,10 @@ export function TemplateEditor({
             {template.active ? "停用" : "啟用"}
           </Button>
         </div>
-
-        <Note>從這裡挑的品項參照「品項」；改品項的名稱或預設價會同步。想只改某一次開團的菜色，是在「開團」時調整，不動模板。</Note>
       </Section>
 
       <Section
         title="分類"
-        description="星期一、飲料…，自由命名；依你的模板類型調整。"
         actions={
           addingSection ? null : <Button onClick={() => setAddingSection(true)}>＋ 新增分類</Button>
         }

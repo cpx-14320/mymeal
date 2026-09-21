@@ -143,7 +143,7 @@ export function MemberInsightTabs({
               total={breakdown.length}
               pageSize={pageSize}
               onPage={setOrdersPage}
-              unit="項品項"
+              unit="筆"
             />
           </>
         ))}
@@ -232,7 +232,7 @@ export function MemberInsightTabs({
               total={favorites.length}
               pageSize={pageSize}
               onPage={setFavoritesPage}
-              unit="項"
+              unit="筆"
             />
           </>
         ))}

@@ -11,7 +11,7 @@ export default async function NewTemplatePage() {
   return (
     <Section
       title="新增模板"
-      description="可重用的訂購藍圖：模板 → 分類 → 品項。建立後會進到編輯頁繼續設定分類與品項。"
+      description="模板是開團訂餐時套用的菜單藍圖，內含多個分類（例如依星期或依餐別區分），每個分類底下可勾選要開放訂購的品項。建立後會進入編輯頁繼續設定分類與品項。"
       actions={
         <ButtonLink href="/admin/templates" variant="ghost">
           返回列表

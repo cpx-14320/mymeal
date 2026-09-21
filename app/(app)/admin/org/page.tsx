@@ -17,10 +17,7 @@ export default async function AdminOrgPage() {
   const [departments, units] = await Promise.all([listDepartments(), listUnits()]);
 
   return (
-    <Section
-      title="部門與單位"
-      description="註冊表單與會員編輯頁的部門/單位選項；新增後即可套用，不用改程式碼。單位一律隸屬於一個部門，刪除部門會連同底下單位一起刪除；改名會同步更新既有會員的部門/單位資料。"
-    >
+    <Section>
       <div className="grid gap-4 sm:grid-cols-2">
         <NameListCard
           title="部門"

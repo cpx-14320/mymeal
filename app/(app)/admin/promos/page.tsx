@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Section, ButtonLink, Badge, Card, CardBody, Note } from "@/components/ui/primitives";
+import { Section, ButtonLink, Badge, Card, CardBody } from "@/components/ui/primitives";
+import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { listInterstitials, interstitialStatus } from "@/lib/models/interstitial";
 
 export const metadata = { title: "蓋台廣告" };
@@ -23,20 +24,15 @@ export default async function AdminPromosPage() {
   const interstitials = await listInterstitials();
 
   return (
-    <Section
-      title="蓋台廣告"
-      description="進入前台時全螢幕蓋住畫面的廣告。可設圖片、連結、倒數秒數與顯示排程。"
-      actions={<ButtonLink href="/admin/promos/new">新增廣告</ButtonLink>}
-    >
-      <Note>
-        規則：狀態「開啟」＋ 現在時間落在排程區間內 → 前台每次進站顯示，倒數後或按 ✕ 消失；
-        排程結束或關閉即不顯示。同時符合的以清單第一筆為準。
-      </Note>
+    <Section>
+      <AdminHeaderActions>
+        <ButtonLink href="/admin/promos/new">新增廣告</ButtonLink>
+      </AdminHeaderActions>
 
       {interstitials.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">還沒有任何廣告，點右上角「新增廣告」開始建立。</p>
+        <p className="text-sm text-muted">還沒有任何廣告，點右上角「新增廣告」開始建立。</p>
       ) : (
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {interstitials.map((a) => {
             const st = statusMeta[interstitialStatus(a)];
             return (

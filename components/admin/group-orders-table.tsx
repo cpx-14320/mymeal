@@ -193,7 +193,7 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={filtered.length} pageSize={pageSize} onPage={setPage} unit="團" />
+      <Pagination page={current} pageCount={pageCount} total={filtered.length} pageSize={pageSize} onPage={setPage} unit="筆" />
     </div>
   );
 }

@@ -18,10 +18,7 @@ export default async function MemberInsightsPage() {
   const balances = Object.fromEntries(walletBalances.map((b) => [b.memberId, b.balance]));
 
   return (
-    <Section
-      title="會員洞察"
-      description="分析每位會員的訂餐習慣；訂餐沒想法時，可以參考他平常喜歡點什麼。"
-    >
+    <Section>
       <MemberInsightsTable
         members={members}
         favoriteCounts={favoriteCounts}

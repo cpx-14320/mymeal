@@ -304,6 +304,15 @@ export async function deleteMembers(ids: string[]): Promise<number> {
   return result.deletedCount;
 }
 
+/** 稽核紀錄用：把一批 id 換成姓名，方便寫「操作對象」欄位；忽略格式不對或找不到的 id。 */
+export async function findMemberNames(ids: string[]): Promise<string[]> {
+  await connectMongo();
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return [];
+  const docs = await Member.find({ _id: { $in: objIds } }, { name: 1 });
+  return docs.map((d) => d.name);
+}
+
 export interface LoginMember {
   _id: Types.ObjectId;
   account: string;

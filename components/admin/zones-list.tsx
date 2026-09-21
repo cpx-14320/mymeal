@@ -186,7 +186,7 @@ export function ZonesList({
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={zones.length} pageSize={pageSize} onPage={setPage} unit="個" />
+      <Pagination page={current} pageCount={pageCount} total={zones.length} pageSize={pageSize} onPage={setPage} unit="筆" />
     </div>
   );
 }

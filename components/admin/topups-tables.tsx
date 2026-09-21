@@ -54,13 +54,6 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
     { key: "rejected", label: "已退件", count: rejected.length },
   ];
 
-  const tabDescription: Record<Tab, string> = {
-    pending: "核准後餘額才會增加並寫入交易明細。",
-    approved: "已核准的儲值申請紀錄。刪除只會移除這筆申請，不會復原已入帳的餘額與交易明細。",
-    rejected: "已退件的儲值申請紀錄。",
-    all: "已核准與已退件的完整紀錄。刪除只會移除申請本身，已核准的入帳不會被復原。",
-  };
-
   const p = paginate(pending, pPage, pageSize);
   const a = paginate(approved, aPage, pageSize);
   const r = paginate(rejected, rPage, pageSize);
@@ -104,7 +97,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   }
 
   return (
-    <Section title="儲值審核" description={tabDescription[tab]}>
+    <Section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <PillTabs tabs={tabs} value={tab} onChange={setTab} />
         <PageSizeSelect value={pageSize} onChange={changeSize} />

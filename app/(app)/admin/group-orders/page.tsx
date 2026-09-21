@@ -11,10 +11,7 @@ export default async function AdminGroupOrdersPage() {
 
   return (
     <div className="space-y-8">
-      <Section
-        title="團訂管理"
-        description="所有團訂的狀態與部門/單位彙總；同一個模板可以被多個單位各自開團。"
-      >
+      <Section>
         <GroupOrdersTable rows={rows} />
       </Section>
 

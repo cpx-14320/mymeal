@@ -36,20 +36,25 @@ export function PageHeader({
 export function Section({
   title,
   description,
+  /** 覆蓋標題文字樣式，預設 "text-lg font-bold tracking-tight"；用來讓次要標題套用較小的樣式（例如比照 NameListCard 的 "text-base font-medium"）。 */
+  titleClassName = "text-lg font-bold tracking-tight",
   actions,
   children,
 }: {
   title?: string;
   description?: string;
+  titleClassName?: string;
   actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section className="space-y-4">
-      {(title || actions) && (
-        <div className="flex flex-wrap items-end justify-between gap-3">
+      {(title || description || actions) && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            {title && <h2 className="text-lg font-bold tracking-tight">{title}</h2>}
+            {title && (
+              <h2 className={`leading-none ${titleClassName}`}>{title}</h2>
+            )}
             {description && (
               <p className="mt-0.5 text-sm text-muted">{description}</p>
             )}
@@ -300,6 +305,35 @@ export function PageSizeSelect({
       </select>
       筆
     </label>
+  );
+}
+
+/** 表格上方常見的「搜尋框 + 每頁顯示」並排列——會員列表／稽核紀錄等清單頁共用。 */
+export function ListSearchBar({
+  searchValue,
+  onSearchChange,
+  searchPlaceholder,
+  pageSize,
+  onPageSizeChange,
+}: {
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  searchPlaceholder: string;
+  pageSize: number;
+  onPageSizeChange: (n: number) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="w-64">
+        <input
+          className={inputClass}
+          placeholder={searchPlaceholder}
+          value={searchValue}
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
+      </div>
+      <PageSizeSelect value={pageSize} onChange={onPageSizeChange} />
+    </div>
   );
 }
 

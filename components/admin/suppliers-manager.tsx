@@ -13,6 +13,7 @@ import {
   Pagination,
   PageSizeSelect,
 } from "@/components/ui/primitives";
+import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { formatTaiwanDateTime } from "@/lib/date";
 import type { SupplierView } from "@/lib/models/supplier";
 import { setSuppliersActiveAction, deleteSuppliersAction } from "@/app/(app)/admin/pages/actions";
@@ -71,11 +72,11 @@ export function SuppliersManager({ suppliers }: { suppliers: SupplierView[] }) {
   }
 
   return (
-    <Section
-      title="店家 / 供應商"
-      description="便當店、飲料店、咖啡等。這裡只是「品項是誰做的」的標註，品項與模板不隸屬店家。"
-      actions={<ButtonLink href="/admin/pages/new">新增店家</ButtonLink>}
-    >
+    <Section>
+      <AdminHeaderActions>
+        <ButtonLink href="/admin/pages/new">新增頁面</ButtonLink>
+      </AdminHeaderActions>
+
       <div className="flex items-center justify-end gap-3">
         <PageSizeSelect
           value={pageSize}
@@ -174,14 +175,14 @@ export function SuppliersManager({ suppliers }: { suppliers: SupplierView[] }) {
           {rows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={9}>
-                還沒有店家資料，點右上角「新增店家」開始建立。
+                還沒有頁面資料，點右上角「新增頁面」開始建立。
               </Td>
             </tr>
           )}
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={suppliers.length} pageSize={pageSize} onPage={setPage} unit="家" />
+      <Pagination page={current} pageCount={pageCount} total={suppliers.length} pageSize={pageSize} onPage={setPage} unit="筆" />
     </Section>
   );
 }
