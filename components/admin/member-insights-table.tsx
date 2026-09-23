@@ -7,7 +7,7 @@ import {
   Th,
   Td,
   Pagination,
-  PageSizeSelect,
+  ListToolbar,
 } from "@/components/ui/primitives";
 import type { MemberListItem } from "@/lib/models/member";
 
@@ -33,16 +33,14 @@ export function MemberInsightsTable({
   const rows = members.slice(start, start + pageSize);
 
   return (
-    <div className="space-y-3">
-      <div className="flex justify-end">
-        <PageSizeSelect
-          value={pageSize}
-          onChange={(n) => {
-            setPageSize(n);
-            setPage(1);
-          }}
-        />
-      </div>
+    <div className="space-y-4">
+      <ListToolbar
+        pageSize={pageSize}
+        onPageSizeChange={(n) => {
+          setPageSize(n);
+          setPage(1);
+        }}
+      />
 
       <TableWrap>
         <thead>
@@ -68,7 +66,7 @@ export function MemberInsightsTable({
           ) : (
             rows.map((m) => (
               <tr key={m.id}>
-                <Td className="font-medium">{m.name}</Td>
+                <Td>{m.name}</Td>
                 <Td className="text-muted">{m.account}</Td>
                 <Td className="text-right tabular-nums">0</Td>
                 <Td className="text-right tabular-nums">0</Td>

@@ -1,14 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { setSuppliersActive, deleteSuppliers } from "@/lib/models/supplier";
+import { setPagesActive, deletePages } from "@/lib/models/page";
 
-export async function setSuppliersActiveAction(ids: string[], active: boolean) {
-  await setSuppliersActive(ids, active);
+export async function setPagesActiveAction(ids: string[], active: boolean) {
+  await setPagesActive(ids, active);
   revalidatePath("/admin/pages");
 }
 
-export async function deleteSuppliersAction(ids: string[]) {
-  await deleteSuppliers(ids);
+export async function deletePagesAction(ids: string[]) {
+  await deletePages(ids);
   revalidatePath("/admin/pages");
 }

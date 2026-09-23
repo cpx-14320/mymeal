@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Section, ButtonLink } from "@/components/ui/primitives";
+import { Section } from "@/components/ui/primitives";
 import { ZoneForm } from "@/components/admin/zone-form";
 import { findOrderZoneById } from "@/lib/models/order-zone";
 import { listTemplates } from "@/lib/models/template";
@@ -19,11 +19,6 @@ export default async function EditZonePage({
     <Section
       title={`編輯專區：${zone.name}`}
       description={`前台網址 /z/${zone.slug}`}
-      actions={
-        <ButtonLink href="/admin/zones" variant="ghost">
-          返回列表
-        </ButtonLink>
-      }
     >
       <ZoneForm zone={zone} templates={templates} />
     </Section>

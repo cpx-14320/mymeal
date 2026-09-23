@@ -106,7 +106,7 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
 
           <Note>排程結束後自動不顯示；也可把「開啟」關掉立即下架。時間依使用者本機時間判斷。</Note>
 
-          {state.error && <p className="text-sm text-danger">{state.error}</p>}
+          {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
         </CardBody>
       </Card>
 
@@ -116,7 +116,7 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
             <Button type="button" variant="danger" disabled={deleting} onClick={handleDelete}>
               {deleting ? "刪除中…" : "刪除廣告"}
             </Button>
-            {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+            {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
           </div>
         ) : (
           <span />

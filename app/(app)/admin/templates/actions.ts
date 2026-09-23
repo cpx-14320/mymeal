@@ -21,10 +21,10 @@ export async function createTemplateAction(
 ): Promise<CreateTemplateState> {
   const name = String(formData.get("name") ?? "").trim();
   const kindId = String(formData.get("kindId") ?? "").trim();
-  const supplierId = String(formData.get("supplierId") ?? "").trim();
+  const pageId = String(formData.get("pageId") ?? "").trim();
   if (!name || !kindId) return { error: "請輸入模板名稱並選擇類型。" };
 
-  const input: TemplateBasicInput = { name, kindId, supplierId: supplierId || undefined };
+  const input: TemplateBasicInput = { name, kindId, pageId: pageId || undefined };
   const memberId = await getSessionMemberId();
   const member = memberId ? await findMemberById(memberId) : null;
 

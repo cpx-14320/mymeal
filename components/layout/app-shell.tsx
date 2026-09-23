@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import { Footer } from "./footer";
@@ -11,7 +12,7 @@ import { AnnouncementBanner } from "@/components/announcement-banner";
 import { LoginModal } from "./login-modal";
 import { LoginModalContext } from "./login-modal-context";
 import { logoutAction } from "@/app/login/actions";
-import type { SupplierNavItem } from "./nav";
+import type { PageNavItem } from "./nav";
 
 export const DEMO_AUTH_KEY = "mymeal-demo-authed";
 
@@ -20,53 +21,46 @@ export const DEMO_AUTH_KEY = "mymeal-demo-authed";
  * 由 app/layout.tsx 包住所有頁面，改這裡即全站同步。
  *
  * 目前為「預覽模式」：所有頁面開放瀏覽、不鎖權限。
- * 之後接上登入系統後，把 previewMode 設為 false，並改用真實的 isAuthed / isAdmin。
- * `authed` 目前是 Header 頭像按鈕控制的預覽用登入狀態（存 localStorage），
- * 跟 Sidebar 共用，用來預覽「登入後顯示會員錢包區塊」等畫面。
+ * 登入狀態＝真實 session（`isSessionAuthed`，伺服器算好傳進來）「或」`demoAuthed`
+ * （Header 頭像按鈕控制、存 localStorage 的預覽開關，讓沒有真的登入也能預覽會員畫面）。
+ * 真實 session 一律優先：只要有真的登入，就算沒開過預覽開關也會顯示已登入畫面。
  */
 export function AppShell({
   children,
-  suppliers = [],
+  pages = [],
   announcement = "",
   walletBalance = 0,
+  isSessionAuthed = false,
 }: {
   children: ReactNode;
-  /** 已上架的店家，前台側欄用來動態多顯示一個連結（見 sidebar.tsx）；後台新增店家就會同步出現。 */
-  suppliers?: SupplierNavItem[];
+  /** 已上架的頁面，前台側欄用來動態多顯示一個連結（見 sidebar.tsx）；後台新增頁面就會同步出現。 */
+  pages?: PageNavItem[];
   /** 後台「系統設定」的公告文字；空字串就不顯示。 */
   announcement?: string;
   /** 目前登入會員的真實錢包餘額（未登入時為 0），側欄「會員錢包」小工具用。 */
   walletBalance?: number;
+  /** 是否有真實登入 session，伺服器端（app/(app)/layout.tsx）算好傳進來。 */
+  isSessionAuthed?: boolean;
 }) {
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [authed, setAuthed] = useState(false);
+  const [demoAuthed, setDemoAuthed] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const previewMode = true;
+  const authed = isSessionAuthed || (mounted && demoAuthed);
 
   useEffect(() => {
     try {
-      setAuthed(localStorage.getItem(DEMO_AUTH_KEY) === "1");
+      setDemoAuthed(localStorage.getItem(DEMO_AUTH_KEY) === "1");
     } catch {
       /* 私密視窗等情況忽略 */
     }
     setMounted(true);
   }, []);
 
-  function toggleAuth() {
-    setAuthed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(DEMO_AUTH_KEY, next ? "1" : "0");
-      } catch {
-        /* 私密視窗等情況忽略 */
-      }
-      return next;
-    });
-  }
-
   function loginDemo() {
-    setAuthed(true);
+    setDemoAuthed(true);
     try {
       localStorage.setItem(DEMO_AUTH_KEY, "1");
     } catch {
@@ -74,15 +68,16 @@ export function AppShell({
     }
   }
 
-  /** 真正的登出：清掉伺服器 session cookie，並跟著清掉這份預覽用的登入狀態。 */
+  /** 真正的登出：清掉伺服器 session cookie、清掉預覽用的登入狀態，並重新整理讓真實 session 狀態同步。 */
   async function logout() {
-    setAuthed(false);
+    setDemoAuthed(false);
     try {
       localStorage.setItem(DEMO_AUTH_KEY, "0");
     } catch {
       /* 私密視窗等情況忽略 */
     }
     await logoutAction();
+    router.refresh();
   }
 
   useEffect(() => {
@@ -105,7 +100,6 @@ export function AppShell({
           onMenuClick={() => setDrawerOpen(true)}
           mounted={mounted}
           authed={authed}
-          onToggleAuth={toggleAuth}
           onLogout={logout}
         />
 
@@ -116,8 +110,8 @@ export function AppShell({
           <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 border-r border-line bg-surface lg:block">
             <Sidebar
               previewMode={previewMode}
-              isAuthed={mounted && authed}
-              suppliers={suppliers}
+              isAuthed={authed}
+              pages={pages}
               walletBalance={walletBalance}
             />
           </aside>
@@ -150,8 +144,8 @@ export function AppShell({
                 <div className="min-h-0 flex-1">
                   <Sidebar
                     previewMode={previewMode}
-                    isAuthed={mounted && authed}
-                    suppliers={suppliers}
+                    isAuthed={authed}
+                    pages={pages}
                     walletBalance={walletBalance}
                     onNavigate={() => setDrawerOpen(false)}
                   />

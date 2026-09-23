@@ -1,10 +1,10 @@
 import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
-// 確保 populate("kindId"/"categoryId"/"supplierId") 前這幾個 model 一定已註冊，
+// 確保 populate("kindId"/"categoryId"/"pageId") 前這幾個 model 一定已註冊，
 // 不依賴這次 request 剛好先經過哪個其他頁面（不然會間歇性 MissingSchemaError）。
 import "@/lib/models/item-kind";
 import "@/lib/models/item-category";
-import "@/lib/models/supplier";
+import "@/lib/models/page";
 
 /** menu_items collection —— 全站唯一的品項來源，模板／開團都只存 itemId 再回頭查。 */
 export interface CatalogItemDocument {
@@ -13,7 +13,7 @@ export interface CatalogItemDocument {
   price: number;
   kindId: Types.ObjectId; // ref ItemKind
   categoryId: Types.ObjectId; // ref ItemCategory
-  supplierId?: Types.ObjectId; // ref Supplier
+  pageId?: Types.ObjectId; // ref Page
   tags: string[]; // 值取自 tag_group.options，不強制外鍵
   emoji: string;
   imageUrl?: string;
@@ -29,7 +29,7 @@ const catalogItemSchema = new Schema<CatalogItemDocument>(
     price: { type: Number, required: true, min: 0 },
     kindId: { type: Schema.Types.ObjectId, ref: "ItemKind", required: true },
     categoryId: { type: Schema.Types.ObjectId, ref: "ItemCategory", required: true },
-    supplierId: { type: Schema.Types.ObjectId, ref: "Supplier" },
+    pageId: { type: Schema.Types.ObjectId, ref: "Page" },
     tags: { type: [String], required: true, default: [] },
     emoji: { type: String, required: true, default: "🍽️" },
     imageUrl: { type: String },
@@ -60,7 +60,7 @@ export interface CatalogItemInput {
   name: string;
   kindId: string;
   categoryId: string;
-  supplierId?: string;
+  pageId?: string;
   price: number;
   tags: string[];
   emoji: string;
@@ -75,8 +75,8 @@ export interface CatalogItemView {
   kindName: string;
   categoryId: string;
   categoryName: string;
-  supplierId?: string;
-  supplierName?: string;
+  pageId?: string;
+  pageName?: string;
   price: number;
   tags: string[];
   emoji: string;
@@ -95,7 +95,7 @@ function toView(d: {
   name: string;
   kindId: PopulatedRef | Types.ObjectId;
   categoryId: PopulatedRef | Types.ObjectId;
-  supplierId?: PopulatedRef | Types.ObjectId;
+  pageId?: PopulatedRef | Types.ObjectId;
   price: number;
   tags: string[];
   emoji: string;
@@ -105,7 +105,7 @@ function toView(d: {
 }): CatalogItemView {
   const kind = d.kindId as PopulatedRef;
   const category = d.categoryId as PopulatedRef;
-  const supplier = d.supplierId as PopulatedRef | undefined;
+  const page = d.pageId as PopulatedRef | undefined;
   return {
     id: String(d._id),
     name: d.name,
@@ -113,8 +113,8 @@ function toView(d: {
     kindName: kind?.name ?? "",
     categoryId: String(category?._id ?? d.categoryId),
     categoryName: category?.name ?? "",
-    supplierId: supplier?._id ? String(supplier._id) : undefined,
-    supplierName: supplier?.name,
+    pageId: page?._id ? String(page._id) : undefined,
+    pageName: page?.name,
     price: d.price,
     tags: d.tags,
     emoji: d.emoji,
@@ -128,24 +128,24 @@ export async function listCatalogItems(): Promise<CatalogItemView[]> {
   await connectMongo();
   const docs = await CatalogItem.find({})
     .sort({ createdAt: -1 })
-    .populate<{ kindId: PopulatedRef; categoryId: PopulatedRef; supplierId?: PopulatedRef }>([
+    .populate<{ kindId: PopulatedRef; categoryId: PopulatedRef; pageId?: PopulatedRef }>([
       "kindId",
       "categoryId",
-      "supplierId",
+      "pageId",
     ]);
   return docs.map((d) => toView(d as unknown as Parameters<typeof toView>[0]));
 }
 
-/** 店家頁用：這家店的所有品項——item.supplierId 是必填欄位，比模板的 supplierId（選填，混合店家會留空）可靠。 */
-export async function listCatalogItemsBySupplier(supplierId: string): Promise<CatalogItemView[]> {
+/** 頁面詳情用：這個頁面的所有品項——item.pageId 是必填欄位，比模板的 pageId（選填，混合頁面會留空）可靠。 */
+export async function listCatalogItemsByPage(pageId: string): Promise<CatalogItemView[]> {
   await connectMongo();
-  if (!Types.ObjectId.isValid(supplierId)) return [];
-  const docs = await CatalogItem.find({ supplierId: new Types.ObjectId(supplierId) })
+  if (!Types.ObjectId.isValid(pageId)) return [];
+  const docs = await CatalogItem.find({ pageId: new Types.ObjectId(pageId) })
     .sort({ createdAt: -1 })
-    .populate<{ kindId: PopulatedRef; categoryId: PopulatedRef; supplierId?: PopulatedRef }>([
+    .populate<{ kindId: PopulatedRef; categoryId: PopulatedRef; pageId?: PopulatedRef }>([
       "kindId",
       "categoryId",
-      "supplierId",
+      "pageId",
     ]);
   return docs.map((d) => toView(d as unknown as Parameters<typeof toView>[0]));
 }
@@ -162,8 +162,8 @@ export async function listCatalogItemsByIds(ids: string[]): Promise<CatalogItemV
   const docs = await CatalogItem.find({ _id: { $in: objIds } }).populate<{
     kindId: PopulatedRef;
     categoryId: PopulatedRef;
-    supplierId?: PopulatedRef;
-  }>(["kindId", "categoryId", "supplierId"]);
+    pageId?: PopulatedRef;
+  }>(["kindId", "categoryId", "pageId"]);
   const byId = new Map(docs.map((d) => [String(d._id), toView(d as unknown as Parameters<typeof toView>[0])]));
   return uniqueIds.map((id) => byId.get(id)).filter((v): v is CatalogItemView => !!v);
 }
@@ -174,22 +174,22 @@ export async function findCatalogItemById(id: string): Promise<CatalogItemView |
   const doc = await CatalogItem.findById(id).populate<{
     kindId: PopulatedRef;
     categoryId: PopulatedRef;
-    supplierId?: PopulatedRef;
-  }>(["kindId", "categoryId", "supplierId"]);
+    pageId?: PopulatedRef;
+  }>(["kindId", "categoryId", "pageId"]);
   return doc ? toView(doc) : null;
 }
 
 function buildDoc(input: CatalogItemInput) {
   if (!Types.ObjectId.isValid(input.kindId)) throw new Error("請選擇有效的類型。");
   if (!Types.ObjectId.isValid(input.categoryId)) throw new Error("請選擇有效的分類。");
-  if (input.supplierId && !Types.ObjectId.isValid(input.supplierId)) {
-    throw new Error("請選擇有效的店家。");
+  if (input.pageId && !Types.ObjectId.isValid(input.pageId)) {
+    throw new Error("請選擇有效的頁面。");
   }
   return {
     name: input.name,
     kindId: new Types.ObjectId(input.kindId),
     categoryId: new Types.ObjectId(input.categoryId),
-    supplierId: input.supplierId ? new Types.ObjectId(input.supplierId) : undefined,
+    pageId: input.pageId ? new Types.ObjectId(input.pageId) : undefined,
     price: input.price,
     tags: input.tags,
     emoji: input.emoji || "🍽️",

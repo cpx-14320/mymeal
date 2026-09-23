@@ -18,7 +18,7 @@ export default async function AdminItemsPage() {
     <div className="space-y-8">
       <Section>
         <AdminHeaderActions>
-          <ButtonLink href="/admin/items/new">新增品項</ButtonLink>
+          <ButtonLink href="/admin/items/new" size="sm">新增品項</ButtonLink>
         </AdminHeaderActions>
 
         <ItemsTable items={items} categories={categories} tagGroups={tagGroups} />

@@ -1,14 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updateSupplier, deleteSuppliers, type SupplierInput } from "@/lib/models/supplier";
+import { updatePage, deletePages, type PageInput } from "@/lib/models/page";
 
-export interface UpdateSupplierState {
+export interface UpdatePageState {
   error?: string;
   success?: boolean;
 }
 
-function parseInput(formData: FormData): SupplierInput | { error: string } {
+function parseInput(formData: FormData): PageInput | { error: string } {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const icon = String(formData.get("icon") ?? "").trim();
@@ -24,16 +24,16 @@ function parseInput(formData: FormData): SupplierInput | { error: string } {
   return { name, description, icon, iconSvg, slug, sortOrder, openInNewTab, showTopItems, templateId };
 }
 
-export async function updateSupplierAction(
+export async function updatePageAction(
   id: string,
-  _prevState: UpdateSupplierState,
+  _prevState: UpdatePageState,
   formData: FormData,
-): Promise<UpdateSupplierState> {
+): Promise<UpdatePageState> {
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
 
   try {
-    await updateSupplier(id, input);
+    await updatePage(id, input);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
@@ -43,14 +43,14 @@ export async function updateSupplierAction(
   return { success: true };
 }
 
-export interface DeleteSupplierState {
+export interface DeletePageState {
   error?: string;
   success?: boolean;
 }
 
-export async function deleteSupplierAction(id: string): Promise<DeleteSupplierState> {
-  const deleted = await deleteSuppliers([id]);
-  if (!deleted) return { error: "找不到這個店家，可能已被刪除。" };
+export async function deletePageAction(id: string): Promise<DeletePageState> {
+  const deleted = await deletePages([id]);
+  if (!deleted) return { error: "找不到這個頁面，可能已被刪除。" };
 
   revalidatePath("/admin/pages");
   return { success: true };

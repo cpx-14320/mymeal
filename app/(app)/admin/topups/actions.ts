@@ -66,3 +66,31 @@ export async function deleteTopupAction(id: string): Promise<TopupActionState> {
   revalidatePath("/admin");
   return { success: true };
 }
+
+/** 批次版本：逐筆呼叫既有的單筆 action（沿用同一套稽核紀錄／餘額入帳邏輯），
+ *  失敗的筆數收集起來回報，不會因為其中一筆失敗就整批中斷。 */
+async function runBulk(ids: string[], run: (id: string) => Promise<TopupActionState>, verb: string) {
+  let failCount = 0;
+  let firstError: string | undefined;
+  for (const id of ids) {
+    const result = await run(id);
+    if (result.error) {
+      failCount++;
+      firstError ??= result.error;
+    }
+  }
+  if (failCount > 0) return { error: `${failCount} 筆${verb}失敗：${firstError}` };
+  return { success: true };
+}
+
+export async function bulkApproveTopupsAction(ids: string[]): Promise<TopupActionState> {
+  return runBulk(ids, approveTopupAction, "核准");
+}
+
+export async function bulkRejectTopupsAction(ids: string[]): Promise<TopupActionState> {
+  return runBulk(ids, (id) => rejectTopupAction(id), "退件");
+}
+
+export async function bulkDeleteTopupsAction(ids: string[]): Promise<TopupActionState> {
+  return runBulk(ids, deleteTopupAction, "刪除");
+}

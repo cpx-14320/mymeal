@@ -81,8 +81,8 @@ export function SettingsForm({ settings }: { settings: SettingsView }) {
         </Section>
       </Section>
 
-      {state.error && <p className="text-sm text-danger">{state.error}</p>}
-      {state.success && <p className="text-sm text-positive">已儲存。</p>}
+      {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
+      {state.success && <p className="text-[13px] lg:text-[14px] text-positive">已儲存。</p>}
 
       <div className="flex justify-end">
         <Button disabled={pending}>{pending ? "儲存中…" : "儲存設定"}</Button>

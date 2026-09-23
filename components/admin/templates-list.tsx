@@ -13,6 +13,7 @@ import {
   Td,
   Pagination,
   PageSizeSelect,
+  BulkActionBar,
 } from "@/components/ui/primitives";
 import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import type { TemplateListItem } from "@/lib/models/template";
@@ -92,10 +93,10 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
   return (
     <Section>
       <AdminHeaderActions>
-        <ButtonLink href="/admin/templates/new">新增模板</ButtonLink>
+        <ButtonLink href="/admin/templates/new" size="sm">新增模板</ButtonLink>
       </AdminHeaderActions>
 
-      <div className="flex items-center justify-end gap-2 text-xs text-muted">
+      <div className="flex min-h-9 flex-wrap items-center justify-end gap-2">
         <PageSizeSelect
           value={pageSize}
           onChange={(n) => {
@@ -137,42 +138,16 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
         </select>
       </div>
 
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span>
-            已選 <b className="tabular-nums">{selected.size}</b> 個
-          </span>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setSelected(new Set())} className="text-muted hover:text-ink">
-              取消選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => bulkSetActive(true)}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-            >
-              啟用選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => bulkSetActive(false)}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-            >
-              停用選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={bulkDelete}
-              className="rounded-lg border border-danger/40 px-3 py-1 font-semibold text-danger hover:bg-danger/10 disabled:opacity-50"
-            >
-              刪除選取
-            </button>
-          </div>
-        </div>
-      )}
+      <BulkActionBar
+        count={selected.size}
+        unit="個"
+        onCancel={() => setSelected(new Set())}
+        actions={[
+          { label: "啟用選取", tone: "neutral", onClick: () => bulkSetActive(true), disabled: busy },
+          { label: "停用選取", tone: "neutral", onClick: () => bulkSetActive(false), disabled: busy },
+          { label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy },
+        ]}
+      />
 
       <TableWrap>
         <thead>
@@ -203,7 +178,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
                     aria-label={`選取 ${t.name}`}
                   />
                 </Td>
-                <Td className="font-medium">
+                <Td>
                   <Link href={`/admin/templates/${t.id}`} className="hover:text-brand">
                     {t.name}
                   </Link>
@@ -217,7 +192,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
                   <Badge tone={t.active ? "positive" : "neutral"}>{t.active ? "啟用" : "停用"}</Badge>
                 </Td>
                 <Td className="text-muted">{t.createdBy}</Td>
-                <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(t.createdAt)}</Td>
+                <Td className="text-muted">{formatTaiwanDateTime(t.createdAt)}</Td>
                 <Td className="text-right">
                   <div className="flex justify-end gap-2">
                     <ButtonLink href={`/admin/templates/${t.id}`} variant="secondary" size="sm">
@@ -234,9 +209,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
           {rows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={9}>
-                {templates.length === 0
-                  ? "還沒有模板，點右上角「新增模板」開始建立。"
-                  : "這個範圍內沒有模板。"}
+                {templates.length === 0 ? "目前沒有資料" : "這個範圍內沒有模板。"}
               </Td>
             </tr>
           )}

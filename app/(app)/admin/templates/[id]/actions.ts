@@ -29,10 +29,10 @@ export async function updateTemplateBasicAction(
 ): Promise<TemplateBasicState> {
   const name = String(formData.get("name") ?? "").trim();
   const kindId = String(formData.get("kindId") ?? "").trim();
-  const supplierId = String(formData.get("supplierId") ?? "").trim();
+  const pageId = String(formData.get("pageId") ?? "").trim();
   if (!name || !kindId) return { error: "請輸入模板名稱並選擇類型。" };
 
-  await updateTemplateBasic(id, { name, kindId, supplierId: supplierId || undefined });
+  await updateTemplateBasic(id, { name, kindId, pageId: pageId || undefined });
   refresh(id);
   return { success: true };
 }

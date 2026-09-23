@@ -28,7 +28,7 @@ export function DepartmentExport({ departments }: { departments: OrgOption[] }) 
   if (departments.length === 0) {
     return (
       <Section title="依部門匯出" description="還沒有任何部門，先到「部門與單位」頁建立。">
-        <p className="text-sm text-muted">尚無可彙總的部門。</p>
+        <p className="text-[13px] lg:text-[14px] text-muted">尚無可彙總的部門。</p>
       </Section>
     );
   }
@@ -41,7 +41,7 @@ export function DepartmentExport({ departments }: { departments: OrgOption[] }) 
         <select
           value={departmentId}
           onChange={(e) => setDepartmentId(e.target.value)}
-          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+          className="rounded-lg border border-line bg-surface px-3 py-2 text-[13px] lg:text-[14px] text-ink outline-none focus:border-brand"
         >
           {departments.map((d) => (
             <option key={d.id} value={d.id}>
@@ -79,7 +79,7 @@ export function DepartmentExport({ departments }: { departments: OrgOption[] }) 
               ) : (
                 summary.byUnit.map((u) => (
                   <tr key={u.unitId}>
-                    <Td className="font-medium">{u.unitName}</Td>
+                    <Td>{u.unitName}</Td>
                     <Td className="text-right tabular-nums">{u.orderCount}</Td>
                     <Td className="text-right tabular-nums">{u.qty}</Td>
                     <Td className="text-right tabular-nums">NT$ {u.amount}</Td>

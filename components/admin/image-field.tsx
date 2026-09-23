@@ -83,7 +83,7 @@ export function ImageField({
               從本機選擇檔案
             </button>
             {fileName && (
-              <span className="max-w-52 truncate text-xs text-muted">
+              <span className="max-w-52 truncate text-[13px] lg:text-[14px] text-muted">
                 {fileName}
               </span>
             )}
@@ -91,7 +91,7 @@ export function ImageField({
               <button
                 type="button"
                 onClick={clear}
-                className="text-xs text-muted hover:text-danger"
+                className="text-[13px] lg:text-[14px] text-muted hover:text-danger"
               >
                 清除
               </button>
@@ -106,7 +106,7 @@ export function ImageField({
             onChange={onFile}
           />
 
-          <p className="text-xs text-muted">
+          <p className="text-[13px] lg:text-[14px] text-muted">
             接後端後：選檔會實際上傳，圖片路徑自動填入。沒有圖片時，清單以備用 emoji 顯示。
           </p>
         </div>

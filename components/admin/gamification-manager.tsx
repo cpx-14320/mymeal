@@ -1,8 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Section, Button, Badge, TableWrap, Th, Td } from "@/components/ui/primitives";
+import { Section, Button, Badge, TableWrap, Th, Td, PillTabs } from "@/components/ui/primitives";
+import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { taskTypeLabel, taskPeriodLabel } from "@/lib/mock";
 import type {
   DailyTaskView,
@@ -27,6 +28,8 @@ const cellInput = "w-full rounded-md border border-transparent bg-transparent px
 const TASK_TYPES: TaskType[] = ["topup", "order", "favorite", "comment", "rating"];
 const TASK_PERIODS: TaskPeriod[] = ["daily", "weekly", "monthly", "achievement"];
 
+type Tab = "tasks" | "rules" | "levels";
+
 function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -39,10 +42,10 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
   }
 
   return (
-    <Section
-      title="任務"
-      actions={
+    <Section>
+      <AdminHeaderActions>
         <Button
+          size="sm"
           onClick={() =>
             startTransition(async () => {
               await createDailyTaskAction();
@@ -52,8 +55,8 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
         >
           新增任務
         </Button>
-      }
-    >
+      </AdminHeaderActions>
+
       <TableWrap>
         <thead>
           <tr>
@@ -69,7 +72,7 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
         <tbody>
           {tasks.map((t) => (
             <tr key={t.id}>
-              <Td className="font-medium">
+              <Td>
                 <input
                   className={cellInput}
                   defaultValue={t.name}
@@ -79,7 +82,7 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
                   }}
                 />
               </Td>
-              <Td className="font-mono text-xs text-muted">
+              <Td className="font-mono text-muted">
                 <select
                   className={cellInput}
                   defaultValue={t.type}
@@ -175,12 +178,10 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
   }
 
   return (
-    <Section
-      title="經驗值規則"
-      description="每次動作給多少 exp，以及每日 / 每週 / 每月上限（空白 = 不限）。"
-      actions={
+    <Section>
+      <AdminHeaderActions>
         <Button
-          variant="secondary"
+          size="sm"
           onClick={() =>
             startTransition(async () => {
               await createExpRuleAction();
@@ -190,8 +191,8 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
         >
           新增規則
         </Button>
-      }
-    >
+      </AdminHeaderActions>
+
       <TableWrap>
         <thead>
           <tr>
@@ -206,7 +207,7 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
         <tbody>
           {rules.map((r) => (
             <tr key={r.id}>
-              <Td className="font-mono text-xs">
+              <Td className="font-mono">
                 <select
                   className={cellInput}
                   defaultValue={r.type}
@@ -277,11 +278,10 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
   }
 
   return (
-    <Section
-      title="等級"
-      actions={
+    <Section>
+      <AdminHeaderActions>
         <Button
-          variant="secondary"
+          size="sm"
           onClick={() =>
             startTransition(async () => {
               await createMemberLevelAction();
@@ -291,8 +291,8 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
         >
           新增等級
         </Button>
-      }
-    >
+      </AdminHeaderActions>
+
       <TableWrap>
         <thead>
           <tr>
@@ -304,7 +304,7 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
         <tbody>
           {levels.map((l, i) => (
             <tr key={l.id}>
-              <Td className="font-medium">
+              <Td>
                 <span className="mr-1 text-muted">Lv.{i + 1}</span>
                 <input
                   className={cellInput}
@@ -357,13 +357,23 @@ export function GamificationManager({
   rules: ExpRuleView[];
   levels: MemberLevelView[];
 }) {
+  const [tab, setTab] = useState<Tab>("tasks");
+
   return (
-    <div className="space-y-8">
-      <Section>
-        <TasksSection tasks={tasks} />
-        <ExpRulesSection rules={rules} />
-        <LevelsSection levels={levels} />
-      </Section>
+    <div className="space-y-4">
+      <PillTabs
+        tabs={[
+          { key: "tasks", label: "任務", count: tasks.length },
+          { key: "rules", label: "經驗值規則", count: rules.length },
+          { key: "levels", label: "等級", count: levels.length },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
+
+      {tab === "tasks" && <TasksSection tasks={tasks} />}
+      {tab === "rules" && <ExpRulesSection rules={rules} />}
+      {tab === "levels" && <LevelsSection levels={levels} />}
     </div>
   );
 }

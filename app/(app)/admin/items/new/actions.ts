@@ -18,7 +18,7 @@ export async function createItemAction(
   const name = String(formData.get("name") ?? "").trim();
   const kindId = String(formData.get("kindId") ?? "").trim();
   const categoryId = String(formData.get("categoryId") ?? "").trim();
-  const supplierId = String(formData.get("supplierId") ?? "").trim();
+  const pageId = String(formData.get("pageId") ?? "").trim();
   const price = Number(formData.get("price") ?? 0);
   const emoji = String(formData.get("emoji") ?? "").trim();
   const imageUrl = String(formData.get("imageUrl") ?? "").trim();
@@ -38,7 +38,7 @@ export async function createItemAction(
         name,
         kindId,
         categoryId,
-        supplierId: supplierId || undefined,
+        pageId: pageId || undefined,
         price,
         tags,
         emoji,

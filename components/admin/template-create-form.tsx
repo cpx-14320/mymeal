@@ -2,13 +2,13 @@
 
 import { useActionState } from "react";
 import { Card, CardBody, Field, inputClass, Button, ButtonLink } from "@/components/ui/primitives";
-import type { SupplierView } from "@/lib/models/supplier";
+import type { PageView } from "@/lib/models/page";
 import type { ItemKindOption } from "@/lib/models/item-kind";
 import { createTemplateAction, type CreateTemplateState } from "@/app/(app)/admin/templates/actions";
 
 const initialState: CreateTemplateState = {};
 
-export function TemplateCreateForm({ suppliers, kinds }: { suppliers: SupplierView[]; kinds: ItemKindOption[] }) {
+export function TemplateCreateForm({ pages, kinds }: { pages: PageView[]; kinds: ItemKindOption[] }) {
   const [state, formAction, pending] = useActionState(createTemplateAction, initialState);
 
   return (
@@ -33,10 +33,10 @@ export function TemplateCreateForm({ suppliers, kinds }: { suppliers: SupplierVi
               </select>
             </Field>
 
-            <Field label="頁面" hint="選填，多家店家混合就留空">
-              <select className={inputClass} name="supplierId" defaultValue="">
+            <Field label="頁面" hint="選填，多個頁面混合就留空">
+              <select className={inputClass} name="pageId" defaultValue="">
                 <option value="">選擇頁面</option>
-                {suppliers.map((s) => (
+                {pages.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
@@ -45,7 +45,7 @@ export function TemplateCreateForm({ suppliers, kinds }: { suppliers: SupplierVi
             </Field>
           </div>
 
-          {state.error && <p className="text-sm text-danger">{state.error}</p>}
+          {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
         </CardBody>
       </Card>
 

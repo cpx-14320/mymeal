@@ -49,7 +49,11 @@ export default async function AdminDashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Section title="今日成團狀況">
           {todayGroups.length === 0 ? (
-            <p className="text-sm text-muted">今天還沒有團訂。</p>
+            <Card>
+              <CardBody>
+                <p className="text-[13px] lg:text-[14px] text-muted">今天還沒有團訂。</p>
+              </CardBody>
+            </Card>
           ) : (
             <div className="space-y-3">
               {todayGroups.map((g) => (
@@ -57,7 +61,7 @@ export default async function AdminDashboard() {
                   <CardBody className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">{g.name}</p>
-                      <p className="text-sm text-muted">
+                      <p className="text-[13px] lg:text-[14px] text-muted">
                         {g.templateName}．{g.qty} 份
                       </p>
                     </div>
@@ -74,7 +78,7 @@ export default async function AdminDashboard() {
         <Section title="近期稽核">
           <Card>
             <CardBody>
-              <p className="text-sm text-muted">稽核紀錄功能還沒串接，之後會顯示最近的管理操作。</p>
+              <p className="text-[13px] lg:text-[14px] text-muted">稽核紀錄功能還沒串接，之後會顯示最近的管理操作。</p>
             </CardBody>
           </Card>
         </Section>

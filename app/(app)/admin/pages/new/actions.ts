@@ -2,16 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createSupplier, type SupplierInput } from "@/lib/models/supplier";
+import { createPage, type PageInput } from "@/lib/models/page";
 import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
 
-export interface CreateSupplierState {
+export interface CreatePageState {
   error?: string;
   success?: boolean;
 }
 
-function parseInput(formData: FormData): SupplierInput | { error: string } {
+function parseInput(formData: FormData): PageInput | { error: string } {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const icon = String(formData.get("icon") ?? "").trim();
@@ -27,24 +27,24 @@ function parseInput(formData: FormData): SupplierInput | { error: string } {
   return { name, description, icon, iconSvg, slug, sortOrder, openInNewTab, showTopItems, templateId };
 }
 
-export async function createSupplierAction(
-  _prevState: CreateSupplierState,
+export async function createPageAction(
+  _prevState: CreatePageState,
   formData: FormData,
-): Promise<CreateSupplierState> {
+): Promise<CreatePageState> {
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
 
   const memberId = await getSessionMemberId();
   const member = memberId ? await findMemberById(memberId) : null;
 
-  let supplierId: string;
+  let pageId: string;
   try {
-    const supplier = await createSupplier(input, member?.name);
-    supplierId = supplier.id;
+    const page = await createPage(input, member?.name);
+    pageId = page.id;
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
   revalidatePath("/admin/pages");
-  redirect(`/admin/pages/${supplierId}`);
+  redirect(`/admin/pages/${pageId}`);
 }

@@ -56,7 +56,7 @@ export function Section({
               <h2 className={`leading-none ${titleClassName}`}>{title}</h2>
             )}
             {description && (
-              <p className="mt-0.5 text-sm text-muted">{description}</p>
+              <p className="mt-0.5 text-[13px] text-muted lg:text-[14px]">{description}</p>
             )}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -113,11 +113,14 @@ type BtnVariant = "primary" | "secondary" | "ghost" | "danger";
 type BtnSize = "sm" | "md";
 
 const btnBase =
-  "btn inline-flex items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50";
+  "btn inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50";
 
+/** sm 的 text-[13px] 搭配 leading-5（20px）是刻意的：字級改小但行高維持跟改之前
+ *  一樣的 20px，這樣按鈕整體高度（padding 4px + 行高 20px = 28px）才會跟標題列
+ *  的 <h1>（text-xl，行高剛好也是 28px）對齊，不會因為字變小而跟著變矮。 */
 const btnSizes: Record<BtnSize, string> = {
-  sm: "px-3 py-1",
-  md: "px-4 py-2",
+  sm: "px-3 py-1 text-[13px] leading-5",
+  md: "px-4 py-2 text-sm",
 };
 
 const btnVariants: Record<BtnVariant, string> = {
@@ -261,7 +264,7 @@ export function PillTabs<T extends string>({
             type="button"
             onClick={() => onChange(t.key)}
             aria-pressed={active}
-            className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
+            className={`rounded-full px-3 py-1.5 text-[13px] transition-colors ${
               active
                 ? "bg-brand text-brand-fg"
                 : "border border-line bg-surface text-muted hover:text-ink"
@@ -294,7 +297,7 @@ export function PageSizeSelect({
       <select
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="rounded-lg border border-line bg-surface px-2 py-1 text-xs text-ink outline-none focus:border-brand"
+        className="rounded-lg border border-line bg-surface px-2 py-1.5 text-xs text-ink outline-none focus:border-brand"
         aria-label="每頁顯示筆數"
       >
         {PAGE_SIZE_OPTIONS.map((n) => (
@@ -308,29 +311,34 @@ export function PageSizeSelect({
   );
 }
 
-/** 表格上方常見的「搜尋框 + 每頁顯示」並排列——會員列表／稽核紀錄等清單頁共用。 */
-export function ListSearchBar({
-  searchValue,
-  onSearchChange,
-  searchPlaceholder,
+/** 表格上方工具列：左邊放篩選頁籤（tabs）或搜尋框（search）擇一（也可以都不放，
+ *  只留「每頁顯示」），右邊固定放 PageSizeSelect。固定 min-h-9——不管當前頁面左邊
+ *  搭配哪種內容（頁籤／搜尋框／什麼都沒有），這排工具列的高度都一樣，避免切頁時
+ *  忽高忽低。取代原本各表格元件各自手刻的 flex 列（items-table、group-orders-table、
+ *  topups-tables、wallets-tables、zones-list、templates-list、pages-manager…）。 */
+export function ListToolbar<T extends string = string>({
+  tabs,
+  search,
   pageSize,
   onPageSizeChange,
 }: {
-  searchValue: string;
-  onSearchChange: (value: string) => void;
-  searchPlaceholder: string;
+  tabs?: { tabs: { key: T; label: string; count?: number }[]; value: T; onChange: (key: T) => void };
+  search?: { value: string; onChange: (value: string) => void; placeholder: string };
   pageSize: number;
   onPageSizeChange: (n: number) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="w-64">
-        <input
-          className={inputClass}
-          placeholder={searchPlaceholder}
-          value={searchValue}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
+    <div className="flex min-h-9 flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {tabs && <PillTabs tabs={tabs.tabs} value={tabs.value} onChange={tabs.onChange} />}
+        {search && (
+          <input
+            className="w-64 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-ink outline-none focus:border-brand"
+            placeholder={search.placeholder}
+            value={search.value}
+            onChange={(e) => search.onChange(e.target.value)}
+          />
+        )}
       </div>
       <PageSizeSelect value={pageSize} onChange={onPageSizeChange} />
     </div>
@@ -404,6 +412,60 @@ export function Pagination({
   );
 }
 
+export interface BulkAction {
+  label: string;
+  /** neutral＝會改變狀態但可逆（啟用/停用、開放/截止、上架/下架、核准…）；
+   *  danger＝拒絕或移除資料（退件、刪除…）。決定按鈕是黑框還是紅框。 */
+  tone: "neutral" | "danger";
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+/** 表格上方「已選 N 筆」批次操作列——全選後出現，取消選取固定灰色、
+ *  其餘按鈕依 tone 統一走黑框（neutral）或紅框（danger），字級 13px。
+ *  count 為 0 時不渲染，呼叫端不用自己包 `{selected.size > 0 && ...}`。 */
+export function BulkActionBar({
+  count,
+  unit,
+  onCancel,
+  actions,
+}: {
+  count: number;
+  unit: string;
+  onCancel: () => void;
+  actions: BulkAction[];
+}) {
+  if (count === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-[13px]">
+      <span>
+        已選 <b className="tabular-nums">{count}</b> {unit}
+      </span>
+      <div className="flex items-center gap-3">
+        <button type="button" onClick={onCancel} className="text-muted hover:text-ink">
+          取消選取
+        </button>
+        {actions.map((a) => (
+          <button
+            key={a.label}
+            type="button"
+            disabled={a.disabled}
+            onClick={a.onClick}
+            className={
+              a.tone === "danger"
+                ? "rounded-lg border border-danger/40 px-3 py-1 font-semibold text-danger hover:bg-danger/10 disabled:opacity-50"
+                : "rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
+            }
+          >
+            {a.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** 列表用的狀態開關（無文字，綠＝開 / 灰＝關）。onToggle 由 client 父層傳入。 */
 export function Toggle({
   on,
@@ -439,7 +501,7 @@ export function Toggle({
 export function TableWrap({ children }: { children: ReactNode }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-line">
-      <table className="w-full text-sm">{children}</table>
+      <table className="w-full">{children}</table>
     </div>
   );
 }
@@ -456,7 +518,7 @@ export function Th({
   return (
     <th
       colSpan={colSpan}
-      className={`whitespace-nowrap bg-surface-2 px-4 py-2.5 text-left text-xs font-medium text-muted ${className}`}
+      className={`whitespace-nowrap bg-surface-2 px-4 py-2.5 text-left text-[13px] font-normal text-muted lg:text-[14px] ${className}`}
     >
       {children}
     </th>
@@ -478,9 +540,14 @@ export function Td({
     <td
       colSpan={colSpan}
       rowSpan={rowSpan}
-      className={`border-t border-line px-4 py-3 text-left align-middle ${className}`}
+      className={`whitespace-nowrap border-t border-line px-4 py-3 text-left align-middle text-[13px] lg:text-[14px] ${className}`}
     >
-      {children}
+      {/* min-height 直接放在 <td> 上，在部分瀏覽器的 table layout 下不會真的撐開列高
+       * （量測驗證過）；改用內層 inline-flex 撐 min-h-[30px]（+ td 自己的 24px 上下
+       * padding＝54px，等於 size="sm" 按鈕的最高高度）才能讓純文字列、空狀態列、
+       * 放按鈕的列高度一致。inline-flex 而非 flex，是為了不影響 text-right/text-center
+       * 這類靠 <td> 的 text-align 排版的既有用法。 */}
+      <div className="inline-flex min-h-[30px] items-center">{children}</div>
     </td>
   );
 }
@@ -510,7 +577,7 @@ export function Field({
 
 export function Note({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-lg border border-line border-l-[3px] border-l-brand bg-surface p-4 text-sm text-muted">
+    <div className="rounded-lg border border-line border-l-[3px] border-l-brand bg-surface p-4 text-[13px] text-muted lg:text-[14px]">
       {children}
     </div>
   );

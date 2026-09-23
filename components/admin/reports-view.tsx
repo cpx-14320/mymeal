@@ -10,7 +10,7 @@ import {
   Th,
   Td,
 } from "@/components/ui/primitives";
-import type { DailyOrderStat, KindOrderStat, SupplierOrderStat } from "@/lib/models/reports";
+import type { DailyOrderStat, KindOrderStat, PageOrderStat } from "@/lib/models/reports";
 
 const RANGE_OPTIONS = [7, 14, 30] as const;
 type Range = (typeof RANGE_OPTIONS)[number];
@@ -18,11 +18,11 @@ type Range = (typeof RANGE_OPTIONS)[number];
 export function ReportsView({
   daily,
   byKind,
-  bySupplier,
+  byPage,
 }: {
   daily: DailyOrderStat[];
   byKind: KindOrderStat[];
-  bySupplier: SupplierOrderStat[];
+  byPage: PageOrderStat[];
 }) {
   const [range, setRange] = useState<Range>(7);
 
@@ -100,7 +100,7 @@ export function ReportsView({
               ) : (
                 byKind.map((r) => (
                   <tr key={r.name}>
-                    <Td className="font-medium">{r.name}</Td>
+                    <Td>{r.name}</Td>
                     <Td className="text-right tabular-nums">{r.sessions}</Td>
                     <Td className="text-right tabular-nums">{r.count}</Td>
                     <Td className="text-right tabular-nums">NT$ {r.amount}</Td>
@@ -111,26 +111,26 @@ export function ReportsView({
           </TableWrap>
         </Section>
 
-        <Section title="依店家統計">
+        <Section title="依頁面統計">
           <TableWrap>
             <thead>
               <tr>
-                <Th>店家</Th>
+                <Th>頁面</Th>
                 <Th className="text-right">份數 / 杯數</Th>
                 <Th className="text-right">金額</Th>
               </tr>
             </thead>
             <tbody>
-              {bySupplier.length === 0 ? (
+              {byPage.length === 0 ? (
                 <tr>
                   <Td colSpan={3} className="text-center text-muted">
                     近 30 天沒有團訂資料。
                   </Td>
                 </tr>
               ) : (
-                bySupplier.map((r) => (
+                byPage.map((r) => (
                   <tr key={r.name}>
-                    <Td className="font-medium">{r.name}</Td>
+                    <Td>{r.name}</Td>
                     <Td className="text-right tabular-nums">{r.orders}</Td>
                     <Td className="text-right tabular-nums">NT$ {r.amount}</Td>
                   </tr>

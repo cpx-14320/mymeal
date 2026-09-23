@@ -10,8 +10,8 @@ import {
   Th,
   Td,
   Pagination,
-  PageSizeSelect,
-  PillTabs,
+  ListToolbar,
+  BulkActionBar,
 } from "@/components/ui/primitives";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
@@ -103,54 +103,26 @@ export function ItemsTable({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <PillTabs tabs={tabs.map((t) => ({ ...t, count: countOf(t.key) }))} value={filter} onChange={pick} />
-        <PageSizeSelect
-          value={pageSize}
-          onChange={(n) => {
-            setPageSize(n);
-            setPage(1);
-          }}
-        />
-      </div>
+    <div className="space-y-4">
+      <ListToolbar
+        tabs={{ tabs: tabs.map((t) => ({ ...t, count: countOf(t.key) })), value: filter, onChange: pick }}
+        pageSize={pageSize}
+        onPageSizeChange={(n) => {
+          setPageSize(n);
+          setPage(1);
+        }}
+      />
 
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span>
-            已選 <b className="tabular-nums">{selected.size}</b> 項
-          </span>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setSelected(new Set())} className="text-muted hover:text-ink">
-              取消選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => bulkSetActive(true)}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-            >
-              啟用選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => bulkSetActive(false)}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-            >
-              停用選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={bulkDelete}
-              className="rounded-lg border border-danger/40 px-3 py-1 font-semibold text-danger hover:bg-danger/10 disabled:opacity-50"
-            >
-              刪除選取
-            </button>
-          </div>
-        </div>
-      )}
+      <BulkActionBar
+        count={selected.size}
+        unit="項"
+        onCancel={() => setSelected(new Set())}
+        actions={[
+          { label: "啟用選取", tone: "neutral", onClick: () => bulkSetActive(true), disabled: busy },
+          { label: "停用選取", tone: "neutral", onClick: () => bulkSetActive(false), disabled: busy },
+          { label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy },
+        ]}
+      />
 
       <TableWrap>
         <thead>
@@ -181,11 +153,11 @@ export function ItemsTable({
                   aria-label={`選取 ${it.name}`}
                 />
               </Td>
-              <Td className="font-medium">
+              <Td>
                 <span className="mr-1.5">{it.emoji}</span>
                 {it.name}
               </Td>
-              <Td className="text-muted">{it.supplierName ?? "—"}</Td>
+              <Td className="text-muted">{it.pageName ?? "—"}</Td>
               <Td className="text-muted">{it.categoryName}</Td>
               {tagGroups.map((g) => (
                 <Td key={g.id} className="text-muted">
@@ -212,7 +184,7 @@ export function ItemsTable({
           {pageRows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={8 + tagGroups.length}>
-                沒有符合的品項
+                目前沒有資料
               </Td>
             </tr>
           )}

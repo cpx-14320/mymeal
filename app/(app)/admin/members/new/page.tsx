@@ -1,4 +1,4 @@
-import { Section, ButtonLink } from "@/components/ui/primitives";
+import { Section } from "@/components/ui/primitives";
 import { MemberCreateForm } from "@/components/admin/member-create-form";
 import { listDepartments, listUnits } from "@/lib/models/org";
 import { listRoles } from "@/lib/models/role";
@@ -13,11 +13,6 @@ export default async function NewMemberPage() {
     <Section
       title="新增會員"
       description="建立後即可登入使用，權限決定後台可操作的範圍。"
-      actions={
-        <ButtonLink href="/admin/members" variant="ghost">
-          返回列表
-        </ButtonLink>
-      }
     >
       <MemberCreateForm departments={departments} units={units} roleNames={roleNames} />
     </Section>

@@ -9,6 +9,7 @@ import {
   ButtonLink,
   Card,
   CardBody,
+  PillTabs,
 } from "@/components/ui/primitives";
 import { ItemCard } from "@/components/item-card";
 import {
@@ -33,8 +34,8 @@ function toItemView(it: CatalogItem): CatalogItemView {
     kindName: itemKindLabel[it.kind],
     categoryId: "",
     categoryName: it.category,
-    supplierId: it.supplierId,
-    supplierName: supplierById(it.supplierId)?.name,
+    pageId: it.supplierId,
+    pageName: supplierById(it.supplierId)?.name,
     price: it.price,
     tags: it.tags,
     emoji: it.emoji,
@@ -75,27 +76,14 @@ export default function MenuPage() {
         actions={<ButtonLink href="/group-orders/new">開團</ButtonLink>}
       />
 
-      <div className="flex gap-2">
-        {(
-          [
-            ["bento", "便當"],
-            ["drinks", "飲料・下午茶"],
-          ] as [Tab, string][]
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={`rounded-full px-4 py-1.5 text-sm ${
-              tab === key
-                ? "bg-brand text-brand-fg"
-                : "border border-line bg-surface text-muted hover:text-ink"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <PillTabs
+        tabs={[
+          { key: "bento", label: "便當" },
+          { key: "drinks", label: "飲料・下午茶" },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
 
       {tab === "bento" && (
         <>

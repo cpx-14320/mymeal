@@ -20,8 +20,8 @@ function Base({ children, ...props }: IconProps & { children: ReactNode }) {
   );
 }
 
-/** 前台側欄動態店家連結用（後台新增店家就會多一個，見 sidebar.tsx）——不是固定的 NavKey，單獨匯出。 */
-export function StoreIcon(props: IconProps) {
+/** 前台側欄動態頁面連結用（後台新增頁面就會多一個，見 sidebar.tsx）——不是固定的 NavKey，單獨匯出。 */
+export function PageIcon(props: IconProps) {
   return (
     <Base {...props}>
       <path d="M4 9h16v11H4z" />
@@ -108,7 +108,7 @@ export const adminNavIcons: Record<
       <path d="M8 9v11" />
     </Base>
   ),
-  suppliers: (props) => (
+  pages: (props) => (
     <Base {...props}>
       <path d="M4 9h16v11H4z" />
       <path d="M4 9l1.6-4.5A2 2 0 0 1 7.5 3h9a2 2 0 0 1 1.9 1.5L20 9" />
@@ -226,6 +226,12 @@ export const adminNavIcons: Record<
     <Base {...props}>
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <rect x="7" y="8" width="10" height="8" rx="1" />
+    </Base>
+  ),
+  notifications: (props) => (
+    <Base {...props}>
+      <path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" />
+      <path d="M10 21a2 2 0 0 0 4 0" />
     </Base>
   ),
 };

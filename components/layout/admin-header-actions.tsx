@@ -20,10 +20,12 @@ export function AdminHeaderActionsProvider({ children }: { children: ReactNode }
   );
 }
 
-/** 放在頂部標題列裡（AdminHeaderTitle 旁邊），是各頁面 <AdminHeaderActions> 實際掛載的地方。 */
+/** 放在頂部標題列裡（AdminHeaderTitle 旁邊），是各頁面 <AdminHeaderActions> 實際掛載的地方。
+ *  固定高度 h-8：不管當前頁面有沒有按鈕，這個插槽都佔住同樣高度，避免切頁時標題列因為
+ *  有無按鈕而忽高忽低。 */
 export function AdminHeaderActionsSlot() {
   const ctx = useContext(AdminHeaderActionsContext);
-  return <div ref={ctx?.setNode} className="flex items-center gap-2" />;
+  return <div ref={ctx?.setNode} className="flex h-8 items-center gap-2" />;
 }
 
 /** 頁面用這個把自己的主要操作按鈕（例如「新增頁面」）放到頂部標題列的右側，

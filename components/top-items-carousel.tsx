@@ -10,7 +10,7 @@ const EMPTY_STAT: ItemStat = { avgRating: null, commentCount: 0 };
 
 /**
  * 熱門品項輪播——依真實評論數排序（沒有真的訂單數量可用，用評論熱度當「熱門」指標）。
- * 吃 items/stats 當 props，所以「所有品項」頁跟店家頁都能各自算自己範圍內的排行，不是站內固定一份。
+ * 吃 items/stats 當 props，所以「所有品項」頁跟頁面詳情頁都能各自算自己範圍內的排行，不是站內固定一份。
  */
 export function TopItemsCarousel({
   items,

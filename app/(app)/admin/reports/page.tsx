@@ -7,5 +7,5 @@ const MAX_RANGE_DAYS = 30;
 
 export default async function AdminReportsPage() {
   const data = await getOrderReportData(MAX_RANGE_DAYS);
-  return <ReportsView daily={data.daily} byKind={data.byKind} bySupplier={data.bySupplier} />;
+  return <ReportsView daily={data.daily} byKind={data.byKind} byPage={data.byPage} />;
 }

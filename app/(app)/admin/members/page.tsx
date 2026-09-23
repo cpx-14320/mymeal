@@ -11,7 +11,7 @@ export default async function AdminMembersPage() {
   return (
     <Section>
       <AdminHeaderActions>
-        <ButtonLink href="/admin/members/new">新增會員</ButtonLink>
+        <ButtonLink href="/admin/members/new" size="sm">新增會員</ButtonLink>
       </AdminHeaderActions>
 
       <MembersTable members={members} />

@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/app-shell";
-import { listSuppliers } from "@/lib/models/supplier";
+import { listPages } from "@/lib/models/page";
 import { getAnnouncement } from "@/lib/models/settings";
 import { getSessionMemberId } from "@/lib/session";
 import { getMemberBalance } from "@/lib/models/wallet";
 
 export default async function AppGroupLayout({ children }: { children: ReactNode }) {
   const memberId = await getSessionMemberId();
-  const [suppliers, announcement, walletBalance] = await Promise.all([
-    listSuppliers(),
+  const [pages, announcement, walletBalance] = await Promise.all([
+    listPages(),
     getAnnouncement(),
     memberId ? getMemberBalance(memberId) : Promise.resolve(0),
   ]);
-  const activeSuppliers = suppliers
+  const activePages = pages
     .filter((s) => s.active)
     .map((s) => ({
       id: s.id,
@@ -25,7 +25,12 @@ export default async function AppGroupLayout({ children }: { children: ReactNode
     }));
 
   return (
-    <AppShell suppliers={activeSuppliers} announcement={announcement} walletBalance={walletBalance}>
+    <AppShell
+      pages={activePages}
+      announcement={announcement}
+      walletBalance={walletBalance}
+      isSessionAuthed={!!memberId}
+    >
       {children}
     </AppShell>
   );

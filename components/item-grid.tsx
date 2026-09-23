@@ -48,7 +48,7 @@ export function ItemGrid({
       ? baseItems.filter((it) => favorited.has(it.id))
       : baseItems;
 
-  // 分類頁籤只顯示目前這批品項實際用到的分類——例如某店家只有飲料，
+  // 分類頁籤只顯示目前這批品項實際用到的分類——例如某頁面只有飲料，
   // 便當之類的分類就不會冒出一個永遠是 0 筆的死頁籤。排序沿用全站分類的 sortOrder。
   const presentCategoryNames = new Set(scopedItems.map((it) => it.categoryName));
   const tabs: { key: Filter; label: string }[] = [

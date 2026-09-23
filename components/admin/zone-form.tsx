@@ -71,9 +71,9 @@ export function ZoneForm({ zone, templates }: { zone?: OrderZoneView; templates:
 
           <div>
             <span className="mb-1 block text-sm font-medium">套用的模板</span>
-            <p className="mb-2 text-xs text-muted">可勾選多個；同一個模板也能被其他專區共用。</p>
+            <p className="mb-2 text-[13px] lg:text-[14px] text-muted">可勾選多個；同一個模板也能被其他專區共用。</p>
             {templates.length === 0 ? (
-              <p className="text-sm text-muted">還沒有模板，先到「模板」頁建立。</p>
+              <p className="text-[13px] lg:text-[14px] text-muted">還沒有模板，先到「模板」頁建立。</p>
             ) : (
               <div className="space-y-2.5 rounded-lg border border-line p-3">
                 {templates.map((t) => {
@@ -88,7 +88,7 @@ export function ZoneForm({ zone, templates }: { zone?: OrderZoneView; templates:
                       />
                       <span className="font-medium">{t.name}</span>
                       <Badge>{t.kindName}</Badge>
-                      <span className="text-xs text-muted">
+                      <span className="text-[13px] lg:text-[14px] text-muted">
                         {t.sections.length} 分類．{itemCount} 品項
                       </span>
                     </label>
@@ -106,7 +106,7 @@ export function ZoneForm({ zone, templates }: { zone?: OrderZoneView; templates:
             </label>
           </div>
 
-          {state.error && <p className="text-sm text-danger">{state.error}</p>}
+          {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
         </CardBody>
       </Card>
 
@@ -116,7 +116,7 @@ export function ZoneForm({ zone, templates }: { zone?: OrderZoneView; templates:
             <Button type="button" variant="danger" disabled={deleting} onClick={handleDelete}>
               {deleting ? "刪除中…" : "刪除專區"}
             </Button>
-            {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+            {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
           </div>
         ) : (
           <span />

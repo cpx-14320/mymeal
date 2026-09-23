@@ -80,7 +80,7 @@ export function OrgUnitSection({
       <CardBody className="space-y-4">
         <div>
           <p className="font-medium">單位</p>
-          <p className="text-xs text-muted">
+          <p className="text-[13px] lg:text-[14px] text-muted">
             部門底下的課別，依所屬部門分組顯示；會員註冊、編輯會員時可選擇。
           </p>
         </div>
@@ -88,7 +88,7 @@ export function OrgUnitSection({
         <form action={formAction} className="space-y-2">
           <div className="flex items-start gap-2">
             <select
-              className={`${inputClass} !w-32 shrink-0`}
+              className={`${inputClass} h-9 !w-32 shrink-0`}
               name="departmentId"
               required
               defaultValue=""
@@ -103,18 +103,18 @@ export function OrgUnitSection({
               ))}
             </select>
             <input
-              className={`${inputClass} flex-1`}
+              className={`${inputClass} h-9 flex-1`}
               name="name"
-              placeholder="例：會計課"
+              placeholder="例：數位推展課"
               required
             />
             <Button disabled={pending}>{pending ? "新增中…" : "新增"}</Button>
           </div>
-          {state.error && <p className="text-sm text-danger">{state.error}</p>}
+          {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
         </form>
 
         {groups.length === 0 ? (
-          <p className="text-sm text-muted">目前沒有資料。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">目前沒有資料。</p>
         ) : (
           <div className="space-y-3">
             {groups.map(({ dept, items }) => (
@@ -127,7 +127,7 @@ export function OrgUnitSection({
                     editingId === item.id ? (
                       <li
                         key={item.id}
-                        className="flex items-center gap-2 px-3 py-2 pl-4 text-sm"
+                        className="flex items-center gap-2 px-3 py-2 pl-4 text-[13px] lg:text-[14px]"
                       >
                         <input
                           className={`${inputClass} flex-1`}
@@ -156,7 +156,7 @@ export function OrgUnitSection({
                     ) : (
                       <li
                         key={item.id}
-                        className="flex items-center justify-between gap-3 px-3 py-2 pl-4 text-sm"
+                        className="flex items-center justify-between gap-3 px-3 py-2 pl-4 text-[13px] lg:text-[14px]"
                       >
                         <span>{item.name}</span>
                         <div className="flex shrink-0 items-center gap-3">
@@ -186,8 +186,8 @@ export function OrgUnitSection({
           </div>
         )}
 
-        {editError && <p className="text-sm text-danger">{editError}</p>}
-        {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+        {editError && <p className="text-[13px] lg:text-[14px] text-danger">{editError}</p>}
+        {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
       </CardBody>
     </Card>
   );

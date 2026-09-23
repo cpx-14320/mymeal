@@ -107,7 +107,7 @@ export function ItemCard({
             <div>
               <p className="font-medium">{item.name}</p>
               <p className="text-xs text-muted">
-                {item.supplierName ?? item.categoryName}
+                {item.pageName ?? item.categoryName}
               </p>
             </div>
             <button

@@ -22,7 +22,7 @@ export default async function AdminOrgPage() {
         <NameListCard
           title="部門"
           description="會員註冊、編輯會員時可選擇的部門。"
-          placeholder="例：財務部"
+          placeholder="例：網路發展部"
           items={departments}
           createAction={createDepartmentAction}
           updateAction={updateDepartmentAction}

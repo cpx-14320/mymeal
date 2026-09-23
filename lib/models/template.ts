@@ -1,6 +1,6 @@
 import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
-import "@/lib/models/catalog-item"; // 確保 populate("supplierId"/"sections.itemIds") 前 Supplier／CatalogItem model 一定已註冊
+import "@/lib/models/catalog-item"; // 確保 populate("pageId"/"sections.itemIds") 前 Page／CatalogItem model 一定已註冊
 import "@/lib/models/item-kind"; // 確保 populate("kindId") 前 ItemKind model 一定已註冊
 
 export interface TemplateSection {
@@ -15,7 +15,7 @@ export interface TemplateDocument {
   _id: Types.ObjectId;
   name: string;
   kindId: Types.ObjectId; // ref ItemKind
-  supplierId?: Types.ObjectId; // ref Supplier
+  pageId?: Types.ObjectId; // ref Page
   sections: TemplateSection[];
   active: boolean;
   createdBy: string; // 建立者姓名快照；無登入會員時記「系統」
@@ -32,7 +32,7 @@ const templateSchema = new Schema<TemplateDocument>(
   {
     name: { type: String, required: true, trim: true },
     kindId: { type: Schema.Types.ObjectId, ref: "ItemKind", required: true },
-    supplierId: { type: Schema.Types.ObjectId, ref: "Supplier" },
+    pageId: { type: Schema.Types.ObjectId, ref: "Page" },
     sections: { type: [templateSectionSchema], required: true, default: [] },
     active: { type: Boolean, required: true, default: true },
     createdBy: { type: String, required: true, trim: true, default: "系統" },
@@ -45,7 +45,7 @@ export const Template = models.Template ?? model<TemplateDocument>("Template", t
 export interface TemplateBasicInput {
   name: string;
   kindId: string;
-  supplierId?: string;
+  pageId?: string;
 }
 
 interface PopulatedRef {
@@ -58,8 +58,8 @@ export interface TemplateListItem {
   name: string;
   kindId: string;
   kindName: string;
-  supplierId?: string;
-  supplierName?: string;
+  pageId?: string;
+  pageName?: string;
   active: boolean;
   sections: { id: string; name: string; itemCount: number }[];
   createdBy: string;
@@ -70,17 +70,17 @@ export async function listTemplates(): Promise<TemplateListItem[]> {
   await connectMongo();
   const docs = await Template.find({})
     .sort({ createdAt: -1 })
-    .populate<{ supplierId?: PopulatedRef; kindId: PopulatedRef }>(["supplierId", "kindId"]);
+    .populate<{ pageId?: PopulatedRef; kindId: PopulatedRef }>(["pageId", "kindId"]);
   return docs.map((d) => {
-    const supplier = d.supplierId as unknown as PopulatedRef | undefined;
+    const page = d.pageId as unknown as PopulatedRef | undefined;
     const kind = d.kindId as unknown as PopulatedRef;
     return {
       id: String(d._id),
       name: d.name,
       kindId: String(kind?._id ?? d.kindId),
       kindName: kind?.name ?? "",
-      supplierId: supplier?._id ? String(supplier._id) : undefined,
-      supplierName: supplier?.name,
+      pageId: page?._id ? String(page._id) : undefined,
+      pageName: page?.name,
       active: d.active,
       sections: d.sections.map((s: TemplateSection) => ({
         id: String(s._id),
@@ -96,7 +96,7 @@ export async function listTemplates(): Promise<TemplateListItem[]> {
 export interface TemplateSectionDetail {
   id: string;
   name: string;
-  items: { id: string; name: string; emoji: string; price: number; supplierName?: string }[];
+  items: { id: string; name: string; emoji: string; price: number; pageName?: string }[];
 }
 
 export interface TemplateDetail {
@@ -104,8 +104,8 @@ export interface TemplateDetail {
   name: string;
   kindId: string;
   kindName: string;
-  supplierId?: string;
-  supplierName?: string;
+  pageId?: string;
+  pageName?: string;
   active: boolean;
   sections: TemplateSectionDetail[];
 }
@@ -115,30 +115,30 @@ type PopulatedTemplateDoc = {
   name: string;
   kindId: PopulatedRef;
   active: boolean;
-  supplierId?: PopulatedRef;
+  pageId?: PopulatedRef;
   sections: { _id: Types.ObjectId; name: string; itemIds: unknown }[];
 };
 
 function toTemplateDetail(doc: PopulatedTemplateDoc): TemplateDetail {
-  const supplier = doc.supplierId as unknown as PopulatedRef | undefined;
+  const page = doc.pageId as unknown as PopulatedRef | undefined;
   const kind = doc.kindId as unknown as PopulatedRef;
   return {
     id: String(doc._id),
     name: doc.name,
     kindId: String(kind?._id ?? doc.kindId),
     kindName: kind?.name ?? "",
-    supplierId: supplier?._id ? String(supplier._id) : undefined,
-    supplierName: supplier?.name,
+    pageId: page?._id ? String(page._id) : undefined,
+    pageName: page?.name,
     active: doc.active,
     sections: doc.sections.map((s) => ({
       id: String(s._id),
       name: s.name,
-      items: (s.itemIds as unknown as Array<PopulatedRef & { emoji: string; price: number; supplierId?: PopulatedRef }>).map((it) => ({
+      items: (s.itemIds as unknown as Array<PopulatedRef & { emoji: string; price: number; pageId?: PopulatedRef }>).map((it) => ({
         id: String(it._id),
         name: it.name,
         emoji: it.emoji,
         price: it.price,
-        supplierName: it.supplierId?.name,
+        pageName: it.pageId?.name,
       })),
     })),
   };
@@ -148,10 +148,10 @@ export async function findTemplateById(id: string): Promise<TemplateDetail | nul
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) return null;
   const doc = await Template.findById(id)
-    .populate<{ supplierId?: PopulatedRef; kindId: PopulatedRef }>(["supplierId", "kindId"])
+    .populate<{ pageId?: PopulatedRef; kindId: PopulatedRef }>(["pageId", "kindId"])
     .populate({
       path: "sections.itemIds",
-      populate: { path: "supplierId" },
+      populate: { path: "pageId" },
     });
   if (!doc) return null;
   return toTemplateDetail(doc as unknown as PopulatedTemplateDoc);
@@ -162,17 +162,17 @@ export async function listActiveTemplateDetails(): Promise<TemplateDetail[]> {
   await connectMongo();
   const docs = await Template.find({ active: true })
     .sort({ createdAt: -1 })
-    .populate<{ supplierId?: PopulatedRef; kindId: PopulatedRef }>(["supplierId", "kindId"])
+    .populate<{ pageId?: PopulatedRef; kindId: PopulatedRef }>(["pageId", "kindId"])
     .populate({
       path: "sections.itemIds",
-      populate: { path: "supplierId" },
+      populate: { path: "pageId" },
     });
   return docs.map((d) => toTemplateDetail(d as unknown as PopulatedTemplateDoc));
 }
 
-function assertSupplierId(supplierId?: string) {
-  if (supplierId && !Types.ObjectId.isValid(supplierId)) throw new Error("請選擇有效的店家。");
-  return supplierId ? new Types.ObjectId(supplierId) : undefined;
+function assertPageId(pageId?: string) {
+  if (pageId && !Types.ObjectId.isValid(pageId)) throw new Error("請選擇有效的頁面。");
+  return pageId ? new Types.ObjectId(pageId) : undefined;
 }
 
 function assertKindId(kindId: string) {
@@ -185,7 +185,7 @@ export async function createTemplate(input: TemplateBasicInput, createdBy?: stri
   const doc = await Template.create({
     name: input.name,
     kindId: assertKindId(input.kindId),
-    supplierId: assertSupplierId(input.supplierId),
+    pageId: assertPageId(input.pageId),
     sections: [],
     active: true,
     createdBy: createdBy ?? "系統",
@@ -198,7 +198,7 @@ export async function updateTemplateBasic(id: string, input: TemplateBasicInput)
   if (!Types.ObjectId.isValid(id)) throw new Error("無效的模板 id");
   return Template.findByIdAndUpdate(
     id,
-    { $set: { name: input.name, kindId: assertKindId(input.kindId), supplierId: assertSupplierId(input.supplierId) } },
+    { $set: { name: input.name, kindId: assertKindId(input.kindId), pageId: assertPageId(input.pageId) } },
     { returnDocument: "after" },
   );
 }

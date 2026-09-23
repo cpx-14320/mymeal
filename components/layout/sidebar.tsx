@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navIcons, adminNavIcons, StoreIcon, ChevronDownIcon, LockIcon } from "./icons";
+import { navIcons, adminNavIcons, PageIcon, ChevronDownIcon, LockIcon } from "./icons";
 import {
   primaryNav,
   adminNav,
   resolveHref,
-  type SupplierNavItem,
+  type PageNavItem,
 } from "./nav";
 import { useLoginModal } from "./login-modal-context";
 
@@ -26,8 +26,8 @@ interface SidebarProps {
   previewMode?: boolean;
   /** 行動版抽屜中，點擊項目後關閉抽屜 */
   onNavigate?: () => void;
-  /** 已上架的店家，動態多顯示在主導覽最後——後台新增店家就會同步出現，目前頁面內容先空著。 */
-  suppliers?: SupplierNavItem[];
+  /** 已上架的頁面，動態多顯示在主導覽最後——後台新增頁面就會同步出現，目前頁面內容先空著。 */
+  pages?: PageNavItem[];
   /** 目前登入會員的真實錢包餘額，「會員錢包」小工具用。 */
   walletBalance?: number;
 }
@@ -37,7 +37,7 @@ export function Sidebar({
   isAdmin = false,
   previewMode = false,
   onNavigate,
-  suppliers = [],
+  pages = [],
   walletBalance = 0,
 }: SidebarProps) {
   const pathname = usePathname();
@@ -230,45 +230,45 @@ export function Sidebar({
       )}
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-        {suppliers.length > 0 && (
+        {pages.length > 0 && (
           <div className="mb-1 border-b border-line pb-3.5">
-            <p className="px-3 pb-1 text-xs font-medium text-muted">店家</p>
-            {suppliers.map((supplier) => {
-              const href = `/pages/${supplier.slug}`;
+            <p className="px-3 pb-1 text-xs font-medium text-muted">頁面</p>
+            {pages.map((page) => {
+              const href = `/pages/${page.slug}`;
               const active = pathname === href || pathname.startsWith(`${href}/`);
               return (
                 <Link
-                  key={supplier.id}
+                  key={page.id}
                   href={href}
                   onClick={onNavigate}
-                  target={supplier.openInNewTab ? "_blank" : undefined}
-                  rel={supplier.openInNewTab ? "noopener noreferrer" : undefined}
+                  target={page.openInNewTab ? "_blank" : undefined}
+                  rel={page.openInNewTab ? "noopener noreferrer" : undefined}
                   aria-current={active ? "page" : undefined}
                   className={`flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                     active ? "bg-brand-soft text-ink" : "text-ink hover:bg-surface-2"
                   }`}
                 >
-                  {supplier.iconSvg ? (
+                  {page.iconSvg ? (
                     <span
                       className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center [&_svg]:h-full [&_svg]:w-full"
                       // 後台「頁面設定」的圖示 SVG 只有管理員能填寫，不是公開使用者輸入，屬於可信任內容。
-                      dangerouslySetInnerHTML={{ __html: supplier.iconSvg }}
+                      dangerouslySetInnerHTML={{ __html: page.iconSvg }}
                     />
-                  ) : supplier.icon ? (
+                  ) : page.icon ? (
                     <span className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center text-base leading-none">
-                      {supplier.icon}
+                      {page.icon}
                     </span>
                   ) : (
-                    <StoreIcon
+                    <PageIcon
                       className={`mt-0.5 h-[18px] w-[18px] shrink-0 ${
                         active ? "text-brand" : "text-muted"
                       }`}
                     />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="font-medium">{supplier.name}</span>
-                    {supplier.description && (
-                      <span className="block truncate text-xs text-muted">{supplier.description}</span>
+                    <span className="font-medium">{page.name}</span>
+                    {page.description && (
+                      <span className="block truncate text-xs text-muted">{page.description}</span>
                     )}
                   </span>
                 </Link>
@@ -311,7 +311,7 @@ export function Sidebar({
             </Link>
           );
 
-          // 分隔線畫在一個沒有圓角的純 div 上（跟上面「店家」區塊的分隔線同一種做法），
+          // 分隔線畫在一個沒有圓角的純 div 上（跟上面「頁面」區塊的分隔線同一種做法），
           // 不要畫在有 rounded-lg 的連結本身上，不然線的兩端會被圓角修掉，兩條線看起來會不一樣長。
           if (item.requiresAdmin) {
             return (

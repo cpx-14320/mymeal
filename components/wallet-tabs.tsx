@@ -168,7 +168,7 @@ export function WalletTabs({
           <TableWrap>
             <thead>
               <tr>
-                <Th>日期</Th>
+                <Th>時間</Th>
                 <Th className="text-right">金額</Th>
                 <Th>方式</Th>
               </tr>

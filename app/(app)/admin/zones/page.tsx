@@ -13,7 +13,7 @@ export default async function AdminZonesPage() {
   return (
     <Section>
       <AdminHeaderActions>
-        <ButtonLink href="/admin/zones/new">新增專區</ButtonLink>
+        <ButtonLink href="/admin/zones/new" size="sm">新增專區</ButtonLink>
       </AdminHeaderActions>
 
       <ZonesList zones={zones} templateNameById={templateNameById} />

@@ -10,10 +10,8 @@ import {
   Th,
   Td,
   Pagination,
-  PageSizeSelect,
-  PillTabs,
+  ListToolbar,
 } from "@/components/ui/primitives";
-import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import type { WalletBalanceRow, WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
 import { formatTaiwanDateTime } from "@/lib/date";
 import { adjustBalanceAction } from "@/app/(app)/admin/wallets/actions";
@@ -91,7 +89,7 @@ function AdjustForm({
       <Button size="sm" variant="ghost" disabled={pending} onClick={onCancel}>
         取消
       </Button>
-      {error && <p className="w-full text-sm text-danger">{error}</p>}
+      {error && <p className="w-full text-[13px] lg:text-[14px] text-danger">{error}</p>}
     </div>
   );
 }
@@ -132,21 +130,12 @@ export function WalletsTables({
 
   return (
     <Section>
-      {tab === "balances" && (
-        <AdminHeaderActions>
-          <Button variant="secondary">匯出</Button>
-        </AdminHeaderActions>
-      )}
-
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <PillTabs tabs={tabs} value={tab} onChange={setTab} />
-        <PageSizeSelect value={pageSize} onChange={changeSize} />
-      </div>
+      <ListToolbar tabs={{ tabs, value: tab, onChange: setTab }} pageSize={pageSize} onPageSizeChange={changeSize} />
 
       {tab === "balances" ? (
         <>
           <input
-            className={`${inputClass} mb-3 w-64`}
+            className={`${inputClass} w-64`}
             placeholder="搜尋姓名 / 部門"
             value={search}
             onChange={(e) => {
@@ -176,7 +165,7 @@ export function WalletsTables({
                 b.rows.map((r) => (
                   <Fragment key={r.memberId}>
                     <tr>
-                      <Td className="font-medium">{r.name}</Td>
+                      <Td>{r.name}</Td>
                       <Td className="text-muted">{r.dept}</Td>
                       <Td className={`text-right tabular-nums ${r.balance < 0 ? "text-danger" : ""}`}>
                         NT$ {r.balance}
@@ -245,14 +234,14 @@ export function WalletsTables({
                 t.rows.map((r) => (
                   <Fragment key={r.id}>
                     <tr>
-                      <Td className="font-medium">{r.memberName}</Td>
+                      <Td>{r.memberName}</Td>
                       <Td>{ledgerTypeLabel[r.type]}</Td>
                       <Td className={`text-right tabular-nums ${r.amount > 0 ? "text-positive" : ""}`}>
                         {r.amount > 0 ? `+${r.amount}` : r.amount}
                       </Td>
                       <Td className="text-right tabular-nums">{r.balanceAfter}</Td>
                       <Td className="text-muted">{r.by}</Td>
-                      <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(r.at)}</Td>
+                      <Td className="text-muted">{formatTaiwanDateTime(r.at)}</Td>
                       <Td className="text-right">
                         <Button
                           variant="secondary"

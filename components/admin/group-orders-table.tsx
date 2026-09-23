@@ -8,8 +8,8 @@ import {
   Th,
   Td,
   Pagination,
-  PageSizeSelect,
-  PillTabs,
+  ListToolbar,
+  BulkActionBar,
 } from "@/components/ui/primitives";
 import type { GroupOrderListItem, GroupOrderStatus } from "@/lib/models/group-order";
 import { setGroupOrdersStatusAction, deleteGroupOrdersAction } from "@/app/(app)/admin/group-orders/actions";
@@ -79,61 +79,33 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <PillTabs
-          tabs={filters.map((f) => ({ key: f.label, label: f.label, count: rows.filter(f.test).length }))}
-          value={filterLabel}
-          onChange={(key) => {
+    <div className="space-y-4">
+      <ListToolbar
+        tabs={{
+          tabs: filters.map((f) => ({ key: f.label, label: f.label, count: rows.filter(f.test).length })),
+          value: filterLabel,
+          onChange: (key) => {
             setFilterLabel(key);
             setPage(1);
-          }}
-        />
-        <PageSizeSelect
-          value={pageSize}
-          onChange={(n) => {
-            setPageSize(n);
-            setPage(1);
-          }}
-        />
-      </div>
+          },
+        }}
+        pageSize={pageSize}
+        onPageSizeChange={(n) => {
+          setPageSize(n);
+          setPage(1);
+        }}
+      />
 
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span>
-            已選 <b className="tabular-nums">{selected.size}</b> 團
-          </span>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setSelected(new Set())} className="text-muted hover:text-ink">
-              取消選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => bulkSetStatus("open")}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-            >
-              開放選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => bulkSetStatus("closed")}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-            >
-              截止選取
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={bulkDelete}
-              className="rounded-lg border border-danger/40 px-3 py-1 font-semibold text-danger hover:bg-danger/10 disabled:opacity-50"
-            >
-              刪除選取
-            </button>
-          </div>
-        </div>
-      )}
+      <BulkActionBar
+        count={selected.size}
+        unit="團"
+        onCancel={() => setSelected(new Set())}
+        actions={[
+          { label: "開放選取", tone: "neutral", onClick: () => bulkSetStatus("open"), disabled: busy },
+          { label: "截止選取", tone: "neutral", onClick: () => bulkSetStatus("closed"), disabled: busy },
+          { label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy },
+        ]}
+      />
 
       <TableWrap>
         <thead>
@@ -169,7 +141,7 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
                     aria-label={`選取 ${r.name}`}
                   />
                 </Td>
-                <Td className="font-medium">{r.name}</Td>
+                <Td>{r.name}</Td>
                 <Td>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge tone="brand">{r.departmentName || "—"}</Badge>

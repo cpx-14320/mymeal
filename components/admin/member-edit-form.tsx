@@ -204,8 +204,8 @@ export function MemberEditForm({ member, departments, units, roleNames }: Member
             </label>
           </div>
 
-          {state.error && <p className="text-sm text-danger">{state.error}</p>}
-          {state.success && <p className="text-sm text-positive">已儲存變更。</p>}
+          {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
+          {state.success && <p className="text-[13px] lg:text-[14px] text-positive">已儲存變更。</p>}
         </CardBody>
       </Card>
 
@@ -219,7 +219,7 @@ export function MemberEditForm({ member, departments, units, roleNames }: Member
           >
             {deleting ? "刪除中…" : "刪除會員"}
           </Button>
-          {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+          {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
         </div>
         <div className="flex gap-2">
           <ButtonLink href="/admin/members" variant="ghost">

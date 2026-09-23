@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import {
-  PillTabs,
-  PageSizeSelect,
+  ListToolbar,
   Pagination,
   TableWrap,
   Th,
@@ -100,15 +99,12 @@ export function MemberInsightTabs({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <PillTabs tabs={tabs} value={tab} onChange={setTab} />
-        <PageSizeSelect value={pageSize} onChange={changeSize} />
-      </div>
+    <div className="space-y-4">
+      <ListToolbar tabs={{ tabs, value: tab, onChange: setTab }} pageSize={pageSize} onPageSizeChange={changeSize} />
 
       {tab === "orders" &&
         (breakdown.length === 0 ? (
-          <p className="text-sm text-muted">尚無訂餐紀錄（團訂功能尚未上線）。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">尚無訂餐紀錄（團訂功能尚未上線）。</p>
         ) : (
           <>
             <TableWrap>
@@ -124,7 +120,7 @@ export function MemberInsightTabs({
               <tbody>
                 {orders.rows.map((o) => (
                   <tr key={o.itemId}>
-                    <Td className="font-medium">{o.itemName}</Td>
+                    <Td>{o.itemName}</Td>
                     <Td className="text-muted">{o.category}</Td>
                     <Td className="text-muted">
                       {o.tags.length ? o.tags.join("、") : "—"}
@@ -150,7 +146,7 @@ export function MemberInsightTabs({
 
       {tab === "topups" &&
         (ledger.length === 0 ? (
-          <p className="text-sm text-muted">尚無儲值／消費紀錄（錢包功能尚未上線）。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">尚無儲值／消費紀錄（錢包功能尚未上線）。</p>
         ) : (
           <>
             <TableWrap>
@@ -180,7 +176,7 @@ export function MemberInsightTabs({
                     <Td className="text-right tabular-nums">
                       NT$ {t.balanceAfter}
                     </Td>
-                    <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(t.at)}</Td>
+                    <Td className="text-muted">{formatTaiwanDateTime(t.at)}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -198,7 +194,7 @@ export function MemberInsightTabs({
 
       {tab === "favorites" &&
         (favorites.length === 0 ? (
-          <p className="text-sm text-muted">尚未收藏任何品項。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">尚未收藏任何品項。</p>
         ) : (
           <>
             <TableWrap>
@@ -213,7 +209,7 @@ export function MemberInsightTabs({
               <tbody>
                 {favoritesPaged.rows.map((f) => (
                   <tr key={f.itemId}>
-                    <Td className="font-medium">
+                    <Td>
                       <span className="mr-1.5">{f.emoji}</span>
                       {f.itemName}
                     </Td>
@@ -221,7 +217,7 @@ export function MemberInsightTabs({
                     <Td className="text-muted">
                       {f.tags.length ? f.tags.join("、") : "—"}
                     </Td>
-                    <Td className="whitespace-nowrap text-muted">{formatAt(f.at)}</Td>
+                    <Td className="text-muted">{formatAt(f.at)}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -239,7 +235,7 @@ export function MemberInsightTabs({
 
       {tab === "comments" &&
         (comments.length === 0 ? (
-          <p className="text-sm text-muted">尚未留下任何評論。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">尚未留下任何評論。</p>
         ) : (
           <>
             <TableWrap>
@@ -254,10 +250,10 @@ export function MemberInsightTabs({
               <tbody>
                 {commentsPaged.rows.map((c) => (
                   <tr key={c.itemId}>
-                    <Td className="font-medium">{c.itemName}</Td>
+                    <Td>{c.itemName}</Td>
                     <Td className="text-muted">{c.text}</Td>
                     <Td className="text-warning">{stars(c.stars)}</Td>
-                    <Td className="whitespace-nowrap text-muted">{formatAt(c.at)}</Td>
+                    <Td className="text-muted">{formatAt(c.at)}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -275,7 +271,7 @@ export function MemberInsightTabs({
 
       {tab === "ratings" &&
         (ratings.length === 0 ? (
-          <p className="text-sm text-muted">尚無評分紀錄。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">尚無評分紀錄。</p>
         ) : (
           <>
             <TableWrap>
@@ -289,14 +285,14 @@ export function MemberInsightTabs({
               <tbody>
                 {ratingsPaged.rows.map((r) => (
                   <tr key={r.itemId}>
-                    <Td className="font-medium">{r.itemName}</Td>
+                    <Td>{r.itemName}</Td>
                     <Td>
                       <span className="text-warning">{stars(r.stars)}</span>
                       <span className="ml-2 tabular-nums text-muted">
                         {r.stars}/5
                       </span>
                     </Td>
-                    <Td className="whitespace-nowrap text-muted">{formatAt(r.at)}</Td>
+                    <Td className="text-muted">{formatAt(r.at)}</Td>
                   </tr>
                 ))}
               </tbody>

@@ -45,7 +45,7 @@ const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
     permissions: {
       zones: true,
       templates: true,
-      suppliers: true,
+      pages: true,
       itemClassification: true,
       items: true,
       grouporders: true,
@@ -64,7 +64,7 @@ const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
     name: "超級管理員",
     permissions: {
       zones: true,
-      suppliers: true,
+      pages: true,
       items: true,
       itemClassification: true,
       templates: true,

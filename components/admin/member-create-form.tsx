@@ -122,7 +122,7 @@ export function MemberCreateForm({ departments, units, roleNames }: MemberCreate
             </label>
           </div>
 
-          {state.error && <p className="text-sm text-danger">{state.error}</p>}
+          {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
         </CardBody>
       </Card>
 

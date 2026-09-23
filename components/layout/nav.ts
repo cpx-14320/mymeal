@@ -13,8 +13,8 @@ export type NavKey =
   | "account"
   | "admin";
 
-/** 前台側欄動態店家連結——後台新增店家就會同步多一個，見 sidebar.tsx / app-shell.tsx。 */
-export interface SupplierNavItem {
+/** 前台側欄動態頁面連結——後台新增頁面就會同步多一個，見 sidebar.tsx / app-shell.tsx。 */
+export interface PageNavItem {
   id: string;
   name: string;
   description: string;
@@ -86,7 +86,7 @@ export const primaryNav: NavItem[] = [
 export type AdminNavKey =
   | "overview"
   | "zones"
-  | "suppliers"
+  | "pages"
   | "items"
   | "itemClassification"
   | "templates"
@@ -102,6 +102,7 @@ export type AdminNavKey =
   | "reports"
   | "audit"
   | "promos"
+  | "notifications"
   | "settings";
 
 export interface AdminNavItem {
@@ -136,7 +137,7 @@ export const adminNav: AdminNavGroup[] = [
     key: "catalog",
     label: "菜單管理",
     items: [
-      { key: "suppliers", label: "頁面設定", href: "/admin/pages" },
+      { key: "pages", label: "頁面設定", href: "/admin/pages" },
       { key: "templates", label: "模板設定", href: "/admin/templates" },
       { key: "itemClassification", label: "類別設定", href: "/admin/classification" },
       { key: "items", label: "品項設定", href: "/admin/items" },
@@ -170,6 +171,7 @@ export const adminNav: AdminNavGroup[] = [
     items: [
       { key: "gamification", label: "任務與經驗", href: "/admin/tasks" },
       { key: "promos", label: "蓋台廣告", href: "/admin/promos" },
+      { key: "notifications", label: "通知訊息", href: "/admin/notifications" },
     ],
   },
   {

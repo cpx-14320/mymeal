@@ -7,39 +7,60 @@ import { MenuIcon, BellIcon, UserCircleIcon } from "./icons";
 import { ThemeToggle } from "./theme-toggle";
 import { REGISTER_HREF } from "./nav";
 import { useLoginModal } from "./login-modal-context";
+import type { NotificationView } from "@/lib/models/notification";
+import { getEnabledNotificationsAction } from "@/app/(app)/notification-actions";
 
-const notifications = [
-  {
-    title: "新品項上架：舒肥雞胸餐盒",
-    at: "2026/09/11 09:00:00",
-  },
-  {
-    title: "歡迎加入 MyMeal！先逛逛「所有品項」，收藏喜歡的口味吧",
-    at: "2026/09/10 14:20:00",
-  },
-  {
-    title: "您的儲值申請（NT$ 500）已核准",
-    at: "2026/09/10 08:41:00",
-  },
-];
+const READ_KEY = "mymeal-notifications-read";
+
+function loadReadIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(READ_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveReadIds(ids: Set<string>) {
+  try {
+    localStorage.setItem(READ_KEY, JSON.stringify([...ids]));
+  } catch {
+    /* 私密視窗等情況忽略 */
+  }
+}
 
 interface HeaderProps {
   /** 開啟行動版側欄抽屜 */
   onMenuClick: () => void;
-  /** 是否已掛載（避免 SSR/CSR 不一致），掛載前先不顯示登入相關狀態 */
+  /** 是否已掛載（避免 SSR/CSR 不一致）；只用來延後顯示「預覽切換」按鈕等純本機的狀態 */
   mounted: boolean;
-  /** 預覽用登入狀態，跟側欄共用同一份（見 AppShell） */
+  /** 是否已登入（真實 session 或預覽開關），跟側欄共用同一份（見 AppShell） */
   authed: boolean;
-  /** 切換預覽登入狀態（訪客狀態下的「預覽切換為已登入」按鈕用） */
-  onToggleAuth: () => void;
   /** 真正登出（清掉 session cookie） */
   onLogout: () => void;
 }
 
-export function Header({ onMenuClick, mounted, authed, onToggleAuth, onLogout }: HeaderProps) {
+export function Header({ onMenuClick, mounted, authed, onLogout }: HeaderProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const { openLogin } = useLoginModal();
+
+  const [notifications, setNotifications] = useState<NotificationView[]>([]);
+  const [readIds, setReadIds] = useState<Set<string>>(() => new Set());
+  const hasUnread = notifications.some((n) => !readIds.has(n.id));
+
+  // 掛載後（且已登入）才抓通知清單，避免 SSR/CSR 不一致；同時讀取本機已讀紀錄。
+  useEffect(() => {
+    if (!mounted || !authed) return;
+    setReadIds(loadReadIds());
+    let cancelled = false;
+    getEnabledNotificationsAction().then((list) => {
+      if (!cancelled) setNotifications(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, authed]);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -52,9 +73,17 @@ export function Header({ onMenuClick, mounted, authed, onToggleAuth, onLogout }:
     return () => document.removeEventListener("mousedown", onClick);
   }, [notifOpen]);
 
-  function toggleDemoAuth() {
-    setNotifOpen(false);
-    onToggleAuth();
+  function toggleNotifOpen() {
+    setNotifOpen((v) => {
+      const next = !v;
+      if (next && notifications.length > 0) {
+        const merged = new Set(readIds);
+        notifications.forEach((n) => merged.add(n.id));
+        setReadIds(merged);
+        saveReadIds(merged);
+      }
+      return next;
+    });
   }
 
   function handleLogout() {
@@ -79,17 +108,17 @@ export function Header({ onMenuClick, mounted, authed, onToggleAuth, onLogout }:
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           <ThemeToggle />
 
-          {mounted && authed ? (
+          {authed ? (
             <>
               <div className="relative" ref={notifRef}>
                 <button
                   type="button"
-                  onClick={() => setNotifOpen((v) => !v)}
+                  onClick={toggleNotifOpen}
                   aria-label="通知"
                   className="relative grid size-9 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink"
                 >
                   <BellIcon className="h-5 w-5" />
-                  <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-danger" />
+                  {hasUnread && <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-danger" />}
                 </button>
 
                 {notifOpen && (
@@ -97,14 +126,31 @@ export function Header({ onMenuClick, mounted, authed, onToggleAuth, onLogout }:
                     <div className="border-b border-line px-3 py-2 text-sm font-medium">
                       通知
                     </div>
-                    <ul className="max-h-80 divide-y divide-line overflow-y-auto">
-                      {notifications.map((n, i) => (
-                        <li key={i} className="px-3 py-2.5 text-sm">
-                          <p>{n.title}</p>
-                          <p className="mt-0.5 text-xs text-muted">{n.at}</p>
-                        </li>
-                      ))}
-                    </ul>
+                    {notifications.length === 0 ? (
+                      <p className="px-3 py-6 text-center text-sm text-muted">目前沒有通知</p>
+                    ) : (
+                      <ul className="max-h-80 divide-y divide-line overflow-y-auto">
+                        {notifications.map((n) =>
+                          n.linkUrl ? (
+                            <li key={n.id}>
+                              <Link
+                                href={n.linkUrl}
+                                onClick={() => setNotifOpen(false)}
+                                className="block px-3 py-2.5 text-sm hover:bg-surface-2"
+                              >
+                                <p className="font-medium">{n.title}</p>
+                                <p className="mt-0.5 text-muted">{n.message}</p>
+                              </Link>
+                            </li>
+                          ) : (
+                            <li key={n.id} className="px-3 py-2.5 text-sm">
+                              <p className="font-medium">{n.title}</p>
+                              <p className="mt-0.5 text-muted">{n.message}</p>
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    )}
                   </div>
                 )}
               </div>
@@ -134,17 +180,6 @@ export function Header({ onMenuClick, mounted, authed, onToggleAuth, onLogout }:
               >
                 申請帳號
               </Link>
-              {mounted && (
-                <button
-                  type="button"
-                  onClick={toggleDemoAuth}
-                  aria-label="預覽：點擊切換為已登入狀態"
-                  title="預覽：點擊切換為已登入狀態"
-                  className="grid size-9 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"
-                >
-                  <UserCircleIcon className="h-6 w-6" />
-                </button>
-              )}
             </>
           )}
         </div>

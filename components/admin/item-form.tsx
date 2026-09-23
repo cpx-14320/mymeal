@@ -7,7 +7,7 @@ import { ImageField } from "@/components/admin/image-field";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemKindOption } from "@/lib/models/item-kind";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
-import type { SupplierView } from "@/lib/models/supplier";
+import type { PageView } from "@/lib/models/page";
 import type { TagGroupView } from "@/lib/models/tag-group";
 import { createItemAction, type CreateItemState } from "@/app/(app)/admin/items/new/actions";
 import { updateItemAction, deleteItemAction, type UpdateItemState } from "@/app/(app)/admin/items/[id]/actions";
@@ -17,13 +17,13 @@ export function ItemForm({
   item,
   kinds,
   categories,
-  suppliers,
+  pages,
   tagGroups,
 }: {
   item?: CatalogItemView;
   kinds: ItemKindOption[];
   categories: ItemCategoryOption[];
-  suppliers: SupplierView[];
+  pages: PageView[];
   tagGroups: TagGroupView[];
 }) {
   const router = useRouter();
@@ -72,9 +72,9 @@ export function ItemForm({
 
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="頁面">
-              <select className={inputClass} name="supplierId" defaultValue={item?.supplierId ?? ""}>
+              <select className={inputClass} name="pageId" defaultValue={item?.pageId ?? ""}>
                 <option value="">選擇頁面</option>
-                {suppliers.map((s) => (
+                {pages.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
@@ -124,9 +124,9 @@ export function ItemForm({
 
           <div>
             <span className="mb-1 block text-sm font-medium">標籤</span>
-            <p className="mb-2 text-xs text-muted">選項來自「標籤群組」設定（在後台「品項標籤」頁管理）。</p>
+            <p className="mb-2 text-[13px] lg:text-[14px] text-muted">選項來自「標籤群組」設定（在後台「品項標籤」頁管理）。</p>
             {tagGroups.length === 0 ? (
-              <p className="text-sm text-muted">還沒有標籤群組，先到「品項標籤」頁建立。</p>
+              <p className="text-[13px] lg:text-[14px] text-muted">還沒有標籤群組，先到「品項標籤」頁建立。</p>
             ) : (
               <div className="space-y-3 rounded-lg border border-line p-3">
                 {tagGroups.map((g) => (
@@ -166,7 +166,7 @@ export function ItemForm({
             </label>
           </div>
 
-          {state.error && <p className="text-sm text-danger">{state.error}</p>}
+          {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
         </CardBody>
       </Card>
 
@@ -176,7 +176,7 @@ export function ItemForm({
             <Button type="button" variant="danger" disabled={deleting} onClick={handleDelete}>
               {deleting ? "刪除中…" : "刪除品項"}
             </Button>
-            {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+            {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
           </div>
         ) : (
           <span />

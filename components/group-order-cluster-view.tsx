@@ -226,15 +226,15 @@ export function GroupOrderClusterView({
               })
             )}
             <tr>
-              <Td className="font-semibold">合計</Td>
+              <Td>合計</Td>
               <Td />
               <Td />
               <Td />
-              <Td className="text-center font-semibold tabular-nums">
+              <Td className="text-center tabular-nums">
                 {combinedTotals.qty}
               </Td>
               <Td />
-              <Td className="text-right font-semibold tabular-nums">
+              <Td className="text-right tabular-nums">
                 NT$ {combinedTotals.amount}
               </Td>
             </tr>

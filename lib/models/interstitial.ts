@@ -131,6 +131,14 @@ export async function deleteInterstitial(id: string): Promise<boolean> {
   return result.deletedCount > 0;
 }
 
+export async function setInterstitialsEnabled(ids: string[], enabled: boolean): Promise<number> {
+  await connectMongo();
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return 0;
+  const result = await Interstitial.updateMany({ _id: { $in: objIds } }, { $set: { enabled } });
+  return result.modifiedCount;
+}
+
 export type InterstitialStatus = "showing" | "scheduled" | "ended" | "disabled";
 
 export function interstitialStatus(a: InterstitialView, now: Date = new Date()): InterstitialStatus {

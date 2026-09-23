@@ -6,7 +6,7 @@ import {
   Th,
   Td,
   Pagination,
-  PageSizeSelect,
+  ListToolbar,
 } from "@/components/ui/primitives";
 import { formatTaiwanDateTime } from "@/lib/date";
 import type { ItemReviewEntry } from "@/lib/models/item-review";
@@ -29,20 +29,18 @@ export function ItemCommentsTable({
   const rows = comments.slice(start, start + pageSize);
 
   if (comments.length === 0) {
-    return <p className="text-sm text-muted">尚未有任何評論。</p>;
+    return <p className="text-[13px] lg:text-[14px] text-muted">尚未有任何評論。</p>;
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex justify-end">
-        <PageSizeSelect
-          value={pageSize}
-          onChange={(n) => {
-            setPageSize(n);
-            setPage(1);
-          }}
-        />
-      </div>
+    <div className="space-y-4">
+      <ListToolbar
+        pageSize={pageSize}
+        onPageSizeChange={(n) => {
+          setPageSize(n);
+          setPage(1);
+        }}
+      />
 
       <TableWrap>
         <thead>
@@ -56,10 +54,10 @@ export function ItemCommentsTable({
         <tbody>
           {rows.map((c, i) => (
             <tr key={i}>
-              <Td className="font-medium">{c.memberName}</Td>
+              <Td>{c.memberName}</Td>
               <Td className="text-muted">{c.text}</Td>
               <Td className="text-warning">{stars(c.stars)}</Td>
-              <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(c.at)}</Td>
+              <Td className="text-muted">{formatTaiwanDateTime(c.at)}</Td>
             </tr>
           ))}
         </tbody>

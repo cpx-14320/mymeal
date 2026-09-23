@@ -10,7 +10,8 @@ import {
   Th,
   Td,
   Pagination,
-  ListSearchBar,
+  ListToolbar,
+  BulkActionBar,
 } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { MemberListItem, MemberStatus } from "@/lib/models/member";
@@ -115,14 +116,16 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
     applyStatus([id], current === "active" ? "suspended" : "active");
 
   return (
-    <div className="space-y-3">
-      <ListSearchBar
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setPage(1);
+    <div className="space-y-4">
+      <ListToolbar
+        search={{
+          value: search,
+          onChange: (v) => {
+            setSearch(v);
+            setPage(1);
+          },
+          placeholder: "搜尋姓名／帳號／部門／單位",
         }}
-        searchPlaceholder="搜尋姓名／帳號／部門／單位"
         pageSize={pageSize}
         onPageSizeChange={(n) => {
           setPageSize(n);
@@ -130,47 +133,28 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
         }}
       />
 
-      {statusError && <p className="text-sm text-danger">{statusError}</p>}
+      {statusError && <p className="text-[13px] lg:text-[14px] text-danger">{statusError}</p>}
 
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span>
-            已選 <b className="tabular-nums">{selected.size}</b> 人
-          </span>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setSelected(new Set())}
-              className="text-muted hover:text-ink"
-            >
-              取消選取
-            </button>
-            <button
-              type="button"
-              onClick={() => bulkSetStatus("active")}
-              disabled={statusUpdatingIds.size > 0}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-            >
-              啟用選取
-            </button>
-            <button
-              type="button"
-              onClick={() => bulkSetStatus("suspended")}
-              disabled={statusUpdatingIds.size > 0}
-              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-            >
-              停用選取
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="rounded-lg border border-danger/40 px-3 py-1 font-semibold text-danger hover:bg-danger/10"
-            >
-              刪除選取
-            </button>
-          </div>
-        </div>
-      )}
+      <BulkActionBar
+        count={selected.size}
+        unit="人"
+        onCancel={() => setSelected(new Set())}
+        actions={[
+          {
+            label: "啟用選取",
+            tone: "neutral",
+            onClick: () => bulkSetStatus("active"),
+            disabled: statusUpdatingIds.size > 0,
+          },
+          {
+            label: "停用選取",
+            tone: "neutral",
+            onClick: () => bulkSetStatus("suspended"),
+            disabled: statusUpdatingIds.size > 0,
+          },
+          { label: "刪除選取", tone: "danger", onClick: () => setConfirmDelete(true) },
+        ]}
+      />
 
       <TableWrap>
         <thead>
@@ -217,7 +201,7 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
                       aria-label={`選取 ${m.name}`}
                     />
                   </Td>
-                  <Td className="font-medium">{m.name}</Td>
+                  <Td>{m.name}</Td>
                   <Td className="text-muted">{m.account}</Td>
                   <Td className="text-muted">{m.dept}</Td>
                   <Td className="text-muted">{m.unit}</Td>
@@ -229,10 +213,10 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
                   <Td>
                     <Badge tone={st.tone}>{st.label}</Badge>
                   </Td>
-                  <Td className="whitespace-nowrap text-muted">
+                  <Td className="text-muted">
                     {formatTaiwanDateTime(m.createdAt)}
                   </Td>
-                  <Td className="whitespace-nowrap text-muted">
+                  <Td className="text-muted">
                     {formatTaiwanDateTime(m.lastLoginAt)}
                   </Td>
                   <Td className="text-right">
@@ -282,11 +266,11 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
       >
         <ModalHeader title="確認刪除會員" onClose={() => setConfirmDelete(false)} />
         <div className="space-y-4 p-4">
-          <p className="text-sm text-ink">
+          <p className="text-[13px] lg:text-[14px] text-ink">
             確定要刪除選取的 <b className="tabular-nums">{selected.size}</b>{" "}
             位會員嗎？此動作無法復原。
           </p>
-          {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+          {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary"

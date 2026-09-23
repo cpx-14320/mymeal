@@ -7,7 +7,7 @@ import {
   Th,
   Td,
   Pagination,
-  PageSizeSelect,
+  ListToolbar,
 } from "@/components/ui/primitives";
 import type { CatalogItemStat } from "@/lib/models/catalog-item";
 
@@ -21,16 +21,14 @@ export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
   const rows = stats.slice(start, start + pageSize);
 
   return (
-    <div className="space-y-3">
-      <div className="flex justify-end">
-        <PageSizeSelect
-          value={pageSize}
-          onChange={(n) => {
-            setPageSize(n);
-            setPage(1);
-          }}
-        />
-      </div>
+    <div className="space-y-4">
+      <ListToolbar
+        pageSize={pageSize}
+        onPageSizeChange={(n) => {
+          setPageSize(n);
+          setPage(1);
+        }}
+      />
 
       <TableWrap>
         <thead>
@@ -45,27 +43,35 @@ export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((s) => (
-            <tr key={s.itemId}>
-              <Td className="font-medium">{s.itemName}</Td>
-              <Td className="text-right tabular-nums">NT$ {s.price}</Td>
-              <Td className="text-right tabular-nums">{s.totalQuantity}</Td>
-              <Td className="text-right tabular-nums">{s.orderCount}</Td>
-              <Td className="text-right tabular-nums">
-                {s.avgRating !== null ? s.avgRating.toFixed(1) : "—"}
-              </Td>
-              <Td className="text-right tabular-nums">{s.commentCount}</Td>
-              <Td className="text-right">
-                <ButtonLink
-                  href={`/admin/item-stats/${s.itemId}`}
-                  variant="secondary"
-                  size="sm"
-                >
-                  查看
-                </ButtonLink>
+          {rows.length === 0 ? (
+            <tr>
+              <Td colSpan={7} className="text-center text-muted">
+                目前沒有品項統計資料。
               </Td>
             </tr>
-          ))}
+          ) : (
+            rows.map((s) => (
+              <tr key={s.itemId}>
+                <Td>{s.itemName}</Td>
+                <Td className="text-right tabular-nums">NT$ {s.price}</Td>
+                <Td className="text-right tabular-nums">{s.totalQuantity}</Td>
+                <Td className="text-right tabular-nums">{s.orderCount}</Td>
+                <Td className="text-right tabular-nums">
+                  {s.avgRating !== null ? s.avgRating.toFixed(1) : "—"}
+                </Td>
+                <Td className="text-right tabular-nums">{s.commentCount}</Td>
+                <Td className="text-right">
+                  <ButtonLink
+                    href={`/admin/item-stats/${s.itemId}`}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    查看
+                  </ButtonLink>
+                </Td>
+              </tr>
+            ))
+          )}
         </tbody>
       </TableWrap>
 

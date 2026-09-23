@@ -1,11 +1,8 @@
 import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
 
-/**
- * menu_kinds collection —— 品項類型（餐點／飲料／點心／其他…），管理方式跟「分類」一樣
- * （見 item-category.ts）：後台自己新增/刪除，不再是寫死在程式碼裡的固定 4 個值。
- * 集合是空的才會種入原本寫死的預設值，避免既有品項的類型顯示消失。
- */
+/** menu_kinds collection —— 品項類型（餐點／飲料／點心／其他…），管理方式跟「分類」一樣
+ *  （見 item-category.ts）：後台自己新增/刪除，不是寫死在程式碼裡的固定值。 */
 export interface ItemKindDocument {
   _id: Types.ObjectId;
   name: string;
@@ -24,13 +21,6 @@ const itemKindSchema = new Schema<ItemKindDocument>(
 
 export const ItemKind = models.ItemKind ?? model<ItemKindDocument>("ItemKind", itemKindSchema);
 
-const DEFAULT_KINDS = ["餐點", "飲料", "點心", "其他"];
-
-async function seedIfEmpty() {
-  if ((await ItemKind.countDocuments()) > 0) return;
-  await ItemKind.insertMany(DEFAULT_KINDS.map((name, i) => ({ name, sortOrder: i })));
-}
-
 export interface ItemKindOption {
   id: string;
   name: string;
@@ -38,7 +28,6 @@ export interface ItemKindOption {
 
 export async function listItemKinds(): Promise<ItemKindOption[]> {
   await connectMongo();
-  await seedIfEmpty();
   const docs = await ItemKind.find({}).sort({ sortOrder: 1, createdAt: 1 });
   return docs.map((d) => ({ id: String(d._id), name: d.name }));
 }

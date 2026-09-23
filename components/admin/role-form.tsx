@@ -54,7 +54,7 @@ export function RoleForm({ role }: { role?: RoleView }) {
 
           <div>
             <span className="mb-1.5 block text-sm font-medium">權限</span>
-            <p className="mb-2 text-xs text-muted">
+            <p className="mb-2 text-[13px] lg:text-[14px] text-muted">
               勾選這個組別可以使用的權限（依後台側欄分類）；套用這個組別的會員都會套用同一份設定。
             </p>
             <div className="space-y-3">
@@ -67,7 +67,7 @@ export function RoleForm({ role }: { role?: RoleView }) {
                         key={p.key}
                         className="flex cursor-pointer items-center justify-between gap-4 px-3 py-2.5 pl-6 hover:bg-surface-2"
                       >
-                        <span className="font-mono text-xs text-muted">{p.label}</span>
+                        <span className="font-mono text-[13px] lg:text-[14px] text-muted">{p.label}</span>
                         <input
                           type="checkbox"
                           name="permissions"
@@ -83,7 +83,7 @@ export function RoleForm({ role }: { role?: RoleView }) {
             </div>
           </div>
 
-          {state.error && <p className="text-sm text-danger">{state.error}</p>}
+          {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
         </CardBody>
       </Card>
 
@@ -93,7 +93,7 @@ export function RoleForm({ role }: { role?: RoleView }) {
             <Button type="button" variant="danger" disabled={deleting} onClick={handleDelete}>
               {deleting ? "刪除中…" : "刪除組別"}
             </Button>
-            {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+            {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
           </div>
         ) : (
           <span />

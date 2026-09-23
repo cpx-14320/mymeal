@@ -1,4 +1,5 @@
 import { Section, ButtonLink, TableWrap, Th, Td } from "@/components/ui/primitives";
+import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { RolesTable } from "@/components/admin/roles-table";
 import { permissionCategories } from "@/lib/mock";
 import { listRoles } from "@/lib/models/role";
@@ -10,11 +11,14 @@ export default async function AdminRolesPage() {
 
   return (
     <div className="space-y-8">
+      <AdminHeaderActions>
+        <ButtonLink href="/admin/roles/new" size="sm">新增組別</ButtonLink>
+      </AdminHeaderActions>
+
       <Section>
         <Section
           title="組別"
           description="組別是權限鍵的組合，指派給會員整包套用；不同會員可以套用同一個組別的權限。"
-          actions={<ButtonLink href="/admin/roles/new">新增組別</ButtonLink>}
         >
           <RolesTable roles={roles} />
         </Section>
@@ -39,12 +43,12 @@ export default async function AdminRolesPage() {
                     {i === 0 && (
                       <Td
                         rowSpan={cat.items.length}
-                        className="bg-surface-2 align-top text-xs font-medium text-muted"
+                        className="bg-surface-2 align-top text-muted"
                       >
                         {cat.label}
                       </Td>
                     )}
-                    <Td className="font-mono text-xs">{p.label}</Td>
+                    <Td className="font-mono">{p.label}</Td>
                     {roles.map((r) => (
                       <Td key={r.id} className="text-center">
                         {r.permissions[p.key] ? "✓" : "–"}

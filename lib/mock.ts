@@ -449,7 +449,7 @@ export const permissionCategories: PermissionCategory[] = [
     items: [
       { key: "zones", label: "訂餐專區" },
       { key: "templates", label: "模板" },
-      { key: "suppliers", label: "店家" },
+      { key: "pages", label: "頁面" },
       { key: "itemClassification", label: "分類與標籤" },
       { key: "items", label: "品項" },
       { key: "grouporders", label: "團訂" },

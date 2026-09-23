@@ -105,22 +105,22 @@ export function NameListCard({
       <CardBody className="space-y-4">
         <div>
           <p className="font-medium">{title}</p>
-          {description && <p className="text-xs text-muted">{description}</p>}
+          {description && <p className="text-[13px] lg:text-[14px] text-muted">{description}</p>}
         </div>
 
         <form action={formAction} className="flex items-start gap-2">
-          <input className={`${inputClass} flex-1`} name="name" placeholder={placeholder} required />
+          <input className={`${inputClass} h-9 flex-1`} name="name" placeholder={placeholder} required />
           <Button disabled={pending}>{pending ? "新增中…" : "新增"}</Button>
         </form>
-        {state.error && <p className="text-sm text-danger">{state.error}</p>}
+        {state.error && <p className="text-[13px] text-danger">{state.error}</p>}
 
         {items.length === 0 ? (
-          <p className="text-sm text-muted">目前沒有資料。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">目前沒有資料。</p>
         ) : (
           <ul className="divide-y divide-line rounded-lg border border-line">
             {items.map((item) =>
               editingId === item.id ? (
-                <li key={item.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                <li key={item.id} className="flex items-center gap-2 px-3 py-2 text-[13px] lg:text-[14px]">
                   <input
                     className={`${inputClass} flex-1`}
                     value={editValue}
@@ -146,7 +146,7 @@ export function NameListCard({
                   </button>
                 </li>
               ) : (
-                <li key={item.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                <li key={item.id} className="flex items-center justify-between gap-3 px-3 py-2 text-[13px] lg:text-[14px]">
                   <span>{item.name}</span>
                   <div className="flex shrink-0 items-center gap-3">
                     <button
@@ -172,14 +172,14 @@ export function NameListCard({
           </ul>
         )}
 
-        {editError && <p className="text-sm text-danger">{editError}</p>}
-        {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+        {editError && <p className="text-[13px] text-danger">{editError}</p>}
+        {deleteError && <p className="text-[13px] text-danger">{deleteError}</p>}
       </CardBody>
 
       <Modal open={confirmTarget !== null} onClose={() => setConfirmTarget(null)} ariaLabel={confirmTitle} className="max-w-sm">
         <ModalHeader title={confirmTitle} onClose={() => setConfirmTarget(null)} />
         <div className="space-y-4 p-4">
-          <p className="text-sm text-ink">
+          <p className="text-[13px] lg:text-[14px] text-ink">
             {confirmTarget ? confirmMessage.replace("{name}", confirmTarget.name) : ""}
           </p>
           <div className="flex justify-end gap-2">

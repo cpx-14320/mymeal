@@ -91,8 +91,12 @@ export async function updateUnitAction(id: string, name: string): Promise<Delete
 }
 
 export async function deleteDepartmentAction(id: string): Promise<DeleteOrgState> {
-  const deleted = await deleteDepartment(id);
-  if (!deleted) return { error: "找不到這筆資料，可能已被刪除。" };
+  try {
+    const deleted = await deleteDepartment(id);
+    if (!deleted) return { error: "找不到這筆資料，可能已被刪除。" };
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
+  }
 
   revalidatePath("/admin/org");
   revalidatePath("/register");
@@ -100,8 +104,12 @@ export async function deleteDepartmentAction(id: string): Promise<DeleteOrgState
 }
 
 export async function deleteUnitAction(id: string): Promise<DeleteOrgState> {
-  const deleted = await deleteUnit(id);
-  if (!deleted) return { error: "找不到這筆資料，可能已被刪除。" };
+  try {
+    const deleted = await deleteUnit(id);
+    if (!deleted) return { error: "找不到這筆資料，可能已被刪除。" };
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
+  }
 
   revalidatePath("/admin/org");
   revalidatePath("/register");

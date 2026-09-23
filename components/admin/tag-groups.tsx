@@ -125,7 +125,7 @@ function TagGroupCard({ group }: { group: TagGroupView }) {
               <button
                 type="button"
                 onClick={() => toggleMulti()}
-                className="shrink-0 rounded-full border border-line px-2 py-0.5 text-xs text-muted hover:text-ink"
+                className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[13px] lg:text-[14px] text-muted hover:text-ink"
               >
                 {group.multi ? "可複選" : "單選"}
               </button>
@@ -167,12 +167,12 @@ function TagGroupCard({ group }: { group: TagGroupView }) {
         </div>
 
         {group.options.length === 0 ? (
-          <p className="text-sm text-muted">尚無選項。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">尚無選項。</p>
         ) : (
           <ul className="divide-y divide-line rounded-lg border border-line">
             {group.options.map((opt) =>
               editingOption === opt ? (
-                <li key={opt} className="flex items-center gap-2 px-3 py-2 text-sm">
+                <li key={opt} className="flex items-center gap-2 px-3 py-2 text-[13px] lg:text-[14px]">
                   <input
                     className={`${inputClass} flex-1`}
                     value={editOptionValue}
@@ -201,7 +201,7 @@ function TagGroupCard({ group }: { group: TagGroupView }) {
                   </button>
                 </li>
               ) : (
-                <li key={opt} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                <li key={opt} className="flex items-center justify-between gap-3 px-3 py-2 text-[13px] lg:text-[14px]">
                   <span>{opt}</span>
                   <div className="flex shrink-0 items-center gap-3">
                     <button
@@ -229,7 +229,7 @@ function TagGroupCard({ group }: { group: TagGroupView }) {
       <Modal open={confirming} onClose={() => setConfirming(false)} ariaLabel="確認刪除標籤群組" className="max-w-sm">
         <ModalHeader title="確認刪除標籤群組" onClose={() => setConfirming(false)} />
         <div className="space-y-4 p-4">
-          <p className="text-sm text-ink">
+          <p className="text-[13px] lg:text-[14px] text-ink">
             刪除「{group.name}」會一併刪除底下所有選項，已套用在品項上的標籤不會自動移除。確定要刪除嗎？
           </p>
           <div className="flex justify-end gap-2">
@@ -261,7 +261,7 @@ export function AddTagGroupButton() {
 
   return (
     <Button disabled={pending} onClick={createGroup}>
-      新增標籤群組
+      新增
     </Button>
   );
 }

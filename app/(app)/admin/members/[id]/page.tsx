@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Section, ButtonLink } from "@/components/ui/primitives";
+import { Section } from "@/components/ui/primitives";
 import { MemberEditForm } from "@/components/admin/member-edit-form";
 import { findMemberById } from "@/lib/models/member";
 import { listDepartments, listUnits } from "@/lib/models/org";
@@ -52,11 +52,6 @@ export default async function EditMemberPage({
     <Section
       title={`編輯會員：${member.name}`}
       description="改權限或狀態會立即影響該會員可操作的範圍。"
-      actions={
-        <ButtonLink href="/admin/members" variant="ghost">
-          返回列表
-        </ButtonLink>
-      }
     >
       <MemberEditForm member={member} departments={departments} units={units} roleNames={roleNames} />
     </Section>

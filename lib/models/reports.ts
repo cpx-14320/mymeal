@@ -6,8 +6,8 @@ import { todayTaiwanDateString } from "@/lib/date";
 /**
  * 後台「報表」頁用的統計彙總——資料來源是 group_orders 的 lines，現場算，不另外存快取表
  * （跟 getItemOrderStats／getMemberFrequentItems 同樣的考量，量大到查詢變慢再說）。
- * 依類型統計以「場次」（一筆團訂）為單位分組；依店家統計以「品項」為單位分組，
- * 因為一個模板可能混合多個店家的品項，template.supplierId 不可靠（見 catalog-item.ts 的註解）。
+ * 依類型統計以「場次」（一筆團訂）為單位分組；依頁面統計以「品項」為單位分組，
+ * 因為一個模板可能混合多個頁面的品項，template.pageId 不可靠（見 catalog-item.ts 的註解）。
  */
 
 const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -50,7 +50,7 @@ export interface KindOrderStat {
   count: number;
   amount: number;
 }
-export interface SupplierOrderStat {
+export interface PageOrderStat {
   name: string;
   orders: number;
   amount: number;
@@ -58,7 +58,7 @@ export interface SupplierOrderStat {
 export interface OrderReportData {
   daily: DailyOrderStat[]; // 舊到新，長度 = rangeDays
   byKind: KindOrderStat[];
-  bySupplier: SupplierOrderStat[];
+  byPage: PageOrderStat[];
 }
 
 interface PopulatedKindTemplate {
@@ -66,7 +66,7 @@ interface PopulatedKindTemplate {
   kindId?: { _id: Types.ObjectId; name: string } | null;
 }
 
-/** rangeDays 天的每日訂單數/金額 + 同一段期間的依類型／依店家彙總，供報表頁的三個區塊共用一次查詢。 */
+/** rangeDays 天的每日訂單數/金額 + 同一段期間的依類型／依頁面彙總，供報表頁的三個區塊共用一次查詢。 */
 export async function getOrderReportData(rangeDays: number): Promise<OrderReportData> {
   await connectMongo();
   await Promise.all([import("@/lib/models/template"), import("@/lib/models/item-kind")]);
@@ -82,11 +82,11 @@ export async function getOrderReportData(rangeDays: number): Promise<OrderReport
   for (const d of docs) for (const l of d.lines as OrderLineSubdoc[]) itemIds.add(String(l.itemId));
   const itemDocs = await CatalogItem.find({
     _id: { $in: [...itemIds].map((id) => new Types.ObjectId(id)) },
-  }).populate<{ supplierId?: { _id: Types.ObjectId; name: string } }>("supplierId");
-  const supplierNameByItem = new Map(
+  }).populate<{ pageId?: { _id: Types.ObjectId; name: string } }>("pageId");
+  const pageNameByItem = new Map(
     itemDocs.map((it) => [
       String(it._id),
-      (it.supplierId as unknown as { name: string } | undefined)?.name ?? "未標註店家",
+      (it.pageId as unknown as { name: string } | undefined)?.name ?? "未標註頁面",
     ]),
   );
 
@@ -94,7 +94,7 @@ export async function getOrderReportData(rangeDays: number): Promise<OrderReport
     dates.map((date) => [date, { orders: 0, amount: 0 }]),
   );
   const kindMap = new Map<string, KindOrderStat>();
-  const supplierMap = new Map<string, SupplierOrderStat>();
+  const pageMap = new Map<string, PageOrderStat>();
 
   for (const d of docs) {
     const lines = d.lines as OrderLineSubdoc[];
@@ -114,17 +114,17 @@ export async function getOrderReportData(rangeDays: number): Promise<OrderReport
     kindMap.set(kindName, kEntry);
 
     for (const l of lines) {
-      const supplierName = supplierNameByItem.get(String(l.itemId)) ?? "未標註店家";
-      const sEntry = supplierMap.get(supplierName) ?? { name: supplierName, orders: 0, amount: 0 };
+      const pageName = pageNameByItem.get(String(l.itemId)) ?? "未標註頁面";
+      const sEntry = pageMap.get(pageName) ?? { name: pageName, orders: 0, amount: 0 };
       sEntry.orders += l.qty;
       sEntry.amount += l.price * l.qty;
-      supplierMap.set(supplierName, sEntry);
+      pageMap.set(pageName, sEntry);
     }
   }
 
   return {
     daily: dates.map((date) => ({ date: formatDateLabel(date), ...dailyMap.get(date)! })),
     byKind: [...kindMap.values()].sort((a, b) => b.amount - a.amount),
-    bySupplier: [...supplierMap.values()].sort((a, b) => b.amount - a.amount),
+    byPage: [...pageMap.values()].sort((a, b) => b.amount - a.amount),
   };
 }

@@ -180,12 +180,12 @@ export default async function GroupOrderDetailPage({
               </tr>
             )}
             <tr>
-              <Td className="font-semibold">合計</Td>
+              <Td>合計</Td>
               <Td />
               <Td />
-              <Td className="text-center font-semibold tabular-nums">{group.qty}</Td>
+              <Td className="text-center tabular-nums">{group.qty}</Td>
               <Td />
-              <Td className="text-right font-semibold tabular-nums">NT$ {group.amount}</Td>
+              <Td className="text-right tabular-nums">NT$ {group.amount}</Td>
             </tr>
           </tbody>
         </TableWrap>

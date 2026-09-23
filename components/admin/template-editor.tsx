@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { TemplateDetail } from "@/lib/models/template";
-import type { SupplierView } from "@/lib/models/supplier";
+import type { PageView } from "@/lib/models/page";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemKindOption } from "@/lib/models/item-kind";
 import {
@@ -33,12 +33,12 @@ const initialBasicState: TemplateBasicState = {};
 
 export function TemplateEditor({
   template,
-  suppliers,
+  pages,
   items,
   kinds,
 }: {
   template: TemplateDetail;
-  suppliers: SupplierView[];
+  pages: PageView[];
   items: CatalogItemView[];
   kinds: ItemKindOption[];
 }) {
@@ -134,7 +134,7 @@ export function TemplateEditor({
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="brand">{template.kindName}</Badge>
           <Badge tone={template.active ? "positive" : "neutral"}>{template.active ? "啟用" : "停用"}</Badge>
-          {template.supplierName && <Badge>{template.supplierName}</Badge>}
+          {template.pageName && <Badge>{template.pageName}</Badge>}
           <Button variant="secondary" size="sm" onClick={toggleActive}>
             {template.active ? "停用" : "啟用"}
           </Button>
@@ -197,7 +197,7 @@ export function TemplateEditor({
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">{sec.name}</span>
-                    <span className="text-xs text-muted tabular-nums">{sec.items.length} 個品項</span>
+                    <span className="text-[13px] lg:text-[14px] text-muted tabular-nums">{sec.items.length} 個品項</span>
                   </div>
                 )}
                 <div className="flex gap-2">
@@ -211,16 +211,16 @@ export function TemplateEditor({
               </div>
 
               <ul className="divide-y divide-line rounded-lg border border-line">
-                {sec.items.length === 0 && <li className="px-3 py-2.5 text-sm text-muted">還沒有品項。</li>}
+                {sec.items.length === 0 && <li className="px-3 py-2.5 text-[13px] lg:text-[14px] text-muted">還沒有品項。</li>}
                 {sec.items.map((it) => (
                   <li key={it.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
                     <span className="flex items-center gap-2">
                       <span>{it.emoji}</span>
                       <span className="font-medium">{it.name}</span>
-                      {it.supplierName && <span className="text-xs text-muted">{it.supplierName}</span>}
+                      {it.pageName && <span className="text-[13px] lg:text-[14px] text-muted">{it.pageName}</span>}
                     </span>
                     <span className="flex items-center gap-3">
-                      <span className="text-sm tabular-nums text-muted">NT$ {it.price}</span>
+                      <span className="text-[13px] lg:text-[14px] tabular-nums text-muted">NT$ {it.price}</span>
                       <button
                         type="button"
                         onClick={() => removeItem(sec.id, it.id)}
@@ -257,7 +257,7 @@ export function TemplateEditor({
           <Button variant="danger" disabled={deleting} onClick={handleDeleteTemplate}>
             {deleting ? "刪除中…" : "刪除模板"}
           </Button>
-          {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+          {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
         </div>
       </div>
 
@@ -277,17 +277,17 @@ export function TemplateEditor({
                 ))}
               </select>
             </Field>
-            <Field label="頁面" hint="選填，多家店家混合就留空">
-              <select className={inputClass} name="supplierId" defaultValue={template.supplierId ?? ""}>
+            <Field label="頁面" hint="選填，多個頁面混合就留空">
+              <select className={inputClass} name="pageId" defaultValue={template.pageId ?? ""}>
                 <option value="">選擇頁面</option>
-                {suppliers.map((s) => (
+                {pages.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
                 ))}
               </select>
             </Field>
-            {basicState.error && <p className="text-sm text-danger">{basicState.error}</p>}
+            {basicState.error && <p className="text-[13px] lg:text-[14px] text-danger">{basicState.error}</p>}
             <div className="flex justify-end gap-2 pt-2">
               <Button disabled={basicPending}>{basicPending ? "儲存中…" : "儲存"}</Button>
             </div>
@@ -351,13 +351,13 @@ function ItemPicker({
         </button>
       </div>
       <ul className="max-h-72 divide-y divide-line overflow-y-auto rounded-lg border border-line bg-surface">
-        {filtered.length === 0 && <li className="px-3 py-2.5 text-sm text-muted">沒有符合的品項。</li>}
+        {filtered.length === 0 && <li className="px-3 py-2.5 text-[13px] lg:text-[14px] text-muted">沒有符合的品項。</li>}
         {filtered.map((it) => (
           <li key={it.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
             <span className="flex items-center gap-2">
               <span>{it.emoji}</span>
               <span className="font-medium">{it.name}</span>
-              <span className="text-xs text-muted">NT$ {it.price}</span>
+              <span className="text-[13px] lg:text-[14px] text-muted">NT$ {it.price}</span>
             </span>
             <Button
               variant={added.has(it.id) ? "secondary" : "primary"}

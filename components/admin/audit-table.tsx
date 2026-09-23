@@ -7,7 +7,7 @@ import {
   Th,
   Td,
   Pagination,
-  ListSearchBar,
+  ListToolbar,
 } from "@/components/ui/primitives";
 import type { AuditLogRow } from "@/lib/models/audit-log";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -29,14 +29,16 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
   const rows = filtered.slice(start, start + pageSize);
 
   return (
-    <div className="space-y-3">
-      <ListSearchBar
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setPage(1);
+    <div className="space-y-4">
+      <ListToolbar
+        search={{
+          value: search,
+          onChange: (v) => {
+            setSearch(v);
+            setPage(1);
+          },
+          placeholder: "搜尋操作者 / 對象 / 動作",
         }}
-        searchPlaceholder="搜尋操作者 / 對象 / 動作"
         pageSize={pageSize}
         onPageSizeChange={(n) => {
           setPageSize(n);
@@ -64,10 +66,10 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
           ) : (
             rows.map((l) => (
               <tr key={l.id}>
-                <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(l.at)}</Td>
-                <Td className="text-xs">{l.actor}</Td>
+                <Td className="text-muted">{formatTaiwanDateTime(l.at)}</Td>
+                <Td>{l.actor}</Td>
                 <Td>{l.action}</Td>
-                <Td className="text-xs text-muted">{l.target || "—"}</Td>
+                <Td className="text-muted">{l.target || "—"}</Td>
                 <Td>
                   <Badge tone={l.risk ? "danger" : "neutral"}>{l.risk ? "高風險" : "一般"}</Badge>
                 </Td>

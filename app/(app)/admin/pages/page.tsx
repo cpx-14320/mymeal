@@ -1,10 +1,10 @@
-import { SuppliersManager } from "@/components/admin/suppliers-manager";
-import { listSuppliers } from "@/lib/models/supplier";
+import { PagesManager } from "@/components/admin/pages-manager";
+import { listPages } from "@/lib/models/page";
 
 export const metadata = { title: "頁面設定" };
 
-export default async function AdminSuppliersPage() {
-  const suppliers = await listSuppliers();
+export default async function AdminPagesPage() {
+  const pages = await listPages();
 
-  return <SuppliersManager suppliers={suppliers} />;
+  return <PagesManager pages={pages} />;
 }
