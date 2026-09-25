@@ -44,7 +44,7 @@ export interface DailyOrderStat {
   orders: number;
   amount: number;
 }
-export interface KindOrderStat {
+export interface CategoryOrderStat {
   name: string;
   sessions: number;
   count: number;
@@ -57,26 +57,26 @@ export interface PageOrderStat {
 }
 export interface OrderReportData {
   daily: DailyOrderStat[]; // 舊到新，長度 = rangeDays
-  byKind: KindOrderStat[];
+  byCategory: CategoryOrderStat[];
   byPage: PageOrderStat[];
 }
 
-interface PopulatedKindTemplate {
+interface PopulatedCategoryTemplate {
   _id: Types.ObjectId;
-  kindId?: { _id: Types.ObjectId; name: string } | null;
+  categoryId?: { _id: Types.ObjectId; name: string } | null;
 }
 
-/** rangeDays 天的每日訂單數/金額 + 同一段期間的依類型／依頁面彙總，供報表頁的三個區塊共用一次查詢。 */
+/** rangeDays 天的每日訂單數/金額 + 同一段期間的依分類／依頁面彙總，供報表頁的三個區塊共用一次查詢。 */
 export async function getOrderReportData(rangeDays: number): Promise<OrderReportData> {
   await connectMongo();
-  await Promise.all([import("@/lib/models/template"), import("@/lib/models/item-kind")]);
+  await Promise.all([import("@/lib/models/template"), import("@/lib/models/item-category")]);
   const { CatalogItem } = await import("@/lib/models/catalog-item");
 
   const dates = lastNDateStrings(rangeDays);
 
   const docs = await GroupOrder.find({ date: { $in: dates } }).populate<{
-    templateId: PopulatedKindTemplate | null;
-  }>({ path: "templateId", populate: { path: "kindId" } });
+    templateId: PopulatedCategoryTemplate | null;
+  }>({ path: "templateId", populate: { path: "categoryId" } });
 
   const itemIds = new Set<string>();
   for (const d of docs) for (const l of d.lines as OrderLineSubdoc[]) itemIds.add(String(l.itemId));
@@ -93,7 +93,7 @@ export async function getOrderReportData(rangeDays: number): Promise<OrderReport
   const dailyMap = new Map<string, { orders: number; amount: number }>(
     dates.map((date) => [date, { orders: 0, amount: 0 }]),
   );
-  const kindMap = new Map<string, KindOrderStat>();
+  const categoryMap = new Map<string, CategoryOrderStat>();
   const pageMap = new Map<string, PageOrderStat>();
 
   for (const d of docs) {
@@ -106,12 +106,12 @@ export async function getOrderReportData(rangeDays: number): Promise<OrderReport
       dayBucket.amount += totals.amount;
     }
 
-    const kindName = d.templateId?.kindId?.name ?? "未分類";
-    const kEntry = kindMap.get(kindName) ?? { name: kindName, sessions: 0, count: 0, amount: 0 };
-    kEntry.sessions += 1;
-    kEntry.count += totals.qty;
-    kEntry.amount += totals.amount;
-    kindMap.set(kindName, kEntry);
+    const categoryName = d.templateId?.categoryId?.name ?? "未分類";
+    const cEntry = categoryMap.get(categoryName) ?? { name: categoryName, sessions: 0, count: 0, amount: 0 };
+    cEntry.sessions += 1;
+    cEntry.count += totals.qty;
+    cEntry.amount += totals.amount;
+    categoryMap.set(categoryName, cEntry);
 
     for (const l of lines) {
       const pageName = pageNameByItem.get(String(l.itemId)) ?? "未標註頁面";
@@ -124,7 +124,7 @@ export async function getOrderReportData(rangeDays: number): Promise<OrderReport
 
   return {
     daily: dates.map((date) => ({ date: formatDateLabel(date), ...dailyMap.get(date)! })),
-    byKind: [...kindMap.values()].sort((a, b) => b.amount - a.amount),
+    byCategory: [...categoryMap.values()].sort((a, b) => b.amount - a.amount),
     byPage: [...pageMap.values()].sort((a, b) => b.amount - a.amount),
   };
 }

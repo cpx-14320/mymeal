@@ -136,7 +136,7 @@ export function WalletTabs({
                 <tr key={tx.id}>
                   <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(tx.at)}</Td>
                   <Td>{ledgerTypeLabel[tx.type]}</Td>
-                  <Td className="text-muted">{tx.detail}</Td>
+                  <Td className="text-muted">{tx.note ?? tx.detail}</Td>
                   <Td className={`text-right tabular-nums ${tx.amount > 0 ? "text-positive" : ""}`}>
                     {tx.amount > 0 ? `+${tx.amount}` : tx.amount}
                   </Td>

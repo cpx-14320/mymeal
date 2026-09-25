@@ -29,17 +29,17 @@ function formatDateWithWeekday(dateStr: string) {
 
 const dayPageSizeOptions = [7, 14, 31] as const;
 
-type Filter = "all" | "open" | "mine" | string; // string = kindName
+type Filter = "all" | "open" | "mine" | string; // string = categoryName
 
 export function GroupOrdersList({
   rows,
   units,
-  kindByTemplateId,
+  categoryByTemplateId,
   currentMemberId,
 }: {
   rows: GroupOrderListItem[];
   units: { id: string; name: string }[];
-  kindByTemplateId: Record<string, string>;
+  categoryByTemplateId: Record<string, string>;
   currentMemberId: string;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -47,14 +47,14 @@ export function GroupOrdersList({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(dayPageSizeOptions[0]);
 
-  const kindOf = (g: GroupOrderListItem) => kindByTemplateId[g.templateId] ?? "";
-  const kindNames = [...new Set(rows.map(kindOf).filter(Boolean))];
+  const categoryOf = (g: GroupOrderListItem) => categoryByTemplateId[g.templateId] ?? "";
+  const categoryNames = [...new Set(rows.map(categoryOf).filter(Boolean))];
 
   const matchesFilter = (g: GroupOrderListItem) => {
     if (filter === "all") return true;
     if (filter === "open") return g.status === "open";
     if (filter === "mine") return g.hostId === currentMemberId;
-    return kindOf(g) === filter;
+    return categoryOf(g) === filter;
   };
 
   const filtered = rows
@@ -80,7 +80,7 @@ export function GroupOrdersList({
 
   const tabs: { key: Filter; label: string; count: number }[] = [
     { key: "all", label: "全部", count: rows.length },
-    ...kindNames.map((k) => ({ key: k, label: k, count: rows.filter((g) => kindOf(g) === k).length })),
+    ...categoryNames.map((c) => ({ key: c, label: c, count: rows.filter((g) => categoryOf(g) === c).length })),
     { key: "open", label: "開放中", count: rows.filter((g) => g.status === "open").length },
     { key: "mine", label: "我開的團", count: rows.filter((g) => g.hostId === currentMemberId).length },
   ];
@@ -182,7 +182,7 @@ export function GroupOrdersList({
                                 </p>
                               </div>
                               <div className="flex shrink-0 gap-1.5">
-                                {kindOf(g) && <Badge tone="brand">{kindOf(g)}</Badge>}
+                                {categoryOf(g) && <Badge tone="brand">{categoryOf(g)}</Badge>}
                                 <Badge tone={statusMap[g.status].tone}>{statusMap[g.status].label}</Badge>
                               </div>
                             </div>

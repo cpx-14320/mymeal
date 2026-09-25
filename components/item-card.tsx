@@ -106,9 +106,6 @@ export function ItemCard({
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="font-medium">{item.name}</p>
-              <p className="text-xs text-muted">
-                {item.pageName ?? item.categoryName}
-              </p>
             </div>
             <button
               type="button"
@@ -122,7 +119,9 @@ export function ItemCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge tone="brand">{item.categoryName}</Badge>
+            {item.tags.map((tag) => (
+              <Badge key={tag}>{tag}</Badge>
+            ))}
             {liveStat?.avgRating != null && (
               <Badge tone="warning">★ {liveStat.avgRating.toFixed(1)}</Badge>
             )}

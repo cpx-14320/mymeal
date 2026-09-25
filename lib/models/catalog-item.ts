@@ -1,8 +1,7 @@
 import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
-// 確保 populate("kindId"/"categoryId"/"pageId") 前這幾個 model 一定已註冊，
+// 確保 populate("categoryId"/"pageId") 前這幾個 model 一定已註冊，
 // 不依賴這次 request 剛好先經過哪個其他頁面（不然會間歇性 MissingSchemaError）。
-import "@/lib/models/item-kind";
 import "@/lib/models/item-category";
 import "@/lib/models/page";
 
@@ -11,7 +10,6 @@ export interface CatalogItemDocument {
   _id: Types.ObjectId;
   name: string;
   price: number;
-  kindId: Types.ObjectId; // ref ItemKind
   categoryId: Types.ObjectId; // ref ItemCategory
   pageId?: Types.ObjectId; // ref Page
   tags: string[]; // 值取自 tag_group.options，不強制外鍵
@@ -27,7 +25,6 @@ const catalogItemSchema = new Schema<CatalogItemDocument>(
   {
     name: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
-    kindId: { type: Schema.Types.ObjectId, ref: "ItemKind", required: true },
     categoryId: { type: Schema.Types.ObjectId, ref: "ItemCategory", required: true },
     pageId: { type: Schema.Types.ObjectId, ref: "Page" },
     tags: { type: [String], required: true, default: [] },
@@ -58,7 +55,6 @@ export function collectTagsFromFormData(formData: FormData): string[] {
 
 export interface CatalogItemInput {
   name: string;
-  kindId: string;
   categoryId: string;
   pageId?: string;
   price: number;
@@ -71,8 +67,6 @@ export interface CatalogItemInput {
 export interface CatalogItemView {
   id: string;
   name: string;
-  kindId: string;
-  kindName: string;
   categoryId: string;
   categoryName: string;
   pageId?: string;
@@ -93,7 +87,6 @@ interface PopulatedRef {
 function toView(d: {
   _id: Types.ObjectId;
   name: string;
-  kindId: PopulatedRef | Types.ObjectId;
   categoryId: PopulatedRef | Types.ObjectId;
   pageId?: PopulatedRef | Types.ObjectId;
   price: number;
@@ -103,14 +96,11 @@ function toView(d: {
   active: boolean;
   createdBy: string;
 }): CatalogItemView {
-  const kind = d.kindId as PopulatedRef;
   const category = d.categoryId as PopulatedRef;
   const page = d.pageId as PopulatedRef | undefined;
   return {
     id: String(d._id),
     name: d.name,
-    kindId: String(kind?._id ?? d.kindId),
-    kindName: kind?.name ?? "",
     categoryId: String(category?._id ?? d.categoryId),
     categoryName: category?.name ?? "",
     pageId: page?._id ? String(page._id) : undefined,
@@ -128,11 +118,7 @@ export async function listCatalogItems(): Promise<CatalogItemView[]> {
   await connectMongo();
   const docs = await CatalogItem.find({})
     .sort({ createdAt: -1 })
-    .populate<{ kindId: PopulatedRef; categoryId: PopulatedRef; pageId?: PopulatedRef }>([
-      "kindId",
-      "categoryId",
-      "pageId",
-    ]);
+    .populate<{ categoryId: PopulatedRef; pageId?: PopulatedRef }>(["categoryId", "pageId"]);
   return docs.map((d) => toView(d as unknown as Parameters<typeof toView>[0]));
 }
 
@@ -142,11 +128,7 @@ export async function listCatalogItemsByPage(pageId: string): Promise<CatalogIte
   if (!Types.ObjectId.isValid(pageId)) return [];
   const docs = await CatalogItem.find({ pageId: new Types.ObjectId(pageId) })
     .sort({ createdAt: -1 })
-    .populate<{ kindId: PopulatedRef; categoryId: PopulatedRef; pageId?: PopulatedRef }>([
-      "kindId",
-      "categoryId",
-      "pageId",
-    ]);
+    .populate<{ categoryId: PopulatedRef; pageId?: PopulatedRef }>(["categoryId", "pageId"]);
   return docs.map((d) => toView(d as unknown as Parameters<typeof toView>[0]));
 }
 
@@ -160,10 +142,9 @@ export async function listCatalogItemsByIds(ids: string[]): Promise<CatalogItemV
   const objIds = uniqueIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
   if (objIds.length === 0) return [];
   const docs = await CatalogItem.find({ _id: { $in: objIds } }).populate<{
-    kindId: PopulatedRef;
     categoryId: PopulatedRef;
     pageId?: PopulatedRef;
-  }>(["kindId", "categoryId", "pageId"]);
+  }>(["categoryId", "pageId"]);
   const byId = new Map(docs.map((d) => [String(d._id), toView(d as unknown as Parameters<typeof toView>[0])]));
   return uniqueIds.map((id) => byId.get(id)).filter((v): v is CatalogItemView => !!v);
 }
@@ -172,22 +153,19 @@ export async function findCatalogItemById(id: string): Promise<CatalogItemView |
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) return null;
   const doc = await CatalogItem.findById(id).populate<{
-    kindId: PopulatedRef;
     categoryId: PopulatedRef;
     pageId?: PopulatedRef;
-  }>(["kindId", "categoryId", "pageId"]);
+  }>(["categoryId", "pageId"]);
   return doc ? toView(doc) : null;
 }
 
 function buildDoc(input: CatalogItemInput) {
-  if (!Types.ObjectId.isValid(input.kindId)) throw new Error("請選擇有效的類型。");
   if (!Types.ObjectId.isValid(input.categoryId)) throw new Error("請選擇有效的分類。");
   if (input.pageId && !Types.ObjectId.isValid(input.pageId)) {
     throw new Error("請選擇有效的頁面。");
   }
   return {
     name: input.name,
-    kindId: new Types.ObjectId(input.kindId),
     categoryId: new Types.ObjectId(input.categoryId),
     pageId: input.pageId ? new Types.ObjectId(input.pageId) : undefined,
     price: input.price,
@@ -211,11 +189,61 @@ export async function updateCatalogItem(id: string, input: CatalogItemInput) {
   return doc;
 }
 
+/** CSV 匯入用：同名品項視為同一筆（更新），沒有就新增——讓「匯出→編輯→匯入」可以重複跑。 */
+export async function upsertCatalogItemByName(
+  input: CatalogItemInput,
+  createdBy?: string,
+): Promise<{ id: string; created: boolean }> {
+  await connectMongo();
+  const existing = await CatalogItem.findOne({ name: input.name });
+  if (existing) {
+    await CatalogItem.findByIdAndUpdate(existing._id, { $set: buildDoc(input) });
+    return { id: String(existing._id), created: false };
+  }
+  const doc = await CatalogItem.create({ ...buildDoc(input), createdBy: createdBy ?? "系統" });
+  return { id: String(doc._id), created: true };
+}
+
 export async function setCatalogItemsActive(ids: string[], active: boolean): Promise<number> {
   await connectMongo();
   const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
   if (objIds.length === 0) return 0;
   const result = await CatalogItem.updateMany({ _id: { $in: objIds } }, { $set: { active } });
+  return result.modifiedCount;
+}
+
+/** 品項設定列表頁的 inline 快速編輯用：只更新有帶到的欄位（分類／價錢／標籤），
+ *  跟 updateCatalogItem 不同——那支是整份表單存檔，這支是單一儲存格改完就送。 */
+export async function patchCatalogItem(
+  id: string,
+  patch: Partial<Pick<CatalogItemInput, "categoryId" | "price" | "tags">>,
+): Promise<void> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(id)) throw new Error("無效的品項 id");
+
+  const set: Record<string, unknown> = {};
+  if (patch.categoryId !== undefined) {
+    if (!Types.ObjectId.isValid(patch.categoryId)) throw new Error("無效的分類 id");
+    set.categoryId = new Types.ObjectId(patch.categoryId);
+  }
+  if (patch.price !== undefined) set.price = patch.price;
+  if (patch.tags !== undefined) set.tags = patch.tags;
+  if (Object.keys(set).length === 0) return;
+
+  await CatalogItem.updateOne({ _id: new Types.ObjectId(id) }, { $set: set });
+}
+
+/** pageId 傳空字串／undefined 代表「取消掛頁面」，用 $unset 而非把欄位存成空字串。 */
+export async function setCatalogItemsPage(ids: string[], pageId: string | undefined): Promise<number> {
+  await connectMongo();
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return 0;
+  if (pageId && !Types.ObjectId.isValid(pageId)) throw new Error("無效的頁面 id");
+
+  const update = pageId
+    ? { $set: { pageId: new Types.ObjectId(pageId) } }
+    : { $unset: { pageId: "" } };
+  const result = await CatalogItem.updateMany({ _id: { $in: objIds } }, update);
   return result.modifiedCount;
 }
 

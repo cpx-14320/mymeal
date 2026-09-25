@@ -2,10 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { PROMO_PAGE_OPTIONS } from "@/lib/promo-pages";
 import type { InterstitialView } from "@/lib/models/interstitial";
 import { getEnabledInterstitialsAction } from "@/app/(app)/interstitial-actions";
 
-const shownOnPrefixes = ["/group-orders", "/menu"];
+/** 廣告的 showOnPages 有沒有任何一個版位的路徑前綴對得上目前頁面。 */
+function matchesPathname(a: InterstitialView, pathname: string): boolean {
+  return a.showOnPages.some((key) => {
+    const opt = PROMO_PAGE_OPTIONS.find((o) => o.key === key);
+    if (!opt) return false;
+    return pathname === opt.prefix || pathname.startsWith(`${opt.prefix}/`);
+  });
+}
 
 /** 「開啟」＋現在時間落在排程區間內＋有圖片，才算候選（跟後台 /admin/promos 的規則一致）。 */
 function isShowing(a: InterstitialView, now: Date): boolean {
@@ -18,14 +26,11 @@ function isShowing(a: InterstitialView, now: Date): boolean {
 
 /**
  * 前台蓋台廣告：進站時全螢幕蓋住畫面，倒數後自動消失。
- * 只在「開團訂餐」與「本週餐點」顯示，避免切到其他頁面時一直被打斷。設定來自後台「蓋台廣告」。
+ * 每則廣告後台自己選要在哪些版位顯示（見 admin/promos 的「顯示版位」），不寫死在這個元件裡。
  * 候選清單（已開啟的廣告）來自真資料庫，排程時間窗依使用者本機時間判斷，留在前端算。
  */
 export function InterstitialOverlay() {
   const pathname = usePathname();
-  const onFront = shownOnPrefixes.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`),
-  );
 
   const [ad, setAd] = useState<InterstitialView | null>(null);
   const [left, setLeft] = useState(0);
@@ -33,13 +38,12 @@ export function InterstitialOverlay() {
 
   // 掛載後才抓候選並判斷時間，避免 SSR 不一致
   useEffect(() => {
-    if (!onFront) return;
     let cancelled = false;
 
     getEnabledInterstitialsAction().then((candidates) => {
       if (cancelled) return;
       const now = new Date();
-      const a = candidates.find((c) => isShowing(c, now));
+      const a = candidates.find((c) => isShowing(c, now) && matchesPathname(c, pathname));
       if (!a) return;
 
       try {
@@ -66,7 +70,7 @@ export function InterstitialOverlay() {
     return () => {
       cancelled = true;
     };
-  }, [onFront]);
+  }, [pathname]);
 
   // 鎖背景捲動 + Esc 關閉
   useEffect(() => {

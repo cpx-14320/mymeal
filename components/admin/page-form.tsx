@@ -6,11 +6,7 @@ import { Card, CardBody, Field, inputClass, Button, ButtonLink } from "@/compone
 import type { PageView } from "@/lib/models/page";
 import type { TemplateListItem } from "@/lib/models/template";
 import { createPageAction, type CreatePageState } from "@/app/(app)/admin/pages/new/actions";
-import {
-  updatePageAction,
-  deletePageAction,
-  type UpdatePageState,
-} from "@/app/(app)/admin/pages/[id]/actions";
+import { updatePageAction, type UpdatePageState } from "@/app/(app)/admin/pages/[id]/actions";
 
 /** 圖示 SVG 挑選預設──沒接觸過這個欄位的管理員常常不知道去哪裡找 SVG 貼；
  *  給幾個跟餐飲頁面情境相關的現成圖示可以直接點選，樣式跟側欄導覽圖示（icons.tsx）同一套
@@ -59,7 +55,7 @@ const ICON_SVG_PRESETS: { label: string; svg: string }[] = [
   },
 ];
 
-/** 新增 / 編輯頁面共用的表單。傳 page 就是編輯模式（欄位帶入現值＋多一個刪除按鈕）。 */
+/** 新增 / 編輯頁面共用的表單。傳 page 就是編輯模式（欄位帶入現值）。 */
 export function PageForm({ page, templates }: { page?: PageView; templates: TemplateListItem[] }) {
   const router = useRouter();
   const isEdit = !!page;
@@ -68,27 +64,11 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
     action,
     {},
   );
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | undefined>();
   const [iconSvgValue, setIconSvgValue] = useState(page?.iconSvg ?? "");
 
   useEffect(() => {
     if (isEdit && state.success) router.refresh();
   }, [isEdit, state.success, router]);
-
-  async function handleDelete() {
-    if (!page) return;
-    setDeleting(true);
-    setDeleteError(undefined);
-    const result = await deletePageAction(page.id);
-    if (result.error) {
-      setDeleteError(result.error);
-      setDeleting(false);
-      return;
-    }
-    router.push("/admin/pages");
-    router.refresh();
-  }
 
   return (
     <form action={formAction}>
@@ -99,12 +79,11 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
               <input className={inputClass} name="name" defaultValue={page?.name} required />
             </Field>
 
-            <Field label="網址代稱 slug">
+            <Field label="網址">
               <input
                 className={inputClass}
                 name="slug"
                 defaultValue={page?.slug}
-                placeholder="小寫英文、數字、-，例如 starbucks-sanduo"
                 required
               />
             </Field>
@@ -114,7 +93,6 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
                 className={inputClass}
                 name="description"
                 defaultValue={page?.description}
-                placeholder="便當、飲料、咖啡"
               />
             </Field>
 
@@ -249,23 +227,11 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
         </CardBody>
       </Card>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        {isEdit ? (
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="danger" disabled={deleting} onClick={handleDelete}>
-              {deleting ? "刪除中…" : "刪除頁面"}
-            </Button>
-            {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
-          </div>
-        ) : (
-          <span />
-        )}
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/pages" variant="ghost">
-            {isEdit ? "返回列表" : "取消"}
-          </ButtonLink>
-          <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立頁面"}</Button>
-        </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <ButtonLink href="/admin/pages" variant="ghost">
+          {isEdit ? "返回列表" : "取消"}
+        </ButtonLink>
+        <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立頁面"}</Button>
       </div>
     </form>
   );

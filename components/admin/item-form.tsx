@@ -1,27 +1,24 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, Field, inputClass, Button, ButtonLink } from "@/components/ui/primitives";
 import { ImageField } from "@/components/admin/image-field";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
-import type { ItemKindOption } from "@/lib/models/item-kind";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
 import type { PageView } from "@/lib/models/page";
 import type { TagGroupView } from "@/lib/models/tag-group";
 import { createItemAction, type CreateItemState } from "@/app/(app)/admin/items/new/actions";
-import { updateItemAction, deleteItemAction, type UpdateItemState } from "@/app/(app)/admin/items/[id]/actions";
+import { updateItemAction, type UpdateItemState } from "@/app/(app)/admin/items/[id]/actions";
 
-/** 新增 / 編輯品項共用的表單。傳 item 就是編輯模式（欄位帶入現值＋多一個刪除按鈕）。 */
+/** 新增 / 編輯品項共用的表單。傳 item 就是編輯模式（欄位帶入現值）。 */
 export function ItemForm({
   item,
-  kinds,
   categories,
   pages,
   tagGroups,
 }: {
   item?: CatalogItemView;
-  kinds: ItemKindOption[];
   categories: ItemCategoryOption[];
   pages: PageView[];
   tagGroups: TagGroupView[];
@@ -33,26 +30,10 @@ export function ItemForm({
     action,
     {},
   );
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | undefined>();
 
   useEffect(() => {
     if (isEdit && state.success) router.refresh();
   }, [isEdit, state.success, router]);
-
-  async function handleDelete() {
-    if (!item) return;
-    setDeleting(true);
-    setDeleteError(undefined);
-    const result = await deleteItemAction(item.id);
-    if (result.error) {
-      setDeleteError(result.error);
-      setDeleting(false);
-      return;
-    }
-    router.push("/admin/items");
-    router.refresh();
-  }
 
   return (
     <form action={formAction}>
@@ -60,7 +41,7 @@ export function ItemForm({
         <CardBody className="space-y-5">
           <ImageField defaultPath={item?.imageUrl} fallbackEmoji={item?.emoji} />
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="品項名稱">
               <input className={inputClass} name="name" defaultValue={item?.name} placeholder="例：招牌雞腿飯" required />
             </Field>
@@ -70,7 +51,7 @@ export function ItemForm({
             </Field>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="頁面">
               <select className={inputClass} name="pageId" defaultValue={item?.pageId ?? ""}>
                 <option value="">選擇頁面</option>
@@ -95,19 +76,6 @@ export function ItemForm({
               </select>
             </Field>
 
-            <Field label="類型">
-              <select className={inputClass} name="kindId" defaultValue={item?.kindId ?? ""} required>
-                <option value="" disabled>
-                  選擇類型
-                </option>
-                {kinds.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
             <Field label="價格（NT$）">
               <input
                 className={inputClass}
@@ -120,11 +88,18 @@ export function ItemForm({
                 required
               />
             </Field>
+
+            <Field label="狀態">
+              <select className={inputClass} name="active" defaultValue={(item?.active ?? true) ? "true" : "false"}>
+                <option value="true">啟用</option>
+                <option value="false">停用</option>
+              </select>
+            </Field>
           </div>
 
           <div>
             <span className="mb-1 block text-sm font-medium">標籤</span>
-            <p className="mb-2 text-[13px] lg:text-[14px] text-muted">選項來自「標籤群組」設定（在後台「品項標籤」頁管理）。</p>
+            <p className="mb-2 text-[13px] lg:text-[14px] text-muted">選項來自「品項標籤」設定。</p>
             {tagGroups.length === 0 ? (
               <p className="text-[13px] lg:text-[14px] text-muted">還沒有標籤群組，先到「品項標籤」頁建立。</p>
             ) : (
@@ -158,35 +133,15 @@ export function ItemForm({
             )}
           </div>
 
-          <div>
-            <span className="mb-1.5 block text-sm font-medium">狀態</span>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="active" defaultChecked={item?.active ?? true} />
-              啟用（可被模板選用）
-            </label>
-          </div>
-
           {state.error && <p className="text-[13px] lg:text-[14px] text-danger">{state.error}</p>}
         </CardBody>
       </Card>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        {isEdit ? (
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="danger" disabled={deleting} onClick={handleDelete}>
-              {deleting ? "刪除中…" : "刪除品項"}
-            </Button>
-            {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
-          </div>
-        ) : (
-          <span />
-        )}
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/items" variant="ghost">
-            {isEdit ? "返回列表" : "取消"}
-          </ButtonLink>
-          <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立品項"}</Button>
-        </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <ButtonLink href="/admin/items" variant="ghost">
+          {isEdit ? "返回列表" : "取消"}
+        </ButtonLink>
+        <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立品項"}</Button>
       </div>
     </form>
   );

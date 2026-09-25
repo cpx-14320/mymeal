@@ -478,7 +478,7 @@ export const permissionCategories: PermissionCategory[] = [
     label: "互動與行銷",
     items: [
       { key: "gamification", label: "任務與經驗" },
-      { key: "promos", label: "蓋台廣告" },
+      { key: "promos", label: "廣宣版位" },
     ],
   },
   {

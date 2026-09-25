@@ -1,7 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createItemCategory, updateItemCategory, deleteItemCategory } from "@/lib/models/item-category";
+import {
+  createItemCategory,
+  updateItemCategory,
+  deleteItemCategory,
+  reorderItemCategories,
+} from "@/lib/models/item-category";
 
 export interface CategoryFormState {
   error?: string;
@@ -44,6 +49,24 @@ export async function updateCategoryAction(id: string, name: string): Promise<Up
 
   revalidatePath("/admin/classification");
   revalidatePath("/admin/items");
+  return { success: true };
+}
+
+export interface ReorderCategoryState {
+  error?: string;
+  success?: boolean;
+}
+
+export async function reorderCategoryAction(orderedIds: string[]): Promise<ReorderCategoryState> {
+  try {
+    await reorderItemCategories(orderedIds);
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
+  }
+
+  revalidatePath("/admin/classification");
+  revalidatePath("/admin/items");
+  revalidatePath("/admin/items/new");
   return { success: true };
 }
 

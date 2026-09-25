@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updateInterstitial, deleteInterstitial, type InterstitialInput, type PromoFrequency } from "@/lib/models/interstitial";
+import { updateInterstitial, type InterstitialInput, type PromoFrequency } from "@/lib/models/interstitial";
 
 export interface UpdatePromoState {
   error?: string;
@@ -17,12 +17,13 @@ function parseInput(formData: FormData): InterstitialInput | { error: string } {
   const startAt = String(formData.get("startAt") ?? "").trim();
   const endAt = String(formData.get("endAt") ?? "").trim();
   const enabled = formData.get("enabled") === "on";
+  const showOnPages = formData.getAll("showOnPages").map(String);
 
   if (!name) return { error: "請填寫活動名稱。" };
   if (!startAt || !endAt) return { error: "請設定排程開始與結束時間。" };
   if (!Number.isFinite(dismissSeconds) || dismissSeconds < 0) return { error: "倒數秒數請輸入 0 以上的數字。" };
 
-  return { name, imageUrl, linkUrl, dismissSeconds, frequency, startAt, endAt, enabled };
+  return { name, imageUrl, linkUrl, dismissSeconds, frequency, showOnPages, startAt, endAt, enabled };
 }
 
 export async function updatePromoAction(
@@ -41,18 +42,5 @@ export async function updatePromoAction(
 
   revalidatePath("/admin/promos");
   revalidatePath(`/admin/promos/${id}`);
-  return { success: true };
-}
-
-export interface DeletePromoState {
-  error?: string;
-  success?: boolean;
-}
-
-export async function deletePromoAction(id: string): Promise<DeletePromoState> {
-  const deleted = await deleteInterstitial(id);
-  if (!deleted) return { error: "找不到這個廣告，可能已被刪除。" };
-
-  revalidatePath("/admin/promos");
   return { success: true };
 }

@@ -3,7 +3,7 @@ import { TemplateEditor } from "@/components/admin/template-editor";
 import { findTemplateById } from "@/lib/models/template";
 import { listPages } from "@/lib/models/page";
 import { listCatalogItems } from "@/lib/models/catalog-item";
-import { listItemKinds } from "@/lib/models/item-kind";
+import { listItemCategories } from "@/lib/models/item-category";
 
 export const metadata = { title: "編輯模板" };
 
@@ -13,11 +13,11 @@ export default async function TemplateEditorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [template, pages, items, kinds] = await Promise.all([
+  const [template, pages, items, categories] = await Promise.all([
     findTemplateById(id),
     listPages(),
     listCatalogItems(),
-    listItemKinds(),
+    listItemCategories(),
   ]);
   if (!template) notFound();
 
@@ -26,7 +26,7 @@ export default async function TemplateEditorPage({
       template={template}
       pages={pages}
       items={items.filter((it) => it.active)}
-      kinds={kinds}
+      categories={categories}
     />
   );
 }

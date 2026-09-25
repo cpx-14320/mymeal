@@ -5,6 +5,7 @@ import {
   createDailyTask,
   updateDailyTask,
   deleteDailyTask,
+  deleteDailyTasks,
   createExpRule,
   updateExpRule,
   deleteExpRule,
@@ -33,6 +34,11 @@ export async function updateDailyTaskAction(id: string, patch: DailyTaskPatch) {
 
 export async function deleteDailyTaskAction(id: string) {
   await deleteDailyTask(id);
+  refresh();
+}
+
+export async function deleteDailyTasksAction(ids: string[]) {
+  await deleteDailyTasks(ids);
   refresh();
 }
 

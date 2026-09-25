@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, inputClass, Button } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
@@ -28,6 +28,10 @@ interface NameListCardProps {
   createAction: (state: NameListFormState, formData: FormData) => Promise<NameListFormState>;
   updateAction: (id: string, name: string) => Promise<NameListActionState>;
   deleteAction: (id: string) => Promise<NameListActionState>;
+  /** 有傳的話，列表可以拖曳排序（拖放後呼叫這個把新順序存回去）。 */
+  reorderAction?: (orderedIds: string[]) => Promise<NameListActionState>;
+  /** "list"（預設）：直式清單，逐列排列。"grid"：多欄網格，項目排成小卡片、依畫面寬度自動幾欄。 */
+  layout?: "list" | "grid";
   confirmTitle: string;
   /** 用 {name} 當佔位符，例如 "刪除「{name}」會連同底下單位一起刪除，確定要刪除嗎？"。 */
   confirmMessage: string;
@@ -48,6 +52,8 @@ export function NameListCard({
   createAction,
   updateAction,
   deleteAction,
+  reorderAction,
+  layout = "list",
   confirmTitle,
   confirmMessage,
 }: NameListCardProps) {
@@ -60,6 +66,37 @@ export function NameListCard({
   const [editValue, setEditValue] = useState("");
   const [editPending, setEditPending] = useState(false);
   const [editError, setEditError] = useState<string | undefined>();
+  const [orderedItems, setOrderedItems] = useState(items);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [reorderError, setReorderError] = useState<string | undefined>();
+
+  useEffect(() => {
+    setOrderedItems(items);
+  }, [items]);
+
+  function handleDrop(targetId: string) {
+    if (!dragId || dragId === targetId) return;
+    const from = orderedItems.findIndex((i) => i.id === dragId);
+    const to = orderedItems.findIndex((i) => i.id === targetId);
+    if (from === -1 || to === -1) return;
+
+    const next = [...orderedItems];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setOrderedItems(next);
+    setDragId(null);
+
+    if (!reorderAction) return;
+    setReorderError(undefined);
+    reorderAction(next.map((i) => i.id)).then((result) => {
+      if (result.error) {
+        setReorderError(result.error);
+        setOrderedItems(items);
+        return;
+      }
+      router.refresh();
+    });
+  }
 
   async function handleDelete(id: string) {
     setConfirmTarget(null);
@@ -95,6 +132,7 @@ export function NameListCard({
       setEditPending(false);
       return;
     }
+    setOrderedItems((prev) => prev.map((it) => (it.id === id ? { ...it, name: editValue } : it)));
     router.refresh();
     setEditPending(false);
     setEditingId(null);
@@ -114,13 +152,26 @@ export function NameListCard({
         </form>
         {state.error && <p className="text-[13px] text-danger">{state.error}</p>}
 
-        {items.length === 0 ? (
+        {orderedItems.length === 0 ? (
           <p className="text-[13px] lg:text-[14px] text-muted">目前沒有資料。</p>
         ) : (
-          <ul className="divide-y divide-line rounded-lg border border-line">
-            {items.map((item) =>
+          <ul
+            className={
+              layout === "grid"
+                ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                : "divide-y divide-line rounded-lg border border-line"
+            }
+          >
+            {orderedItems.map((item) =>
               editingId === item.id ? (
-                <li key={item.id} className="flex items-center gap-2 px-3 py-2 text-[13px] lg:text-[14px]">
+                <li
+                  key={item.id}
+                  className={
+                    layout === "grid"
+                      ? "flex flex-wrap items-center gap-2 rounded-lg border border-line px-3 py-2 text-[13px] lg:text-[14px]"
+                      : "flex items-center gap-2 px-3 py-2 text-[13px] lg:text-[14px]"
+                  }
+                >
                   <input
                     className={`${inputClass} flex-1`}
                     value={editValue}
@@ -146,14 +197,29 @@ export function NameListCard({
                   </button>
                 </li>
               ) : (
-                <li key={item.id} className="flex items-center justify-between gap-3 px-3 py-2 text-[13px] lg:text-[14px]">
-                  <span>{item.name}</span>
+                <li
+                  key={item.id}
+                  draggable={!!reorderAction}
+                  onDragStart={() => setDragId(item.id)}
+                  onDragOver={(e) => reorderAction && e.preventDefault()}
+                  onDrop={() => handleDrop(item.id)}
+                  onDragEnd={() => setDragId(null)}
+                  className={`flex items-center justify-between gap-3 text-[13px] lg:text-[14px] ${
+                    layout === "grid" ? "rounded-lg border border-line px-3 py-2" : "px-3 py-2"
+                  } ${reorderAction ? "cursor-grab active:cursor-grabbing" : ""} ${
+                    dragId === item.id ? "opacity-40" : ""
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    {reorderAction && <span className="text-muted select-none">⠿</span>}
+                    {item.name}
+                  </span>
                   <div className="flex shrink-0 items-center gap-3">
                     <button
                       type="button"
                       disabled={deletingId === item.id}
                       onClick={() => startEdit(item)}
-                      className="text-xs font-medium text-ink hover:underline disabled:opacity-50"
+                      className="text-[13px] font-medium text-ink hover:underline disabled:opacity-50"
                     >
                       修改
                     </button>
@@ -161,7 +227,7 @@ export function NameListCard({
                       type="button"
                       disabled={deletingId === item.id}
                       onClick={() => setConfirmTarget(item)}
-                      className="text-xs font-medium text-danger hover:underline disabled:opacity-50"
+                      className="text-[13px] font-medium text-danger hover:underline disabled:opacity-50"
                     >
                       {deletingId === item.id ? "刪除中…" : "刪除"}
                     </button>
@@ -174,6 +240,7 @@ export function NameListCard({
 
         {editError && <p className="text-[13px] text-danger">{editError}</p>}
         {deleteError && <p className="text-[13px] text-danger">{deleteError}</p>}
+        {reorderError && <p className="text-[13px] text-danger">{reorderError}</p>}
       </CardBody>
 
       <Modal open={confirmTarget !== null} onClose={() => setConfirmTarget(null)} ariaLabel={confirmTitle} className="max-w-sm">

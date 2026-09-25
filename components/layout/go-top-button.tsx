@@ -1,24 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { ArrowUpIcon } from "./icons";
 
-/** 前台頁面右下角「回到頂部」按鈕，捲動超過一定距離才出現。不在 /admin 顯示。 */
+/** 右下角「回到頂部」按鈕，捲動超過一定距離才出現。前台、後台共用同一顆。 */
 export function GoTopButton() {
-  const pathname = usePathname();
-  const onFront = !pathname.startsWith("/admin");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!onFront) return;
     const onScroll = () => setVisible(window.scrollY > 400);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [onFront]);
+  }, []);
 
-  if (!onFront || !visible) return null;
+  if (!visible) return null;
 
   return (
     <button

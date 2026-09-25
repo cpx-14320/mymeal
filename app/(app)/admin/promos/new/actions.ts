@@ -18,12 +18,13 @@ function parseInput(formData: FormData): InterstitialInput | { error: string } {
   const startAt = String(formData.get("startAt") ?? "").trim();
   const endAt = String(formData.get("endAt") ?? "").trim();
   const enabled = formData.get("enabled") === "on";
+  const showOnPages = formData.getAll("showOnPages").map(String);
 
   if (!name) return { error: "請填寫活動名稱。" };
   if (!startAt || !endAt) return { error: "請設定排程開始與結束時間。" };
   if (!Number.isFinite(dismissSeconds) || dismissSeconds < 0) return { error: "倒數秒數請輸入 0 以上的數字。" };
 
-  return { name, imageUrl, linkUrl, dismissSeconds, frequency, startAt, endAt, enabled };
+  return { name, imageUrl, linkUrl, dismissSeconds, frequency, showOnPages, startAt, endAt, enabled };
 }
 
 export async function createPromoAction(

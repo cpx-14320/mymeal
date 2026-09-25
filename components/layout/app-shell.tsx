@@ -164,7 +164,7 @@ export function AppShell({
         {/* 前台蓋台廣告（/admin 不顯示） */}
         <InterstitialOverlay />
 
-        {/* 前台回到頂部按鈕（/admin 不顯示） */}
+        {/* 回到頂部按鈕（前台／後台共用） */}
         <GoTopButton />
 
         <LoginModal

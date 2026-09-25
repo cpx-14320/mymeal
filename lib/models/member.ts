@@ -287,14 +287,6 @@ export async function setMembersStatus(ids: string[], status: MemberStatus): Pro
   return result.modifiedCount;
 }
 
-/** 後台刪除會員用：直接刪除該筆 member 文件。 */
-export async function deleteMember(id: string) {
-  await connectMongo();
-  if (!Types.ObjectId.isValid(id)) throw new Error("無效的會員 id");
-  const result = await Member.deleteOne({ _id: new Types.ObjectId(id) });
-  return result.deletedCount > 0;
-}
-
 /** 後台會員列表「刪除選取」用：一次刪多筆，忽略格式不對的 id，回傳實際刪除的筆數。 */
 export async function deleteMembers(ids: string[]): Promise<number> {
   await connectMongo();

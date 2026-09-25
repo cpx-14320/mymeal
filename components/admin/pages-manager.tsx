@@ -13,6 +13,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  Note,
 } from "@/components/ui/primitives";
 import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -25,6 +26,8 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
   const [pageSize, setPageSize] = useState(25);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
 
   const pageCount = Math.max(1, Math.ceil(pages.length / pageSize));
   const current = Math.min(page, pageCount);
@@ -65,10 +68,13 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
   }
 
   async function bulkDelete() {
-    setBusy(true);
+    setDeleting(true);
+    const count = selected.size;
     await deletePagesAction([...selected]);
     setSelected(new Set());
-    setBusy(false);
+    setDeleting(false);
+    setDeletedMessage(`已刪除 ${count} 筆資料`);
+    setTimeout(() => setDeletedMessage(null), 3000);
     router.refresh();
   }
 
@@ -86,14 +92,16 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
         }}
       />
 
+      {deletedMessage && <Note tone="danger">{deletedMessage}</Note>}
+
       <BulkActionBar
         count={selected.size}
         unit="家"
         onCancel={() => setSelected(new Set())}
         actions={[
-          { label: "啟用選取", tone: "neutral", onClick: () => bulkSetActive(true), disabled: busy },
-          { label: "停用選取", tone: "neutral", onClick: () => bulkSetActive(false), disabled: busy },
-          { label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy },
+          { label: "啟用選取", tone: "neutral", onClick: () => bulkSetActive(true), disabled: busy || deleting },
+          { label: "停用選取", tone: "neutral", onClick: () => bulkSetActive(false), disabled: busy || deleting },
+          { label: deleting ? "刪除中…" : "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy || deleting },
         ]}
       />
 

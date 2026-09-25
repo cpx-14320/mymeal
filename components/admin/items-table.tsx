@@ -12,31 +12,54 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  inputClass,
 } from "@/components/ui/primitives";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
 import type { TagGroupView } from "@/lib/models/tag-group";
-import { setItemsActiveAction, deleteItemsAction } from "@/app/(app)/admin/items/actions";
+import type { PageView } from "@/lib/models/page";
+import {
+  setItemsActiveAction,
+  setItemsPageAction,
+  patchItemAction,
+  deleteItemsAction,
+} from "@/app/(app)/admin/items/actions";
 
 type Filter = "all" | string; // "all" 或 categoryId
 
-/** 品項的標籤值裡，屬於某個標籤群組的那些——欄位跟著後台「分類與標籤」建立的群組走，新增群組就多一欄，品項有勾選對應選項才會顯示。 */
-function tagValueForGroup(tags: string[], group: TagGroupView): string {
-  const matched = tags.filter((t) => group.options.includes(t));
-  return matched.length ? matched.join("、") : "—";
+/** 表格內 inline 編輯用的下拉／輸入框樣式，跟 /admin/tasks（gamification-manager.tsx）的 cellInput 一致。 */
+const cellSelect =
+  "w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 hover:border-line focus:border-brand focus:outline-none";
+
+const UNSET_PAGE = "__unset__";
+
+/** 品項的標籤裡，屬於某個標籤群組的那一個——inline 編輯只給每組「單一目前值」的快速下拉，
+ *  多選群組要同時掛多個標籤時，還是要到完整編輯頁（item-form.tsx 的 checkbox 群組）。
+ *  CSV 匯出/匯入（items-csv-buttons.tsx）也共用這支，讓每個標籤群組各自一欄。 */
+export function tagGroupValue(tags: string[], group: TagGroupView): string {
+  return tags.find((t) => group.options.includes(t)) ?? "";
+}
+
+/** 換掉 tags 陣列裡屬於這個群組的值，其他群組的標籤原樣保留。value 傳空字串代表清空這組。 */
+function withTagGroupValue(tags: string[], group: TagGroupView, value: string): string[] {
+  const rest = tags.filter((t) => !group.options.includes(t));
+  return value ? [...rest, value] : rest;
 }
 
 export function ItemsTable({
   items,
   categories,
   tagGroups,
+  pages,
 }: {
   items: CatalogItemView[];
   categories: ItemCategoryOption[];
   tagGroups: TagGroupView[];
+  pages: PageView[];
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
@@ -47,14 +70,17 @@ export function ItemsTable({
     ...categories.map((c) => ({ key: c.id, label: c.name })),
   ];
 
-  const rows = items.filter((it) => filter === "all" || it.categoryId === filter);
+  const rows = items.filter(
+    (it) => (filter === "all" || it.categoryId === filter) && (!search.trim() || it.name.includes(search)),
+  );
 
   const countOf = (f: Filter) => (f === "all" ? items.length : items.filter((it) => it.categoryId === f).length);
 
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const effectivePageSize = pageSize === 0 ? Math.max(rows.length, 1) : pageSize; // pageSize=0 代表「全部」
+  const pageCount = Math.max(1, Math.ceil(rows.length / effectivePageSize));
   const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const pageRows = rows.slice(start, start + pageSize);
+  const start = (current - 1) * effectivePageSize;
+  const pageRows = rows.slice(start, start + effectivePageSize);
 
   const pick = (f: Filter) => {
     setFilter(f);
@@ -102,13 +128,61 @@ export function ItemsTable({
     router.refresh();
   }
 
+  async function bulkSetPage(value: string) {
+    if (!value) return; // 選到「設定頁面…」提示選項，不動作
+    setBusy(true);
+    await setItemsPageAction([...selected], value === UNSET_PAGE ? "" : value);
+    setSelected(new Set());
+    setBusy(false);
+    router.refresh();
+  }
+
+  async function setItemPage(id: string, pageId: string) {
+    setBusy(true);
+    await setItemsPageAction([id], pageId);
+    setBusy(false);
+    router.refresh();
+  }
+
+  async function setItemCategory(id: string, categoryId: string) {
+    setBusy(true);
+    await patchItemAction(id, { categoryId });
+    setBusy(false);
+    router.refresh();
+  }
+
+  async function setItemTagGroup(it: CatalogItemView, group: TagGroupView, value: string) {
+    setBusy(true);
+    await patchItemAction(it.id, { tags: withTagGroupValue(it.tags, group, value) });
+    setBusy(false);
+    router.refresh();
+  }
+
+  async function setItemPrice(id: string, price: number) {
+    setBusy(true);
+    await patchItemAction(id, { price });
+    setBusy(false);
+    router.refresh();
+  }
+
   return (
     <div className="space-y-4">
       <ListToolbar
         tabs={{ tabs: tabs.map((t) => ({ ...t, count: countOf(t.key) })), value: filter, onChange: pick }}
         pageSize={pageSize}
+        pageSizeAllOption
         onPageSizeChange={(n) => {
           setPageSize(n);
+          setPage(1);
+        }}
+      />
+
+      <input
+        className={`${inputClass} w-64`}
+        placeholder="搜尋品項名稱"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
           setPage(1);
         }}
       />
@@ -117,6 +191,27 @@ export function ItemsTable({
         count={selected.size}
         unit="項"
         onCancel={() => setSelected(new Set())}
+        extra={
+          <select
+            className="rounded-lg border border-line bg-surface px-2 py-1 text-[13px]"
+            defaultValue=""
+            disabled={busy}
+            onChange={(e) => {
+              bulkSetPage(e.target.value);
+              e.target.value = "";
+            }}
+          >
+            <option value="" disabled>
+              設定頁面…
+            </option>
+            <option value={UNSET_PAGE}>（取消掛頁面）</option>
+            {pages.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        }
         actions={[
           { label: "啟用選取", tone: "neutral", onClick: () => bulkSetActive(true), disabled: busy },
           { label: "停用選取", tone: "neutral", onClick: () => bulkSetActive(false), disabled: busy },
@@ -136,7 +231,7 @@ export function ItemsTable({
             {tagGroups.map((g) => (
               <Th key={g.id}>{g.name}</Th>
             ))}
-            <Th className="text-right">價錢</Th>
+            <Th>價錢</Th>
             <Th>狀態</Th>
             <Th>建立者</Th>
             <Th className="text-right">操作</Th>
@@ -157,14 +252,73 @@ export function ItemsTable({
                 <span className="mr-1.5">{it.emoji}</span>
                 {it.name}
               </Td>
-              <Td className="text-muted">{it.pageName ?? "—"}</Td>
-              <Td className="text-muted">{it.categoryName}</Td>
-              {tagGroups.map((g) => (
-                <Td key={g.id} className="text-muted">
-                  {tagValueForGroup(it.tags, g)}
-                </Td>
-              ))}
-              <Td className="text-right tabular-nums">NT$ {it.price}</Td>
+              <Td className="text-muted">
+                <select
+                  key={it.pageId ?? ""}
+                  className={cellSelect}
+                  defaultValue={it.pageId ?? ""}
+                  disabled={busy}
+                  onChange={(e) => setItemPage(it.id, e.target.value)}
+                >
+                  <option value="">—</option>
+                  {pages.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </Td>
+              <Td className="text-muted">
+                <select
+                  key={it.categoryId}
+                  className={cellSelect}
+                  defaultValue={it.categoryId}
+                  disabled={busy}
+                  onChange={(e) => setItemCategory(it.id, e.target.value)}
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </Td>
+              {tagGroups.map((g) => {
+                const value = tagGroupValue(it.tags, g);
+                return (
+                  <Td key={g.id} className="text-muted">
+                    <select
+                      key={value}
+                      className={cellSelect}
+                      defaultValue={value}
+                      disabled={busy}
+                      onChange={(e) => setItemTagGroup(it, g, e.target.value)}
+                    >
+                      <option value="">—</option>
+                      {g.options.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </Td>
+                );
+              })}
+              <Td>
+                <input
+                  className="w-14 rounded-md border border-transparent bg-transparent px-1 py-0.5 text-left hover:border-line focus:border-brand focus:outline-none"
+                  type="number"
+                  min={0}
+                  max={999}
+                  step={5}
+                  defaultValue={it.price}
+                  disabled={busy}
+                  onBlur={(e) => {
+                    const n = Number(e.target.value);
+                    if (Number.isFinite(n) && n !== it.price) setItemPrice(it.id, n);
+                  }}
+                />
+              </Td>
               <Td>
                 <Badge tone={it.active ? "positive" : "neutral"}>{it.active ? "啟用" : "停用"}</Badge>
               </Td>
@@ -191,7 +345,7 @@ export function ItemsTable({
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={rows.length} pageSize={pageSize} onPage={setPage} />
+      <Pagination page={current} pageCount={pageCount} total={rows.length} pageSize={effectivePageSize} onPage={setPage} />
     </div>
   );
 }

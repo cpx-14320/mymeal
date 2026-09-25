@@ -9,7 +9,6 @@ import {
   addItemToSection,
   removeItemFromSection,
   setTemplatesActive,
-  deleteTemplates,
 } from "@/lib/models/template";
 
 function refresh(id: string) {
@@ -28,11 +27,11 @@ export async function updateTemplateBasicAction(
   formData: FormData,
 ): Promise<TemplateBasicState> {
   const name = String(formData.get("name") ?? "").trim();
-  const kindId = String(formData.get("kindId") ?? "").trim();
+  const categoryId = String(formData.get("categoryId") ?? "").trim();
   const pageId = String(formData.get("pageId") ?? "").trim();
-  if (!name || !kindId) return { error: "請輸入模板名稱並選擇類型。" };
+  if (!name || !categoryId) return { error: "請輸入模板名稱並選擇分類。" };
 
-  await updateTemplateBasic(id, { name, kindId, pageId: pageId || undefined });
+  await updateTemplateBasic(id, { name, categoryId, pageId: pageId || undefined });
   refresh(id);
   return { success: true };
 }
@@ -67,17 +66,4 @@ export async function removeItemFromSectionAction(templateId: string, sectionId:
 export async function setTemplateActiveAction(id: string, active: boolean) {
   await setTemplatesActive([id], active);
   refresh(id);
-}
-
-export interface DeleteTemplateState {
-  error?: string;
-  success?: boolean;
-}
-
-export async function deleteTemplateAction(id: string): Promise<DeleteTemplateState> {
-  const deleted = await deleteTemplates([id]);
-  if (!deleted) return { error: "找不到這個模板，可能已被刪除。" };
-  revalidatePath("/admin/templates");
-  revalidatePath("/admin/zones");
-  return { success: true };
 }

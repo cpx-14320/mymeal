@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updatePage, deletePages, type PageInput } from "@/lib/models/page";
+import { updatePage, type PageInput } from "@/lib/models/page";
 
 export interface UpdatePageState {
   error?: string;
@@ -40,18 +40,5 @@ export async function updatePageAction(
 
   revalidatePath("/admin/pages");
   revalidatePath(`/admin/pages/${id}`);
-  return { success: true };
-}
-
-export interface DeletePageState {
-  error?: string;
-  success?: boolean;
-}
-
-export async function deletePageAction(id: string): Promise<DeletePageState> {
-  const deleted = await deletePages([id]);
-  if (!deleted) return { error: "找不到這個頁面，可能已被刪除。" };
-
-  revalidatePath("/admin/pages");
   return { success: true };
 }

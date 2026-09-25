@@ -173,6 +173,7 @@ export interface WalletLedgerRow {
   balanceAfter: number;
   by: string;
   detail: string;
+  note?: string;
   at: Date;
 }
 
@@ -193,6 +194,7 @@ export async function listRecentLedger(limit = 200): Promise<WalletLedgerRow[]> 
     balanceAfter: d.balanceAfter,
     by: d.by,
     detail: d.detail,
+    note: d.note,
     at: d.createdAt,
   }));
 }
@@ -214,6 +216,7 @@ export async function listLedgerForMember(memberId: string, limit = 200): Promis
     balanceAfter: d.balanceAfter,
     by: d.by,
     detail: d.detail,
+    note: d.note,
     at: d.createdAt,
   }));
 }

@@ -1,17 +1,16 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, Field, inputClass, Note, Button, ButtonLink } from "@/components/ui/primitives";
 import type { NotificationView } from "@/lib/models/notification";
 import { createNotificationAction, type CreateNotificationState } from "@/app/(app)/admin/notifications/new/actions";
 import {
   updateNotificationAction,
-  deleteNotificationAction,
   type UpdateNotificationState,
 } from "@/app/(app)/admin/notifications/[id]/actions";
 
-/** 新增 / 編輯通知訊息共用的表單。傳 notification 就是編輯模式（欄位帶入現值＋多一個刪除按鈕）。 */
+/** 新增 / 編輯通知訊息共用的表單。傳 notification 就是編輯模式（欄位帶入現值）。 */
 export function NotificationForm({ notification }: { notification?: NotificationView }) {
   const router = useRouter();
   const isEdit = !!notification;
@@ -20,26 +19,10 @@ export function NotificationForm({ notification }: { notification?: Notification
     action,
     {},
   );
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | undefined>();
 
   useEffect(() => {
     if (isEdit && state.success) router.refresh();
   }, [isEdit, state.success, router]);
-
-  async function handleDelete() {
-    if (!notification) return;
-    setDeleting(true);
-    setDeleteError(undefined);
-    const result = await deleteNotificationAction(notification.id);
-    if (result.error) {
-      setDeleteError(result.error);
-      setDeleting(false);
-      return;
-    }
-    router.push("/admin/notifications");
-    router.refresh();
-  }
 
   return (
     <form action={formAction}>
@@ -89,23 +72,11 @@ export function NotificationForm({ notification }: { notification?: Notification
         </CardBody>
       </Card>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        {isEdit ? (
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="danger" disabled={deleting} onClick={handleDelete}>
-              {deleting ? "刪除中…" : "刪除通知"}
-            </Button>
-            {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
-          </div>
-        ) : (
-          <span />
-        )}
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/notifications" variant="ghost">
-            {isEdit ? "返回列表" : "取消"}
-          </ButtonLink>
-          <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立通知"}</Button>
-        </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <ButtonLink href="/admin/promos" variant="ghost">
+          {isEdit ? "返回列表" : "取消"}
+        </ButtonLink>
+        <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立通知"}</Button>
       </div>
     </form>
   );

@@ -184,7 +184,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
                   </Link>
                 </Td>
                 <Td>
-                  <Badge tone="brand">{t.kindName}</Badge>
+                  <Badge tone="brand">{t.categoryName}</Badge>
                 </Td>
                 <Td className="tabular-nums text-muted">{t.sections.length}</Td>
                 <Td className="tabular-nums text-muted">{itemCount}</Td>

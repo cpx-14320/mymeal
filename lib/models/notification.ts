@@ -81,11 +81,12 @@ export async function updateNotification(id: string, input: NotificationInput) {
   await Notification.findByIdAndUpdate(id, { $set: input });
 }
 
-export async function deleteNotification(id: string): Promise<boolean> {
+export async function deleteNotifications(ids: string[]): Promise<number> {
   await connectMongo();
-  if (!Types.ObjectId.isValid(id)) throw new Error("無效的通知 id");
-  const result = await Notification.deleteOne({ _id: new Types.ObjectId(id) });
-  return result.deletedCount > 0;
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return 0;
+  const result = await Notification.deleteMany({ _id: { $in: objIds } });
+  return result.deletedCount;
 }
 
 export async function setNotificationsEnabled(ids: string[], enabled: boolean): Promise<number> {

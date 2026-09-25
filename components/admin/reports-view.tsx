@@ -10,18 +10,18 @@ import {
   Th,
   Td,
 } from "@/components/ui/primitives";
-import type { DailyOrderStat, KindOrderStat, PageOrderStat } from "@/lib/models/reports";
+import type { DailyOrderStat, CategoryOrderStat, PageOrderStat } from "@/lib/models/reports";
 
 const RANGE_OPTIONS = [7, 14, 30] as const;
 type Range = (typeof RANGE_OPTIONS)[number];
 
 export function ReportsView({
   daily,
-  byKind,
+  byCategory,
   byPage,
 }: {
   daily: DailyOrderStat[];
-  byKind: KindOrderStat[];
+  byCategory: CategoryOrderStat[];
   byPage: PageOrderStat[];
 }) {
   const [range, setRange] = useState<Range>(7);
@@ -80,25 +80,25 @@ export function ReportsView({
           </div>
         </Section>
 
-        <Section title="依類型統計">
+        <Section title="依分類統計">
           <TableWrap>
             <thead>
               <tr>
-                <Th>類型</Th>
+                <Th>分類</Th>
                 <Th className="text-right">場次</Th>
                 <Th className="text-right">份數 / 杯數</Th>
                 <Th className="text-right">金額</Th>
               </tr>
             </thead>
             <tbody>
-              {byKind.length === 0 ? (
+              {byCategory.length === 0 ? (
                 <tr>
                   <Td colSpan={4} className="text-center text-muted">
                     近 30 天沒有團訂資料。
                   </Td>
                 </tr>
               ) : (
-                byKind.map((r) => (
+                byCategory.map((r) => (
                   <tr key={r.name}>
                     <Td>{r.name}</Td>
                     <Td className="text-right tabular-nums">{r.sessions}</Td>

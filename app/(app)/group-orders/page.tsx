@@ -16,7 +16,7 @@ export default async function GroupOrdersPage() {
     getSessionMemberId(),
   ]);
 
-  const kindByTemplateId = Object.fromEntries(templates.map((t) => [t.id, t.kindName]));
+  const categoryByTemplateId = Object.fromEntries(templates.map((t) => [t.id, t.categoryName]));
 
   return (
     <PageContainer>
@@ -29,7 +29,7 @@ export default async function GroupOrdersPage() {
       <GroupOrdersList
         rows={rows}
         units={units.map((u) => ({ id: u.id, name: u.name }))}
-        kindByTemplateId={kindByTemplateId}
+        categoryByTemplateId={categoryByTemplateId}
         currentMemberId={memberId ?? ""}
       />
     </PageContainer>

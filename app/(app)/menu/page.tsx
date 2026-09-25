@@ -19,7 +19,6 @@ import {
   itemById,
   itemStatById,
   supplierById,
-  itemKindLabel,
   type CatalogItem,
 } from "@/lib/mock";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
@@ -30,8 +29,6 @@ function toItemView(it: CatalogItem): CatalogItemView {
   return {
     id: it.id,
     name: it.name,
-    kindId: "",
-    kindName: itemKindLabel[it.kind],
     categoryId: "",
     categoryName: it.category,
     pageId: it.supplierId,

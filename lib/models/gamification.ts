@@ -141,6 +141,13 @@ export async function deleteDailyTask(id: string) {
   await DailyTask.deleteOne({ _id: new Types.ObjectId(id) });
 }
 
+export async function deleteDailyTasks(ids: string[]) {
+  await connectMongo();
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return;
+  await DailyTask.deleteMany({ _id: { $in: objIds } });
+}
+
 /* ── 經驗值規則 ── */
 
 export interface ExpRuleDocument {

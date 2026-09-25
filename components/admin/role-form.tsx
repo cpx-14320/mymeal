@@ -1,14 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, Field, inputClass, Button, ButtonLink } from "@/components/ui/primitives";
 import { permissionCategories } from "@/lib/mock";
 import type { RoleView } from "@/lib/models/role";
 import { createRoleAction, type CreateRoleState } from "@/app/(app)/admin/roles/new/actions";
-import { updateRoleAction, deleteRoleAction, type UpdateRoleState } from "@/app/(app)/admin/roles/[id]/actions";
+import { updateRoleAction, type UpdateRoleState } from "@/app/(app)/admin/roles/[id]/actions";
 
-/** 新增 / 編輯組別共用的表單。傳 role 就是編輯模式（欄位帶入現值＋多一個刪除按鈕）。 */
+/** 新增 / 編輯組別共用的表單。傳 role 就是編輯模式（欄位帶入現值）。 */
 export function RoleForm({ role }: { role?: RoleView }) {
   const router = useRouter();
   const isEdit = !!role;
@@ -17,26 +17,10 @@ export function RoleForm({ role }: { role?: RoleView }) {
     action,
     {},
   );
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | undefined>();
 
   useEffect(() => {
     if (isEdit && state.success) router.refresh();
   }, [isEdit, state.success, router]);
-
-  async function handleDelete() {
-    if (!role) return;
-    setDeleting(true);
-    setDeleteError(undefined);
-    const result = await deleteRoleAction(role.id);
-    if (result.error) {
-      setDeleteError(result.error);
-      setDeleting(false);
-      return;
-    }
-    router.push("/admin/roles");
-    router.refresh();
-  }
 
   return (
     <form action={formAction}>
@@ -87,23 +71,11 @@ export function RoleForm({ role }: { role?: RoleView }) {
         </CardBody>
       </Card>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        {isEdit ? (
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="danger" disabled={deleting} onClick={handleDelete}>
-              {deleting ? "刪除中…" : "刪除組別"}
-            </Button>
-            {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
-          </div>
-        ) : (
-          <span />
-        )}
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/roles" variant="ghost">
-            {isEdit ? "返回列表" : "取消"}
-          </ButtonLink>
-          <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立組別"}</Button>
-        </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <ButtonLink href="/admin/roles" variant="ghost">
+          {isEdit ? "返回列表" : "取消"}
+        </ButtonLink>
+        <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立組別"}</Button>
       </div>
     </form>
   );

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updateNotification, deleteNotification, type NotificationInput } from "@/lib/models/notification";
+import { updateNotification, type NotificationInput } from "@/lib/models/notification";
 
 export interface UpdateNotificationState {
   error?: string;
@@ -34,20 +34,7 @@ export async function updateNotificationAction(
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
-  revalidatePath("/admin/notifications");
+  revalidatePath("/admin/promos");
   revalidatePath(`/admin/notifications/${id}`);
-  return { success: true };
-}
-
-export interface DeleteNotificationState {
-  error?: string;
-  success?: boolean;
-}
-
-export async function deleteNotificationAction(id: string): Promise<DeleteNotificationState> {
-  const deleted = await deleteNotification(id);
-  if (!deleted) return { error: "找不到這則通知，可能已被刪除。" };
-
-  revalidatePath("/admin/notifications");
   return { success: true };
 }

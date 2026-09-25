@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updateOrderZone, deleteOrderZones, type OrderZoneInput } from "@/lib/models/order-zone";
+import { updateOrderZone, type OrderZoneInput } from "@/lib/models/order-zone";
 
 export interface UpdateZoneState {
   error?: string;
@@ -39,18 +39,5 @@ export async function updateZoneAction(
 
   revalidatePath("/admin/zones");
   revalidatePath(`/admin/zones/${id}`);
-  return { success: true };
-}
-
-export interface DeleteZoneState {
-  error?: string;
-  success?: boolean;
-}
-
-export async function deleteZoneAction(id: string): Promise<DeleteZoneState> {
-  const deleted = await deleteOrderZones([id]);
-  if (!deleted) return { error: "找不到這個專區，可能已被刪除。" };
-
-  revalidatePath("/admin/zones");
   return { success: true };
 }

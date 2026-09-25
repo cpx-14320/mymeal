@@ -1,5 +1,9 @@
 import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
+import { PROMO_PAGE_OPTIONS } from "@/lib/promo-pages";
+
+export { PROMO_PAGE_OPTIONS };
+export type { PromoPageKey } from "@/lib/promo-pages";
 
 /**
  * interstitial collection —— 蓋台廣告：前台進站時全螢幕蓋住畫面的廣告。
@@ -9,6 +13,8 @@ import { connectMongo } from "@/lib/mongoose";
  */
 export type PromoFrequency = "always" | "daily" | "once";
 
+const PROMO_PAGE_KEYS = PROMO_PAGE_OPTIONS.map((o) => o.key) as string[];
+
 export interface InterstitialDocument {
   _id: Types.ObjectId;
   name: string; // 只在後台顯示的名稱
@@ -17,6 +23,7 @@ export interface InterstitialDocument {
   linkUrl?: string; // 空＝圖片不可點
   dismissSeconds: number; // 0＝不自動關，需手動
   frequency: PromoFrequency;
+  showOnPages: string[]; // PromoPageKey[]，空陣列＝哪裡都不顯示
   startAt: string;
   endAt: string;
   createdAt: Date;
@@ -31,6 +38,7 @@ const interstitialSchema = new Schema<InterstitialDocument>(
     linkUrl: { type: String, default: "" },
     dismissSeconds: { type: Number, required: true, default: 8 },
     frequency: { type: String, enum: ["always", "daily", "once"], required: true, default: "daily" },
+    showOnPages: { type: [String], required: true, default: [], enum: PROMO_PAGE_KEYS },
     startAt: { type: String, required: true },
     endAt: { type: String, required: true },
   },
@@ -47,6 +55,7 @@ export interface InterstitialInput {
   linkUrl?: string;
   dismissSeconds: number;
   frequency: PromoFrequency;
+  showOnPages: string[];
   startAt: string;
   endAt: string;
 }
@@ -59,6 +68,7 @@ export interface InterstitialView {
   linkUrl?: string;
   dismissSeconds: number;
   frequency: PromoFrequency;
+  showOnPages: string[];
   startAt: string;
   endAt: string;
 }
@@ -72,6 +82,7 @@ function toView(d: InterstitialDocument): InterstitialView {
     linkUrl: d.linkUrl,
     dismissSeconds: d.dismissSeconds,
     frequency: d.frequency,
+    showOnPages: d.showOnPages,
     startAt: d.startAt,
     endAt: d.endAt,
   };
@@ -93,6 +104,7 @@ async function seedIfEmpty() {
     linkUrl: "/menu",
     dismissSeconds: 8,
     frequency: "always",
+    showOnPages: ["group-orders", "pages"],
     startAt: "2026-09-01T00:00",
     endAt: "2026-12-31T23:59",
   });
@@ -124,11 +136,12 @@ export async function updateInterstitial(id: string, input: InterstitialInput) {
   await Interstitial.findByIdAndUpdate(id, { $set: input });
 }
 
-export async function deleteInterstitial(id: string): Promise<boolean> {
+export async function deleteInterstitials(ids: string[]): Promise<number> {
   await connectMongo();
-  if (!Types.ObjectId.isValid(id)) throw new Error("無效的廣告 id");
-  const result = await Interstitial.deleteOne({ _id: new Types.ObjectId(id) });
-  return result.deletedCount > 0;
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return 0;
+  const result = await Interstitial.deleteMany({ _id: { $in: objIds } });
+  return result.deletedCount;
 }
 
 export async function setInterstitialsEnabled(ids: string[], enabled: boolean): Promise<number> {

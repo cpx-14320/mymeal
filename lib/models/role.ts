@@ -179,20 +179,6 @@ export async function updateRole(id: string, input: RoleInput) {
   return { id };
 }
 
-/** 還有會員套用這個組別就擋下來，避免會員的 role 字串對不到任何組別。 */
-export async function deleteRole(id: string): Promise<boolean> {
-  await connectMongo();
-  if (!Types.ObjectId.isValid(id)) throw new Error("無效的組別 id");
-  const current = await Role.findById(id);
-  if (!current) return false;
-
-  const memberCount = await countMembersByRole(current.name);
-  if (memberCount > 0) throw new Error("還有會員套用這個組別，請先將會員改為其他組別再刪除。");
-
-  const result = await Role.deleteOne({ _id: current._id });
-  return result.deletedCount > 0;
-}
-
 export async function deleteRoles(ids: string[]): Promise<{ deleted: number; blocked: string[] }> {
   await connectMongo();
   let deleted = 0;

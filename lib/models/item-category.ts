@@ -56,6 +56,15 @@ export async function updateItemCategory(id: string, name: string): Promise<Item
   return { id, name };
 }
 
+export async function reorderItemCategories(orderedIds: string[]): Promise<void> {
+  await connectMongo();
+  await ItemCategory.bulkWrite(
+    orderedIds.map((id, index) => ({
+      updateOne: { filter: { _id: new Types.ObjectId(id) }, update: { $set: { sortOrder: index } } },
+    })),
+  );
+}
+
 export async function deleteItemCategory(id: string): Promise<boolean> {
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) throw new Error("無效的 id");

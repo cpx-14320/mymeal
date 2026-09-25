@@ -1,14 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, Field, inputClass, Note, Button, ButtonLink } from "@/components/ui/primitives";
 import { ImageField } from "@/components/admin/image-field";
+import { PROMO_PAGE_OPTIONS } from "@/lib/promo-pages";
 import type { InterstitialView } from "@/lib/models/interstitial";
 import { createPromoAction, type CreatePromoState } from "@/app/(app)/admin/promos/new/actions";
-import { updatePromoAction, deletePromoAction, type UpdatePromoState } from "@/app/(app)/admin/promos/[id]/actions";
+import { updatePromoAction, type UpdatePromoState } from "@/app/(app)/admin/promos/[id]/actions";
 
-/** 新增 / 編輯蓋台廣告共用的表單。傳 promo 就是編輯模式（欄位帶入現值＋多一個刪除按鈕）。 */
+/** 新增 / 編輯蓋台廣告共用的表單。傳 promo 就是編輯模式（欄位帶入現值）。 */
 export function PromoForm({ promo }: { promo?: InterstitialView }) {
   const router = useRouter();
   const isEdit = !!promo;
@@ -17,26 +18,10 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
     action,
     {},
   );
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | undefined>();
 
   useEffect(() => {
     if (isEdit && state.success) router.refresh();
   }, [isEdit, state.success, router]);
-
-  async function handleDelete() {
-    if (!promo) return;
-    setDeleting(true);
-    setDeleteError(undefined);
-    const result = await deletePromoAction(promo.id);
-    if (result.error) {
-      setDeleteError(result.error);
-      setDeleting(false);
-      return;
-    }
-    router.push("/admin/promos");
-    router.refresh();
-  }
 
   return (
     <form action={formAction}>
@@ -97,6 +82,28 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
           </div>
 
           <div>
+            <span className="mb-1 block text-sm font-medium">顯示版位</span>
+            <p className="mb-2 text-[13px] lg:text-[14px] text-muted">選擇這則廣告要在前台哪些頁面顯示，可複選；不勾就不會顯示在任何地方。</p>
+            <div className="flex flex-wrap gap-2">
+              {PROMO_PAGE_OPTIONS.map((opt) => (
+                <label
+                  key={opt.key}
+                  className="inline-flex cursor-pointer items-center rounded-lg border border-line px-2.5 py-1 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-ink"
+                >
+                  <input
+                    type="checkbox"
+                    name="showOnPages"
+                    value={opt.key}
+                    defaultChecked={promo?.showOnPages.includes(opt.key) ?? opt.key === "group-orders"}
+                    className="sr-only"
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <span className="mb-1.5 block text-sm font-medium">狀態</span>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="enabled" defaultChecked={promo?.enabled ?? true} />
@@ -110,23 +117,11 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
         </CardBody>
       </Card>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        {isEdit ? (
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="danger" disabled={deleting} onClick={handleDelete}>
-              {deleting ? "刪除中…" : "刪除廣告"}
-            </Button>
-            {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
-          </div>
-        ) : (
-          <span />
-        )}
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/promos" variant="ghost">
-            {isEdit ? "返回列表" : "取消"}
-          </ButtonLink>
-          <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立廣告"}</Button>
-        </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <ButtonLink href="/admin/promos" variant="ghost">
+          {isEdit ? "返回列表" : "取消"}
+        </ButtonLink>
+        <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立廣告"}</Button>
       </div>
     </form>
   );

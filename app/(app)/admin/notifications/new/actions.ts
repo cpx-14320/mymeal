@@ -36,6 +36,6 @@ export async function createNotificationAction(
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
-  revalidatePath("/admin/notifications");
+  revalidatePath("/admin/promos");
   redirect(`/admin/notifications/${notificationId}`);
 }

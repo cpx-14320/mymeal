@@ -9,6 +9,8 @@ import {
   renameTagOption,
   removeTagOption,
   deleteTagGroup,
+  reorderTagGroups,
+  reorderTagOptions,
 } from "@/lib/models/tag-group";
 
 function refresh() {
@@ -51,4 +53,28 @@ export async function removeTagOptionAction(id: string, option: string) {
 export async function deleteTagGroupAction(id: string) {
   await deleteTagGroup(id);
   refresh();
+}
+
+export interface ReorderTagState {
+  error?: string;
+}
+
+export async function reorderTagGroupsAction(orderedIds: string[]): Promise<ReorderTagState> {
+  try {
+    await reorderTagGroups(orderedIds);
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
+  }
+  refresh();
+  return {};
+}
+
+export async function reorderTagOptionsAction(id: string, orderedOptions: string[]): Promise<ReorderTagState> {
+  try {
+    await reorderTagOptions(id, orderedOptions);
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
+  }
+  refresh();
+  return {};
 }

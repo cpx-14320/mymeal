@@ -1,20 +1,16 @@
-import { Section, ButtonLink } from "@/components/ui/primitives";
-import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
-import { PromosList } from "@/components/admin/promos-list";
+import { Section } from "@/components/ui/primitives";
+import { MarketingTabs } from "@/components/admin/marketing-tabs";
 import { listInterstitials } from "@/lib/models/interstitial";
+import { listNotifications } from "@/lib/models/notification";
 
-export const metadata = { title: "蓋台廣告" };
+export const metadata = { title: "廣宣版位" };
 
-export default async function AdminPromosPage() {
-  const promos = await listInterstitials();
+export default async function AdminMarketingPage() {
+  const [promos, notifications] = await Promise.all([listInterstitials(), listNotifications()]);
 
   return (
     <Section>
-      <AdminHeaderActions>
-        <ButtonLink href="/admin/promos/new" size="sm">新增廣告</ButtonLink>
-      </AdminHeaderActions>
-
-      <PromosList promos={promos} />
+      <MarketingTabs promos={promos} notifications={notifications} />
     </Section>
   );
 }

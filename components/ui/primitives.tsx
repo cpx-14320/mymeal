@@ -56,7 +56,7 @@ export function Section({
               <h2 className={`leading-none ${titleClassName}`}>{title}</h2>
             )}
             {description && (
-              <p className="mt-0.5 text-[13px] text-muted lg:text-[14px]">{description}</p>
+              <p className="mt-3 text-[13px] text-muted lg:text-[14px]">{description}</p>
             )}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -283,13 +283,17 @@ export function PillTabs<T extends string>({
 
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
-/** 「每頁顯示 [10/25/50/100] 筆」下拉，放在表格上方最右邊。 */
+/** 「每頁顯示 [10/25/50/100] 筆」下拉，放在表格上方最右邊。
+ *  allOption 開了才多一個「全部」選項（value=0）——呼叫端自己把 0 換算成當下實際筆數，
+ *  這支元件不管換算，維持跟其他頁面一樣「顯示固定筆數」的預設行為。 */
 export function PageSizeSelect({
   value,
   onChange,
+  allOption = false,
 }: {
   value: number;
   onChange: (n: number) => void;
+  allOption?: boolean;
 }) {
   return (
     <label className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted">
@@ -305,6 +309,7 @@ export function PageSizeSelect({
             {n}
           </option>
         ))}
+        {allOption && <option value={0}>全部</option>}
       </select>
       筆
     </label>
@@ -321,11 +326,14 @@ export function ListToolbar<T extends string = string>({
   search,
   pageSize,
   onPageSizeChange,
+  pageSizeAllOption,
 }: {
   tabs?: { tabs: { key: T; label: string; count?: number }[]; value: T; onChange: (key: T) => void };
   search?: { value: string; onChange: (value: string) => void; placeholder: string };
   pageSize: number;
   onPageSizeChange: (n: number) => void;
+  /** 轉發給 PageSizeSelect 的 allOption，加一個「全部」選項。 */
+  pageSizeAllOption?: boolean;
 }) {
   return (
     <div className="flex min-h-9 flex-wrap items-center justify-between gap-3">
@@ -340,7 +348,7 @@ export function ListToolbar<T extends string = string>({
           />
         )}
       </div>
-      <PageSizeSelect value={pageSize} onChange={onPageSizeChange} />
+      <PageSizeSelect value={pageSize} onChange={onPageSizeChange} allOption={pageSizeAllOption} />
     </div>
   );
 }
@@ -428,11 +436,14 @@ export function BulkActionBar({
   count,
   unit,
   onCancel,
+  extra,
   actions,
 }: {
   count: number;
   unit: string;
   onCancel: () => void;
+  /** 按鈕以外的批次控制項（例如「設定頁面」下拉），排在取消選取跟按鈕之間。 */
+  extra?: ReactNode;
   actions: BulkAction[];
 }) {
   if (count === 0) return null;
@@ -446,6 +457,7 @@ export function BulkActionBar({
         <button type="button" onClick={onCancel} className="text-muted hover:text-ink">
           取消選取
         </button>
+        {extra}
         {actions.map((a) => (
           <button
             key={a.label}
@@ -575,10 +587,20 @@ export function Field({
   );
 }
 
-export function Note({ children }: { children: ReactNode }) {
+const noteToneCls: Record<"brand" | "positive" | "danger", string> = {
+  brand: "border border-line border-l-[3px] border-l-brand bg-surface text-muted",
+  positive: "border border-line border-l-[3px] border-l-positive bg-surface text-muted",
+  danger: "border border-danger/40 bg-danger/10 text-danger",
+};
+
+export function Note({
+  children,
+  tone = "brand",
+}: {
+  children: ReactNode;
+  tone?: "brand" | "positive" | "danger";
+}) {
   return (
-    <div className="rounded-lg border border-line border-l-[3px] border-l-brand bg-surface p-4 text-[13px] text-muted lg:text-[14px]">
-      {children}
-    </div>
+    <div className={`rounded-lg p-4 text-[13px] lg:text-[14px] ${noteToneCls[tone]}`}>{children}</div>
   );
 }

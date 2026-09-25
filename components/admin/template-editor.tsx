@@ -16,7 +16,7 @@ import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { TemplateDetail } from "@/lib/models/template";
 import type { PageView } from "@/lib/models/page";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
-import type { ItemKindOption } from "@/lib/models/item-kind";
+import type { ItemCategoryOption } from "@/lib/models/item-category";
 import {
   updateTemplateBasicAction,
   addTemplateSectionAction,
@@ -25,7 +25,6 @@ import {
   addItemToSectionAction,
   removeItemFromSectionAction,
   setTemplateActiveAction,
-  deleteTemplateAction,
   type TemplateBasicState,
 } from "@/app/(app)/admin/templates/[id]/actions";
 
@@ -35,12 +34,12 @@ export function TemplateEditor({
   template,
   pages,
   items,
-  kinds,
+  categories,
 }: {
   template: TemplateDetail;
   pages: PageView[];
   items: CatalogItemView[];
-  kinds: ItemKindOption[];
+  categories: ItemCategoryOption[];
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -50,8 +49,6 @@ export function TemplateEditor({
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
   const [renamingSectionId, setRenamingSectionId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | undefined>();
 
   const boundBasicAction = updateTemplateBasicAction.bind(null, template.id);
   const [basicState, basicFormAction, basicPending] = useActionState(boundBasicAction, initialBasicState);
@@ -70,19 +67,6 @@ export function TemplateEditor({
       await setTemplateActiveAction(template.id, !template.active);
       router.refresh();
     });
-  }
-
-  async function handleDeleteTemplate() {
-    setDeleting(true);
-    setDeleteError(undefined);
-    const result = await deleteTemplateAction(template.id);
-    if (result.error) {
-      setDeleteError(result.error);
-      setDeleting(false);
-      return;
-    }
-    router.push("/admin/templates");
-    router.refresh();
   }
 
   async function submitNewSection() {
@@ -132,7 +116,7 @@ export function TemplateEditor({
         }
       >
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="brand">{template.kindName}</Badge>
+          <Badge tone="brand">{template.categoryName}</Badge>
           <Badge tone={template.active ? "positive" : "neutral"}>{template.active ? "啟用" : "停用"}</Badge>
           {template.pageName && <Badge>{template.pageName}</Badge>}
           <Button variant="secondary" size="sm" onClick={toggleActive}>
@@ -150,7 +134,7 @@ export function TemplateEditor({
         {addingSection && (
           <div className="flex max-w-md items-center gap-2">
             <input
-              className={inputClass}
+              className={`${inputClass} min-w-0`}
               value={newSectionName}
               onChange={(e) => setNewSectionName(e.target.value)}
               placeholder="分類名稱，例：星期一"
@@ -162,8 +146,10 @@ export function TemplateEditor({
                 }
               }}
             />
-            <Button onClick={submitNewSection}>新增</Button>
-            <Button variant="ghost" onClick={() => setAddingSection(false)}>
+            <Button className="shrink-0" onClick={submitNewSection}>
+              新增
+            </Button>
+            <Button className="shrink-0" variant="ghost" onClick={() => setAddingSection(false)}>
               取消
             </Button>
           </div>
@@ -217,7 +203,6 @@ export function TemplateEditor({
                     <span className="flex items-center gap-2">
                       <span>{it.emoji}</span>
                       <span className="font-medium">{it.name}</span>
-                      {it.pageName && <span className="text-[13px] lg:text-[14px] text-muted">{it.pageName}</span>}
                     </span>
                     <span className="flex items-center gap-3">
                       <span className="text-[13px] lg:text-[14px] tabular-nums text-muted">NT$ {it.price}</span>
@@ -252,15 +237,6 @@ export function TemplateEditor({
         ))}
       </div>
 
-      <div className="flex items-center justify-between border-t border-line pt-4">
-        <div className="flex items-center gap-3">
-          <Button variant="danger" disabled={deleting} onClick={handleDeleteTemplate}>
-            {deleting ? "刪除中…" : "刪除模板"}
-          </Button>
-          {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
-        </div>
-      </div>
-
       <Modal open={editingBasic} onClose={() => setEditingBasic(false)} ariaLabel="編輯基本資料">
         <ModalHeader title="編輯基本資料" onClose={() => setEditingBasic(false)} />
         <form action={basicFormAction}>
@@ -268,11 +244,11 @@ export function TemplateEditor({
             <Field label="模板名稱">
               <input className={inputClass} name="name" defaultValue={template.name} required />
             </Field>
-            <Field label="類型">
-              <select className={inputClass} name="kindId" defaultValue={template.kindId} required>
-                {kinds.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.name}
+            <Field label="分類">
+              <select className={inputClass} name="categoryId" defaultValue={template.categoryId} required>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>

@@ -3,12 +3,12 @@
 import { useActionState } from "react";
 import { Card, CardBody, Field, inputClass, Button, ButtonLink } from "@/components/ui/primitives";
 import type { PageView } from "@/lib/models/page";
-import type { ItemKindOption } from "@/lib/models/item-kind";
+import type { ItemCategoryOption } from "@/lib/models/item-category";
 import { createTemplateAction, type CreateTemplateState } from "@/app/(app)/admin/templates/actions";
 
 const initialState: CreateTemplateState = {};
 
-export function TemplateCreateForm({ pages, kinds }: { pages: PageView[]; kinds: ItemKindOption[] }) {
+export function TemplateCreateForm({ pages, categories }: { pages: PageView[]; categories: ItemCategoryOption[] }) {
   const [state, formAction, pending] = useActionState(createTemplateAction, initialState);
 
   return (
@@ -20,14 +20,14 @@ export function TemplateCreateForm({ pages, kinds }: { pages: PageView[]; kinds:
           </Field>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="類型">
-              <select className={inputClass} name="kindId" defaultValue="" required>
+            <Field label="分類">
+              <select className={inputClass} name="categoryId" defaultValue="" required>
                 <option value="" disabled>
-                  選擇類型
+                  選擇分類
                 </option>
-                {kinds.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.name}
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>

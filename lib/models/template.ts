@@ -1,7 +1,7 @@
 import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
 import "@/lib/models/catalog-item"; // 確保 populate("pageId"/"sections.itemIds") 前 Page／CatalogItem model 一定已註冊
-import "@/lib/models/item-kind"; // 確保 populate("kindId") 前 ItemKind model 一定已註冊
+import "@/lib/models/item-category"; // 確保 populate("categoryId") 前 ItemCategory model 一定已註冊
 
 export interface TemplateSection {
   _id: Types.ObjectId;
@@ -10,11 +10,11 @@ export interface TemplateSection {
 }
 
 /** menu_templates collection —— 一週菜單／一組飲料清單；sections 內嵌，順序有意義、不需要獨立查詢。
- *  kindId 跟品項的「類型」共用同一份「類別設定」資料（見 item-kind.ts），不再是寫死的固定 4 個值。 */
+ *  categoryId 跟品項的「分類」共用同一份「類別設定」資料（見 item-category.ts）。 */
 export interface TemplateDocument {
   _id: Types.ObjectId;
   name: string;
-  kindId: Types.ObjectId; // ref ItemKind
+  categoryId: Types.ObjectId; // ref ItemCategory
   pageId?: Types.ObjectId; // ref Page
   sections: TemplateSection[];
   active: boolean;
@@ -31,7 +31,7 @@ const templateSectionSchema = new Schema<TemplateSection>({
 const templateSchema = new Schema<TemplateDocument>(
   {
     name: { type: String, required: true, trim: true },
-    kindId: { type: Schema.Types.ObjectId, ref: "ItemKind", required: true },
+    categoryId: { type: Schema.Types.ObjectId, ref: "ItemCategory", required: true },
     pageId: { type: Schema.Types.ObjectId, ref: "Page" },
     sections: { type: [templateSectionSchema], required: true, default: [] },
     active: { type: Boolean, required: true, default: true },
@@ -44,7 +44,7 @@ export const Template = models.Template ?? model<TemplateDocument>("Template", t
 
 export interface TemplateBasicInput {
   name: string;
-  kindId: string;
+  categoryId: string;
   pageId?: string;
 }
 
@@ -56,8 +56,8 @@ interface PopulatedRef {
 export interface TemplateListItem {
   id: string;
   name: string;
-  kindId: string;
-  kindName: string;
+  categoryId: string;
+  categoryName: string;
   pageId?: string;
   pageName?: string;
   active: boolean;
@@ -70,15 +70,15 @@ export async function listTemplates(): Promise<TemplateListItem[]> {
   await connectMongo();
   const docs = await Template.find({})
     .sort({ createdAt: -1 })
-    .populate<{ pageId?: PopulatedRef; kindId: PopulatedRef }>(["pageId", "kindId"]);
+    .populate<{ pageId?: PopulatedRef; categoryId: PopulatedRef }>(["pageId", "categoryId"]);
   return docs.map((d) => {
     const page = d.pageId as unknown as PopulatedRef | undefined;
-    const kind = d.kindId as unknown as PopulatedRef;
+    const category = d.categoryId as unknown as PopulatedRef;
     return {
       id: String(d._id),
       name: d.name,
-      kindId: String(kind?._id ?? d.kindId),
-      kindName: kind?.name ?? "",
+      categoryId: String(category?._id ?? d.categoryId),
+      categoryName: category?.name ?? "",
       pageId: page?._id ? String(page._id) : undefined,
       pageName: page?.name,
       active: d.active,
@@ -102,8 +102,8 @@ export interface TemplateSectionDetail {
 export interface TemplateDetail {
   id: string;
   name: string;
-  kindId: string;
-  kindName: string;
+  categoryId: string;
+  categoryName: string;
   pageId?: string;
   pageName?: string;
   active: boolean;
@@ -113,7 +113,7 @@ export interface TemplateDetail {
 type PopulatedTemplateDoc = {
   _id: Types.ObjectId;
   name: string;
-  kindId: PopulatedRef;
+  categoryId: PopulatedRef;
   active: boolean;
   pageId?: PopulatedRef;
   sections: { _id: Types.ObjectId; name: string; itemIds: unknown }[];
@@ -121,12 +121,12 @@ type PopulatedTemplateDoc = {
 
 function toTemplateDetail(doc: PopulatedTemplateDoc): TemplateDetail {
   const page = doc.pageId as unknown as PopulatedRef | undefined;
-  const kind = doc.kindId as unknown as PopulatedRef;
+  const category = doc.categoryId as unknown as PopulatedRef;
   return {
     id: String(doc._id),
     name: doc.name,
-    kindId: String(kind?._id ?? doc.kindId),
-    kindName: kind?.name ?? "",
+    categoryId: String(category?._id ?? doc.categoryId),
+    categoryName: category?.name ?? "",
     pageId: page?._id ? String(page._id) : undefined,
     pageName: page?.name,
     active: doc.active,
@@ -148,7 +148,7 @@ export async function findTemplateById(id: string): Promise<TemplateDetail | nul
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) return null;
   const doc = await Template.findById(id)
-    .populate<{ pageId?: PopulatedRef; kindId: PopulatedRef }>(["pageId", "kindId"])
+    .populate<{ pageId?: PopulatedRef; categoryId: PopulatedRef }>(["pageId", "categoryId"])
     .populate({
       path: "sections.itemIds",
       populate: { path: "pageId" },
@@ -162,7 +162,7 @@ export async function listActiveTemplateDetails(): Promise<TemplateDetail[]> {
   await connectMongo();
   const docs = await Template.find({ active: true })
     .sort({ createdAt: -1 })
-    .populate<{ pageId?: PopulatedRef; kindId: PopulatedRef }>(["pageId", "kindId"])
+    .populate<{ pageId?: PopulatedRef; categoryId: PopulatedRef }>(["pageId", "categoryId"])
     .populate({
       path: "sections.itemIds",
       populate: { path: "pageId" },
@@ -175,16 +175,16 @@ function assertPageId(pageId?: string) {
   return pageId ? new Types.ObjectId(pageId) : undefined;
 }
 
-function assertKindId(kindId: string) {
-  if (!Types.ObjectId.isValid(kindId)) throw new Error("請選擇有效的類型。");
-  return new Types.ObjectId(kindId);
+function assertCategoryId(categoryId: string) {
+  if (!Types.ObjectId.isValid(categoryId)) throw new Error("請選擇有效的分類。");
+  return new Types.ObjectId(categoryId);
 }
 
 export async function createTemplate(input: TemplateBasicInput, createdBy?: string) {
   await connectMongo();
   const doc = await Template.create({
     name: input.name,
-    kindId: assertKindId(input.kindId),
+    categoryId: assertCategoryId(input.categoryId),
     pageId: assertPageId(input.pageId),
     sections: [],
     active: true,
@@ -198,7 +198,7 @@ export async function updateTemplateBasic(id: string, input: TemplateBasicInput)
   if (!Types.ObjectId.isValid(id)) throw new Error("無效的模板 id");
   return Template.findByIdAndUpdate(
     id,
-    { $set: { name: input.name, kindId: assertKindId(input.kindId), pageId: assertPageId(input.pageId) } },
+    { $set: { name: input.name, categoryId: assertCategoryId(input.categoryId), pageId: assertPageId(input.pageId) } },
     { returnDocument: "after" },
   );
 }

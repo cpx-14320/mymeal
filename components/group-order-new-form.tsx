@@ -133,7 +133,7 @@ export function GroupOrderNewForm({
                 >
                   {templates.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.name}（{t.kindName}）
+                      {t.name}（{t.categoryName}）
                     </option>
                   ))}
                 </select>

@@ -10,11 +10,7 @@ import {
   Button,
   ButtonLink,
 } from "@/components/ui/primitives";
-import {
-  updateMemberAction,
-  deleteMemberAction,
-  type UpdateMemberState,
-} from "@/app/(app)/admin/members/[id]/actions";
+import { updateMemberAction, type UpdateMemberState } from "@/app/(app)/admin/members/[id]/actions";
 import type { MemberListItem } from "@/lib/models/member";
 import type { OrgOption, UnitOption } from "@/lib/models/org";
 
@@ -32,8 +28,6 @@ export function MemberEditForm({ member, departments, units, roleNames }: Member
   const router = useRouter();
   const action = updateMemberAction.bind(null, member.id);
   const [state, formAction, pending] = useActionState(action, initialState);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | undefined>();
   const [deptName, setDeptName] = useState(member.dept);
   const [unitName, setUnitName] = useState(member.unit);
   const [password, setPassword] = useState("");
@@ -59,19 +53,6 @@ export function MemberEditForm({ member, departments, units, roleNames }: Member
       router.refresh();
     }
   }, [state.success, router]);
-
-  async function handleDelete() {
-    setDeleting(true);
-    setDeleteError(undefined);
-    const result = await deleteMemberAction(member.id);
-    if (result.error) {
-      setDeleteError(result.error);
-      setDeleting(false);
-      return;
-    }
-    router.push("/admin/members");
-    router.refresh();
-  }
 
   return (
     <form action={formAction}>
@@ -209,24 +190,11 @@ export function MemberEditForm({ member, departments, units, roleNames }: Member
         </CardBody>
       </Card>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="danger"
-            disabled={deleting}
-            onClick={handleDelete}
-          >
-            {deleting ? "刪除中…" : "刪除會員"}
-          </Button>
-          {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
-        </div>
-        <div className="flex gap-2">
-          <ButtonLink href="/admin/members" variant="ghost">
-            返回列表
-          </ButtonLink>
-          <Button disabled={pending}>{pending ? "儲存中…" : "儲存"}</Button>
-        </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <ButtonLink href="/admin/members" variant="ghost">
+          返回列表
+        </ButtonLink>
+        <Button disabled={pending}>{pending ? "儲存中…" : "儲存"}</Button>
       </div>
     </form>
   );
