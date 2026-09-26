@@ -161,6 +161,20 @@ export async function approveTopupRequest(id: string, by = "管理員"): Promise
   return { id };
 }
 
+/** 前台會員自己撤回申請用：只能刪自己的、而且只能是還沒審核的（pending），
+ *  避免誤刪已經核准入帳／已退件、留有審核紀錄的申請。 */
+export async function deleteOwnPendingTopupRequest(memberId: string, id: string): Promise<{ id: string }> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(id)) throw new Error("無效的申請 id");
+  const doc = await TopupRequest.findById(id);
+  if (!doc) throw new Error("找不到這筆申請，可能已被刪除。");
+  if (String(doc.memberId) !== memberId) throw new Error("無法刪除其他人的申請。");
+  if (doc.status !== "pending") throw new Error("這筆申請已經處理過了，無法刪除。");
+
+  await TopupRequest.deleteOne({ _id: id });
+  return { id };
+}
+
 /** 刪除一筆申請紀錄（不論狀態）。純粹移除申請本身，若已核准，對應的 wallet_ledger 儲值紀錄與會員餘額不會被復原。 */
 export async function deleteTopupRequest(id: string): Promise<{ id: string }> {
   await connectMongo();

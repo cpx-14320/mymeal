@@ -599,16 +599,29 @@ export interface MemberFrequentItem {
   totalQty: number; // 這個品項總共點了幾份
 }
 
-/** 依這位會員過去在所有團訂裡實際點過的品項，統計出點最多次的前 N 個（已下架/被刪除的品項會被排除）。 */
-export async function getMemberFrequentItems(memberId: string, limit = 6): Promise<MemberFrequentItem[]> {
+/** 依這位會員過去在所有團訂裡實際點過的品項，統計出總份數最多的前 N 個（已下架/被刪除的品項會被排除）。
+ *  restrictToItemIds：只在這個範圍內排名（例如某個團目前可點的品項），而不是先抓全站排名前 N 名再篩選——
+ *  避免會員在這個範圍內其實點最多，卻因為全站排名沒進前 N 而被漏掉。 */
+export async function getMemberFrequentItems(
+  memberId: string,
+  limit = 6,
+  restrictToItemIds?: string[],
+): Promise<MemberFrequentItem[]> {
   await connectMongo();
   if (!Types.ObjectId.isValid(memberId)) return [];
   const memberObjId = new Types.ObjectId(memberId);
 
+  const lineMatch: Record<string, unknown> = { "lines.memberId": memberObjId };
+  if (restrictToItemIds) {
+    const objIds = restrictToItemIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+    if (objIds.length === 0) return [];
+    lineMatch["lines.itemId"] = { $in: objIds };
+  }
+
   const rows = await GroupOrder.aggregate<{ _id: Types.ObjectId; orderCount: number; totalQty: number }>([
     { $match: { "lines.memberId": memberObjId } },
     { $unwind: "$lines" },
-    { $match: { "lines.memberId": memberObjId } },
+    { $match: lineMatch },
     { $group: { _id: "$lines.itemId", orderCount: { $sum: 1 }, totalQty: { $sum: "$lines.qty" } } },
     { $sort: { totalQty: -1, orderCount: -1 } },
     { $limit: limit },
@@ -630,6 +643,56 @@ export async function getMemberFrequentItems(memberId: string, limit = 6): Promi
         price: item.price,
         orderCount: r.orderCount,
         totalQty: r.totalQty,
+      };
+    });
+}
+
+export interface MemberOrderBreakdown {
+  itemId: string;
+  itemName: string;
+  emoji: string;
+  imageUrl?: string;
+  category: string;
+  tags: string[];
+  totalQuantity: number;
+  orderCount: number;
+}
+
+/** 會員洞察「訂餐紀錄」分頁用：這位會員在所有團訂裡，依品項彙總的完整點餐紀錄
+ *  （含已下架品項——這是歷史紀錄，不像 getMemberFrequentItems 是要推薦「現在還能點的」）。 */
+export async function getMemberOrderBreakdown(memberId: string): Promise<MemberOrderBreakdown[]> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return [];
+  const memberObjId = new Types.ObjectId(memberId);
+
+  const rows = await GroupOrder.aggregate<{ _id: Types.ObjectId; orderCount: number; totalQty: number }>([
+    { $match: { "lines.memberId": memberObjId } },
+    { $unwind: "$lines" },
+    { $match: { "lines.memberId": memberObjId } },
+    { $group: { _id: "$lines.itemId", orderCount: { $sum: 1 }, totalQty: { $sum: "$lines.qty" } } },
+    { $sort: { totalQty: -1, orderCount: -1 } },
+  ]);
+  if (rows.length === 0) return [];
+
+  const { CatalogItem } = await import("@/lib/models/catalog-item");
+  const itemDocs = await CatalogItem.find({ _id: { $in: rows.map((r) => r._id) } }).populate<{
+    categoryId?: { name: string } | null;
+  }>("categoryId");
+  const itemById = new Map(itemDocs.map((d) => [String(d._id), d]));
+
+  return rows
+    .filter((r) => itemById.has(String(r._id)))
+    .map((r) => {
+      const item = itemById.get(String(r._id))!;
+      return {
+        itemId: String(r._id),
+        itemName: item.name,
+        emoji: item.emoji,
+        imageUrl: item.imageUrl,
+        category: item.categoryId?.name ?? "",
+        tags: item.tags,
+        totalQuantity: r.totalQty,
+        orderCount: r.orderCount,
       };
     });
 }

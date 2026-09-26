@@ -101,8 +101,7 @@ export type AdminNavKey =
   | "gamification"
   | "reports"
   | "audit"
-  | "promos"
-  | "settings";
+  | "promos";
 
 export interface AdminNavItem {
   key: AdminNavKey;
@@ -179,7 +178,6 @@ export const adminNav: AdminNavGroup[] = [
       { key: "itemStats", label: "餐點統計", href: "/admin/item-stats" },
       { key: "reports", label: "報表", href: "/admin/reports" },
       { key: "audit", label: "稽核紀錄", href: "/admin/audit" },
-      { key: "settings", label: "系統設定", href: "/admin/settings" },
     ],
   },
 ];

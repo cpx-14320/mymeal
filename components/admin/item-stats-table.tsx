@@ -10,6 +10,7 @@ import {
   ListToolbar,
   paginate,
   DEFAULT_PAGE_SIZE,
+  ItemLabel,
 } from "@/components/ui/primitives";
 import type { CatalogItemStat } from "@/lib/models/catalog-item";
 
@@ -33,11 +34,11 @@ export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
         <thead>
           <tr>
             <Th>品項</Th>
-            <Th className="text-right">價格</Th>
-            <Th className="text-right">總訂購數量</Th>
-            <Th className="text-right">被訂購次數</Th>
-            <Th className="text-right">平均評分</Th>
-            <Th className="text-right">評論數</Th>
+            <Th>價格</Th>
+            <Th>總訂購數量</Th>
+            <Th>被訂購次數</Th>
+            <Th>平均評分</Th>
+            <Th>評論數</Th>
             <Th className="text-right">操作</Th>
           </tr>
         </thead>
@@ -51,14 +52,16 @@ export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
           ) : (
             rows.map((s) => (
               <tr key={s.itemId}>
-                <Td>{s.itemName}</Td>
-                <Td className="text-right tabular-nums">NT$ {s.price}</Td>
-                <Td className="text-right tabular-nums">{s.totalQuantity}</Td>
-                <Td className="text-right tabular-nums">{s.orderCount}</Td>
-                <Td className="text-right tabular-nums">
+                <Td>
+                  <ItemLabel imageUrl={s.imageUrl} emoji={s.emoji} name={s.itemName} />
+                </Td>
+                <Td className="tabular-nums">NT$ {s.price}</Td>
+                <Td className="tabular-nums">{s.totalQuantity}</Td>
+                <Td className="tabular-nums">{s.orderCount}</Td>
+                <Td className="tabular-nums">
                   {s.avgRating !== null ? s.avgRating.toFixed(1) : "—"}
                 </Td>
-                <Td className="text-right tabular-nums">{s.commentCount}</Td>
+                <Td className="tabular-nums">{s.commentCount}</Td>
                 <Td className="text-right">
                   <ButtonLink
                     href={`/admin/item-stats/${s.itemId}`}

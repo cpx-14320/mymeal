@@ -20,9 +20,11 @@ import {
   createExpRuleAction,
   updateExpRuleAction,
   deleteExpRuleAction,
+  deleteExpRulesAction,
   createMemberLevelAction,
   updateMemberLevelAction,
   deleteMemberLevelAction,
+  deleteMemberLevelsAction,
 } from "@/app/(app)/admin/tasks/actions";
 
 const cellInput = "w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 hover:border-line focus:border-brand focus:outline-none";
@@ -202,7 +204,8 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
 
 function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [busy, startTransition] = useTransition();
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   function patch(id: string, p: Parameters<typeof updateExpRuleAction>[1]) {
     startTransition(async () => {
@@ -218,6 +221,27 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
   function parseLimit(v: string): number | null {
     const trimmed = v.trim();
     return trimmed === "" ? null : Number(trimmed);
+  }
+
+  const allSelected = rules.length > 0 && rules.every((r) => selected.has(r.id));
+
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(rules.map((r) => r.id)));
+
+  const toggleOne = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  function bulkDelete() {
+    startTransition(async () => {
+      await deleteExpRulesAction([...selected]);
+      setSelected(new Set());
+      router.refresh();
+    });
   }
 
   return (
@@ -236,20 +260,38 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
         </Button>
       </AdminHeaderActions>
 
+      <BulkActionBar
+        count={selected.size}
+        unit="項"
+        onCancel={() => setSelected(new Set())}
+        actions={[{ label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy }]}
+      />
+
       <TableWrap>
         <thead>
           <tr>
+            <Th className="w-10">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="全選" />
+            </Th>
             <Th>動作類型</Th>
-            <Th className="text-right">每次 exp</Th>
-            <Th className="text-right">每日上限</Th>
-            <Th className="text-right">每週上限</Th>
-            <Th className="text-right">每月上限</Th>
+            <Th>每次 exp</Th>
+            <Th>每日上限</Th>
+            <Th>每週上限</Th>
+            <Th>每月上限</Th>
             <Th className="text-right">操作</Th>
           </tr>
         </thead>
         <tbody>
           {rules.map((r) => (
-            <tr key={r.id}>
+            <tr key={r.id} className={selected.has(r.id) ? "bg-brand-soft" : ""}>
+              <Td>
+                <input
+                  type="checkbox"
+                  checked={selected.has(r.id)}
+                  onChange={() => toggleOne(r.id)}
+                  aria-label={`選取 ${taskTypeLabel[r.type]}`}
+                />
+              </Td>
               <Td className="font-mono">
                 <select
                   className={cellInput}
@@ -263,9 +305,9 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
                   ))}
                 </select>
               </Td>
-              <Td className="text-right">
+              <Td>
                 <input
-                  className={`${cellInput} text-right`}
+                  className={cellInput}
                   type="number"
                   defaultValue={r.expPerAction}
                   onBlur={(e) => {
@@ -275,9 +317,9 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
                 />
               </Td>
               {(["dailyLimit", "weeklyLimit", "monthlyLimit"] as const).map((field) => (
-                <Td key={field} className="text-right text-muted">
+                <Td key={field} className="text-muted">
                   <input
-                    className={`${cellInput} text-right`}
+                    className={cellInput}
                     placeholder="不限"
                     defaultValue={limitValue(r[field])}
                     onBlur={(e) => {
@@ -311,11 +353,33 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
 
 function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [busy, startTransition] = useTransition();
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   function patch(id: string, p: { name?: string; minExp?: number }) {
     startTransition(async () => {
       await updateMemberLevelAction(id, p);
+      router.refresh();
+    });
+  }
+
+  const allSelected = levels.length > 0 && levels.every((l) => selected.has(l.id));
+
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(levels.map((l) => l.id)));
+
+  const toggleOne = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  function bulkDelete() {
+    startTransition(async () => {
+      await deleteMemberLevelsAction([...selected]);
+      setSelected(new Set());
       router.refresh();
     });
   }
@@ -336,17 +400,35 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
         </Button>
       </AdminHeaderActions>
 
+      <BulkActionBar
+        count={selected.size}
+        unit="項"
+        onCancel={() => setSelected(new Set())}
+        actions={[{ label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy }]}
+      />
+
       <TableWrap>
         <thead>
           <tr>
+            <Th className="w-10">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="全選" />
+            </Th>
             <Th>等級</Th>
-            <Th className="text-right">所需 exp</Th>
+            <Th>所需 exp</Th>
             <Th className="text-right">操作</Th>
           </tr>
         </thead>
         <tbody>
           {levels.map((l, i) => (
-            <tr key={l.id}>
+            <tr key={l.id} className={selected.has(l.id) ? "bg-brand-soft" : ""}>
+              <Td>
+                <input
+                  type="checkbox"
+                  checked={selected.has(l.id)}
+                  onChange={() => toggleOne(l.id)}
+                  aria-label={`選取 Lv.${i + 1}`}
+                />
+              </Td>
               <Td>
                 <span className="mr-1 text-muted">Lv.{i + 1}</span>
                 <input
@@ -358,9 +440,9 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
                   }}
                 />
               </Td>
-              <Td className="text-right">
+              <Td>
                 <input
-                  className={`${cellInput} text-right`}
+                  className={cellInput}
                   type="number"
                   defaultValue={l.minExp}
                   onBlur={(e) => {

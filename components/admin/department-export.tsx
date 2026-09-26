@@ -64,8 +64,8 @@ export function DepartmentExport({ departments }: { departments: OrgOption[] }) 
             <thead>
               <tr>
                 <Th>單位</Th>
-                <Th className="text-right">團數</Th>
-                <Th className="text-right">份數</Th>
+                <Th>團數</Th>
+                <Th>份數</Th>
                 <Th className="text-right">金額</Th>
               </tr>
             </thead>
@@ -80,8 +80,8 @@ export function DepartmentExport({ departments }: { departments: OrgOption[] }) 
                 summary.byUnit.map((u) => (
                   <tr key={u.unitId}>
                     <Td>{u.unitName}</Td>
-                    <Td className="text-right tabular-nums">{u.orderCount}</Td>
-                    <Td className="text-right tabular-nums">{u.qty}</Td>
+                    <Td className="tabular-nums">{u.orderCount}</Td>
+                    <Td className="tabular-nums">{u.qty}</Td>
                     <Td className="text-right tabular-nums">NT$ {u.amount}</Td>
                   </tr>
                 ))

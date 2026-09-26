@@ -52,7 +52,7 @@ export function DashboardPendingTopups({ requests }: { requests: TopupRequestVie
           <tr>
             <Th>申請人</Th>
             <Th>單位</Th>
-            <Th className="text-right">金額</Th>
+            <Th>金額</Th>
             <Th>方式</Th>
             <Th>時間</Th>
             <Th className="text-right">操作</Th>
@@ -63,7 +63,7 @@ export function DashboardPendingTopups({ requests }: { requests: TopupRequestVie
             <tr key={t.id}>
               <Td>{t.memberName}</Td>
               <Td className="text-muted">{t.dept || "—"}</Td>
-              <Td className="text-right tabular-nums">NT$ {t.amount}</Td>
+              <Td className="tabular-nums">NT$ {t.amount}</Td>
               <Td>{t.method}</Td>
               <Td className="text-muted">{formatTaiwanDateTime(t.at)}</Td>
               <Td className="text-right">

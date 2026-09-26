@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Badge,
   TableWrap,
@@ -117,9 +118,9 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
             <Th>套用模板</Th>
             <Th>團主</Th>
             <Th>日期</Th>
-            <Th className="text-right">份數</Th>
-            <Th className="text-right">金額</Th>
-            <Th>狀態</Th>
+            <Th>份數</Th>
+            <Th>金額</Th>
+            <Th className="text-right">狀態</Th>
           </tr>
         </thead>
         <tbody>
@@ -140,7 +141,11 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
                     aria-label={`選取 ${r.name}`}
                   />
                 </Td>
-                <Td>{r.name}</Td>
+                <Td>
+                  <Link href={`/group-orders/${r.id}`} className="hover:text-brand">
+                    {r.name}
+                  </Link>
+                </Td>
                 <Td>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge tone="brand">{r.departmentName || "—"}</Badge>
@@ -150,9 +155,9 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
                 <Td className="text-muted">{r.templateName}</Td>
                 <Td className="text-muted">{r.hostName}</Td>
                 <Td className="tabular-nums">{r.date}</Td>
-                <Td className="text-right tabular-nums">{r.qty}</Td>
-                <Td className="text-right tabular-nums">NT$ {r.amount}</Td>
-                <Td>
+                <Td className="tabular-nums">{r.qty}</Td>
+                <Td className="tabular-nums">NT$ {r.amount}</Td>
+                <Td className="text-right">
                   {(() => {
                     const s = statusMap[r.status] ?? { label: r.status, tone: "neutral" as const };
                     return <Badge tone={s.tone}>{s.label}</Badge>;

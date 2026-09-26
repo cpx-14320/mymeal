@@ -212,16 +212,6 @@ export const adminNavIcons: Record<
       <path d="M9 13l2 2 4-4" />
     </Base>
   ),
-  settings: (props) => (
-    <Base {...props}>
-      <path d="M4 8h9" />
-      <path d="M17 8h3" />
-      <path d="M4 16h3" />
-      <path d="M11 16h9" />
-      <circle cx="15" cy="8" r="2" />
-      <circle cx="9" cy="16" r="2" />
-    </Base>
-  ),
   promos: (props) => (
     <Base {...props}>
       <rect x="3" y="4" width="18" height="16" rx="2" />

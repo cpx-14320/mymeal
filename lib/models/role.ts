@@ -80,7 +80,6 @@ const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
       reports: true,
       audit: true,
       promos: true,
-      settings: true,
     },
   },
 ];

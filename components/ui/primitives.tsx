@@ -30,6 +30,31 @@ export function ItemThumbnail({
   return emojiClassName ? <span className={emojiClassName}>{emoji}</span> : <>{emoji}</>;
 }
 
+/** 「40px 縮圖＋品項名稱」列——品項設定／餐點統計／會員洞察／模板編輯的品項清單都共用這個排版
+ *  （圖文間距統一 gap-2＝8px，不要有的用 margin 有的用 gap，間距各自不一樣）。 */
+export function ItemLabel({
+  imageUrl,
+  emoji,
+  name,
+}: {
+  imageUrl?: string;
+  emoji: string;
+  name: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2 align-middle">
+      <ItemThumbnail
+        imageUrl={imageUrl}
+        emoji={emoji}
+        alt={name}
+        size={40}
+        className="size-10 shrink-0 rounded object-cover"
+      />
+      {name}
+    </span>
+  );
+}
+
 export function ItemThumbnailFill({
   imageUrl,
   emoji,
@@ -56,10 +81,18 @@ export function ItemThumbnailFill({
 
 /* ── 版面 ────────────────────────────────────────────── */
 
-export function PageContainer({ children }: { children: ReactNode }) {
+export function PageContainer({
+  children,
+  spacingClassName = "space-y-8",
+}: {
+  children: ReactNode;
+  /** 區塊之間的垂直間距——預設 "space-y-8"；區塊較多、手機版容易太鬆散時可以傳響應式 class
+   *  （例如 "space-y-4 sm:space-y-8"）縮小手機版的間距。 */
+  spacingClassName?: string;
+}) {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <div className="space-y-8">{children}</div>
+      <div className={spacingClassName}>{children}</div>
     </div>
   );
 }
@@ -74,7 +107,7 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-balance">{title}</h1>
         {description && <p className="mt-1 text-sm text-muted">{description}</p>}
@@ -255,6 +288,10 @@ export function Badge({
 
 /* ── 數據 ────────────────────────────────────────────── */
 
+/** Stat 卡片的外框樣式——需要客製一個「可編輯版」Stat（例如團訂明細頁的截止時間）而不能直接用
+ *  <Stat> 本身時，外框套這個 class 才會跟其他 Stat 卡片長得一樣。 */
+export const STAT_CARD_CLASS = "rounded-xl border border-line bg-surface p-4";
+
 export function Stat({
   label,
   value,
@@ -264,16 +301,25 @@ export function Stat({
   label: string;
   value: ReactNode;
   hint?: string;
-  /** 覆蓋數值文字大小——預設 "text-xl"；擠在手機版一列多欄時可以傳較小/響應式的 class（例如 "text-sm sm:text-xl"）。 */
+  /** 覆蓋數值文字大小——預設 "text-xl"；擠在手機版一列多欄時可以傳較小/響應式的 class（例如 COMPACT_STAT_VALUE_CLASS）。 */
   valueClassName?: string;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-surface p-4">
+    <div className={STAT_CARD_CLASS}>
       <p className="text-xs text-muted">{label}</p>
       <p className={`mt-1 font-bold tracking-tight tabular-nums ${valueClassName}`}>{value}</p>
       {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
     </div>
   );
+}
+
+/** 手機版也擠三欄的 Stat 數值文字大小——跟 StatGrid3 搭配使用，傳給每個 <Stat valueClassName>。 */
+export const COMPACT_STAT_VALUE_CLASS = "text-sm sm:text-xl";
+
+/** 手機版也強制三欄（不像預設 Stat 常搭配的 sm:grid-cols-* 手機版單欄）的 Stat 排版——
+ *  目前 /wallet 和團訂明細頁的三個數據卡片共用這個排版，要調整（例如欄距）改這裡就好。 */
+export function StatGrid3({ children }: { children: ReactNode }) {
+  return <div className="grid grid-cols-3 gap-4">{children}</div>;
 }
 
 export function Progress({ value, max = 100 }: { value: number; max?: number }) {

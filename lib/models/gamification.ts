@@ -240,6 +240,13 @@ export async function deleteExpRule(id: string) {
   await ExpRule.deleteOne({ _id: new Types.ObjectId(id) });
 }
 
+export async function deleteExpRules(ids: string[]) {
+  await connectMongo();
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return;
+  await ExpRule.deleteMany({ _id: { $in: objIds } });
+}
+
 /* ── 等級 ── */
 
 export interface MemberLevelDocument {
@@ -302,4 +309,11 @@ export async function deleteMemberLevel(id: string) {
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) throw new Error("無效的等級 id");
   await MemberLevel.deleteOne({ _id: new Types.ObjectId(id) });
+}
+
+export async function deleteMemberLevels(ids: string[]) {
+  await connectMongo();
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return;
+  await MemberLevel.deleteMany({ _id: { $in: objIds } });
 }

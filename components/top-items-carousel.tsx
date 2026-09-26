@@ -73,8 +73,8 @@ export function TopItemsCarousel({
                     imageUrl={item.imageUrl}
                     emoji={item.emoji}
                     alt=""
-                    size={40}
-                    className="size-10 rounded-lg object-cover"
+                    size={64}
+                    className="size-16 rounded-lg object-cover"
                     emojiClassName="text-4xl"
                   />
                   <span className="text-sm font-medium">{item.name}</span>
@@ -141,8 +141,8 @@ export function TopItemsCarousel({
                 imageUrl={item.imageUrl}
                 emoji={item.emoji}
                 alt=""
-                size={28}
-                className="size-7 shrink-0 rounded object-cover"
+                size={40}
+                className="size-10 shrink-0 rounded object-cover"
                 emojiClassName="text-2xl"
               />
               <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.name}</span>

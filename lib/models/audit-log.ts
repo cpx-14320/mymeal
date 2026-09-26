@@ -3,7 +3,7 @@ import { connectMongo } from "@/lib/mongoose";
 
 /**
  * audit_logs collection —— 後台操作紀錄，append-only（只新增，沒有更新/刪除函式）。
- * 目前涵蓋錢包手動調整、儲值審核、會員停權/復權/刪除、組別權限異動、系統設定異動；
+ * 目前涵蓋錢包手動調整、儲值審核、會員停權/復權/刪除、組別權限異動；
  * 之後有新的高風險操作要記錄，比照現有呼叫點在對應的 server action 裡加一行
  * createAuditLog() 即可，不用動這個檔案。
  */

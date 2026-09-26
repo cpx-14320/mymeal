@@ -9,9 +9,11 @@ import {
   createExpRule,
   updateExpRule,
   deleteExpRule,
+  deleteExpRules,
   createMemberLevel,
   updateMemberLevel,
   deleteMemberLevel,
+  deleteMemberLevels,
   type DailyTaskPatch,
   type ExpRulePatch,
 } from "@/lib/models/gamification";
@@ -58,6 +60,11 @@ export async function deleteExpRuleAction(id: string) {
   refresh();
 }
 
+export async function deleteExpRulesAction(ids: string[]) {
+  await deleteExpRules(ids);
+  refresh();
+}
+
 export async function createMemberLevelAction() {
   const level = await createMemberLevel();
   refresh();
@@ -71,5 +78,10 @@ export async function updateMemberLevelAction(id: string, patch: { name?: string
 
 export async function deleteMemberLevelAction(id: string) {
   await deleteMemberLevel(id);
+  refresh();
+}
+
+export async function deleteMemberLevelsAction(ids: string[]) {
+  await deleteMemberLevels(ids);
   refresh();
 }

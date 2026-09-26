@@ -336,6 +336,8 @@ export async function deleteCatalogItems(ids: string[]): Promise<number> {
 export interface CatalogItemStat {
   itemId: string;
   itemName: string;
+  emoji: string;
+  imageUrl?: string;
   price: number;
   totalQuantity: number;
   orderCount: number;
@@ -363,6 +365,8 @@ export async function listItemStats(): Promise<CatalogItemStat[]> {
       return {
         itemId: it.id,
         itemName: it.name,
+        emoji: it.emoji,
+        imageUrl: it.imageUrl,
         price: it.price,
         totalQuantity: order?.totalQty ?? 0,
         orderCount: order?.orderCount ?? 0,
@@ -390,6 +394,8 @@ export async function findItemStatById(id: string): Promise<CatalogItemStat | nu
   return {
     itemId: item.id,
     itemName: item.name,
+    emoji: item.emoji,
+    imageUrl: item.imageUrl,
     price: item.price,
     totalQuantity: order?.totalQty ?? 0,
     orderCount: order?.orderCount ?? 0,

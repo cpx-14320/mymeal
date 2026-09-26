@@ -36,7 +36,7 @@ type Tab = "all" | "pending" | "approved" | "rejected";
 
 export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("pending");
+  const [tab, setTab] = useState<Tab>("all");
   const [allPage, setAllPage] = useState(1);
   const [pPage, setPPage] = useState(1);
   const [aPage, setAPage] = useState(1);
@@ -202,7 +202,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
             </Th>
             <Th>申請人</Th>
             <Th>部門</Th>
-            <Th className="text-right">金額</Th>
+            <Th>金額</Th>
             <Th>方式</Th>
             <Th>時間</Th>
             <Th>狀態</Th>
@@ -229,7 +229,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
                 </Td>
                 <Td>{req.memberName}</Td>
                 <Td className="text-muted">{req.dept}</Td>
-                <Td className="text-right tabular-nums">NT$ {req.amount}</Td>
+                <Td className="tabular-nums">NT$ {req.amount}</Td>
                 <Td>{req.method}</Td>
                 <Td className="text-muted">{formatTaiwanDateTime(req.at)}</Td>
                 <Td>

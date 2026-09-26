@@ -1,21 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, inputClass } from "@/components/ui/primitives";
 import type { GroupOrderStatus } from "@/lib/models/group-order";
 import {
   closeGroupOrderAction,
   reopenGroupOrderAction,
-  updateGroupOrderDeadlineAction,
   cancelGroupOrderAction,
 } from "@/app/(app)/group-orders/[id]/actions";
-
-/** "YYYY-MM-DD HH:mm"（後端存的格式）轉成 datetime-local 欄位要的 "YYYY-MM-DDTHH:mm"；格式對不上就回傳空字串。 */
-function toDatetimeLocalValue(deadline: string): string {
-  const m = deadline.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/);
-  return m ? `${m[1]}T${m[2]}` : "";
-}
 
 /** 現在時間 +1 小時，給「重新開放」表單的預設截止時間。 */
 function defaultReopenDeadline(): string {
@@ -27,14 +20,14 @@ function defaultReopenDeadline(): string {
 export function GroupOrderHostActions({
   groupOrderId,
   status,
-  deadline,
+  trailingActions,
 }: {
   groupOrderId: string;
   status: GroupOrderStatus;
-  deadline: string;
+  /** 跟團主操作（提前結單／取消團訂…）放在同一列的其他按鈕，例如返回列表、匯出 CSV。 */
+  trailingActions?: ReactNode;
 }) {
   const router = useRouter();
-  const [editingDeadline, setEditingDeadline] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [pending, setPending] = useState(false);
@@ -47,19 +40,6 @@ export function GroupOrderHostActions({
     setPending(false);
     if (result.error) setError(result.error);
     else router.refresh();
-  }
-
-  async function handleUpdateDeadline(formData: FormData) {
-    setPending(true);
-    setError(undefined);
-    const value = String(formData.get("deadline") ?? "");
-    const result = await updateGroupOrderDeadlineAction(groupOrderId, value);
-    setPending(false);
-    if (result.error) setError(result.error);
-    else {
-      setEditingDeadline(false);
-      router.refresh();
-    }
   }
 
   async function handleReopen(formData: FormData) {
@@ -84,43 +64,40 @@ export function GroupOrderHostActions({
     else router.push("/group-orders");
   }
 
-  if (status === "completed") return null;
+  if (status === "completed") {
+    return trailingActions ? (
+      <div className="flex flex-wrap items-center justify-end gap-2">{trailingActions}</div>
+    ) : null;
+  }
 
   return (
     <div className="space-y-2">
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      <div className="flex flex-wrap items-center gap-2">
-        {status === "open" &&
-          (editingDeadline ? (
-            <form
-              action={handleUpdateDeadline}
-              className="flex flex-wrap items-end gap-2"
-            >
-              <Field label="新的截止時間">
-                <input
-                  className={inputClass}
-                  type="datetime-local"
-                  name="deadline"
-                  defaultValue={toDatetimeLocalValue(deadline)}
-                  required
-                />
-              </Field>
-              <Button type="button" variant="ghost" onClick={() => setEditingDeadline(false)}>
-                取消
-              </Button>
-              <Button disabled={pending}>{pending ? "儲存中…" : "儲存"}</Button>
-            </form>
-          ) : (
-            <>
-              <Button variant="secondary" disabled={pending} onClick={() => setEditingDeadline(true)}>
-                調整截止時間
-              </Button>
-              <Button variant="danger" disabled={pending} onClick={handleClose}>
-                {pending ? "處理中…" : "提前結單"}
-              </Button>
-            </>
-          ))}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {trailingActions}
+
+        {confirmingCancel ? (
+          <>
+            <p className="text-sm text-danger">確定要取消團訂嗎？大家目前點的餐點都會一併刪除，無法復原。</p>
+            <Button type="button" variant="ghost" disabled={pending} onClick={() => setConfirmingCancel(false)}>
+              返回
+            </Button>
+            <Button variant="danger" disabled={pending} onClick={handleCancel}>
+              {pending ? "取消中…" : "確認取消團訂"}
+            </Button>
+          </>
+        ) : (
+          <Button variant="danger" disabled={pending} onClick={() => setConfirmingCancel(true)}>
+            取消團訂
+          </Button>
+        )}
+
+        {status === "open" && (
+          <Button variant="danger" disabled={pending} onClick={handleClose}>
+            {pending ? "處理中…" : "提前結單"}
+          </Button>
+        )}
 
         {status === "closed" &&
           (reopening ? (
@@ -144,22 +121,6 @@ export function GroupOrderHostActions({
               重新開放
             </Button>
           ))}
-
-        {confirmingCancel ? (
-          <>
-            <p className="text-sm text-danger">確定要取消團訂嗎？大家目前點的餐點都會一併刪除，無法復原。</p>
-            <Button type="button" variant="ghost" disabled={pending} onClick={() => setConfirmingCancel(false)}>
-              返回
-            </Button>
-            <Button variant="danger" disabled={pending} onClick={handleCancel}>
-              {pending ? "取消中…" : "確認取消團訂"}
-            </Button>
-          </>
-        ) : (
-          <Button variant="danger" disabled={pending} onClick={() => setConfirmingCancel(true)}>
-            取消團訂
-          </Button>
-        )}
       </div>
     </div>
   );

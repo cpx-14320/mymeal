@@ -488,7 +488,6 @@ export const permissionCategories: PermissionCategory[] = [
       { key: "itemStats", label: "餐點統計" },
       { key: "reports", label: "報表" },
       { key: "audit", label: "稽核" },
-      { key: "settings", label: "系統設定" },
     ],
   },
 ];

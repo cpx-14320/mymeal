@@ -85,8 +85,8 @@ export function ReportsView({
             <thead>
               <tr>
                 <Th>分類</Th>
-                <Th className="text-right">場次</Th>
-                <Th className="text-right">份數 / 杯數</Th>
+                <Th>場次</Th>
+                <Th>份數 / 杯數</Th>
                 <Th className="text-right">金額</Th>
               </tr>
             </thead>
@@ -101,8 +101,8 @@ export function ReportsView({
                 byCategory.map((r) => (
                   <tr key={r.name}>
                     <Td>{r.name}</Td>
-                    <Td className="text-right tabular-nums">{r.sessions}</Td>
-                    <Td className="text-right tabular-nums">{r.count}</Td>
+                    <Td className="tabular-nums">{r.sessions}</Td>
+                    <Td className="tabular-nums">{r.count}</Td>
                     <Td className="text-right tabular-nums">NT$ {r.amount}</Td>
                   </tr>
                 ))
@@ -116,7 +116,7 @@ export function ReportsView({
             <thead>
               <tr>
                 <Th>頁面</Th>
-                <Th className="text-right">份數 / 杯數</Th>
+                <Th>份數 / 杯數</Th>
                 <Th className="text-right">金額</Th>
               </tr>
             </thead>
@@ -131,7 +131,7 @@ export function ReportsView({
                 byPage.map((r) => (
                   <tr key={r.name}>
                     <Td>{r.name}</Td>
-                    <Td className="text-right tabular-nums">{r.orders}</Td>
+                    <Td className="tabular-nums">{r.orders}</Td>
                     <Td className="text-right tabular-nums">NT$ {r.amount}</Td>
                   </tr>
                 ))

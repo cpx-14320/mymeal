@@ -107,7 +107,7 @@ export function ZonesList({
             <Th>代稱</Th>
             <Th>套用模板</Th>
             <Th>狀態</Th>
-            <Th className="text-right">排序</Th>
+            <Th>排序</Th>
             <Th className="text-right">操作</Th>
           </tr>
         </thead>
@@ -135,7 +135,7 @@ export function ZonesList({
               <Td>
                 <Badge tone={z.active ? "positive" : "neutral"}>{z.active ? "上架" : "下架"}</Badge>
               </Td>
-              <Td className="text-right tabular-nums">{z.sortOrder}</Td>
+              <Td className="tabular-nums">{z.sortOrder}</Td>
               <Td className="text-right">
                 <div className="flex justify-end gap-2">
                   <ButtonLink href={`/admin/zones/${z.id}`} variant="secondary" size="sm">

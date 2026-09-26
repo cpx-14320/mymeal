@@ -15,7 +15,7 @@ import {
   inputClass,
   paginate,
   DEFAULT_PAGE_SIZE,
-  ItemThumbnail,
+  ItemLabel,
 } from "@/components/ui/primitives";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
@@ -247,16 +247,7 @@ export function ItemsTable({
                 />
               </Td>
               <Td>
-                <span className="mr-1.5 inline-flex size-10 items-center justify-center align-middle">
-                  <ItemThumbnail
-                    imageUrl={it.imageUrl}
-                    emoji={it.emoji}
-                    alt=""
-                    size={40}
-                    className="size-10 rounded object-cover"
-                  />
-                </span>
-                {it.name}
+                <ItemLabel imageUrl={it.imageUrl} emoji={it.emoji} name={it.name} />
               </Td>
               <Td className="text-muted">
                 <select

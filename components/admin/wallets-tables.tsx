@@ -143,9 +143,9 @@ export function WalletsTables({
               <tr>
                 <Th>會員</Th>
                 <Th>部門</Th>
-                <Th className="text-right">餘額</Th>
-                <Th className="text-right">累計儲值</Th>
-                <Th className="text-right">累計消費</Th>
+                <Th>餘額</Th>
+                <Th>累計儲值</Th>
+                <Th>累計消費</Th>
                 <Th className="text-right">操作</Th>
               </tr>
             </thead>
@@ -162,11 +162,11 @@ export function WalletsTables({
                     <tr>
                       <Td>{r.name}</Td>
                       <Td className="text-muted">{r.dept}</Td>
-                      <Td className={`text-right tabular-nums ${r.balance < 0 ? "text-danger" : ""}`}>
+                      <Td className={`tabular-nums ${r.balance < 0 ? "text-danger" : ""}`}>
                         NT$ {r.balance}
                       </Td>
-                      <Td className="text-right tabular-nums text-muted">NT$ {r.totalTopup}</Td>
-                      <Td className="text-right tabular-nums text-muted">NT$ {r.totalSpend}</Td>
+                      <Td className="tabular-nums text-muted">NT$ {r.totalTopup}</Td>
+                      <Td className="tabular-nums text-muted">NT$ {r.totalSpend}</Td>
                       <Td className="text-right">
                         <Button
                           variant="secondary"
@@ -211,8 +211,8 @@ export function WalletsTables({
               <tr>
                 <Th>會員</Th>
                 <Th>類型</Th>
-                <Th className="text-right">金額</Th>
-                <Th className="text-right">餘額</Th>
+                <Th>金額</Th>
+                <Th>餘額</Th>
                 <Th>操作者</Th>
                 <Th>時間</Th>
                 <Th className="text-right">操作</Th>
@@ -231,10 +231,10 @@ export function WalletsTables({
                     <tr>
                       <Td>{r.memberName}</Td>
                       <Td>{ledgerTypeLabel[r.type]}</Td>
-                      <Td className={`text-right tabular-nums ${r.amount > 0 ? "text-positive" : ""}`}>
+                      <Td className={`tabular-nums ${r.amount > 0 ? "text-positive" : ""}`}>
                         {r.amount > 0 ? `+${r.amount}` : r.amount}
                       </Td>
-                      <Td className="text-right tabular-nums">{r.balanceAfter}</Td>
+                      <Td className="tabular-nums">{r.balanceAfter}</Td>
                       <Td className="text-muted">{r.by}</Td>
                       <Td className="text-muted">{formatTaiwanDateTime(r.at)}</Td>
                       <Td className="text-right">

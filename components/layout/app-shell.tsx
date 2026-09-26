@@ -8,7 +8,6 @@ import { Footer } from "./footer";
 import { CloseIcon } from "./icons";
 import { GoTopButton } from "./go-top-button";
 import { InterstitialOverlay } from "@/components/interstitial-overlay";
-import { AnnouncementBanner } from "@/components/announcement-banner";
 import { LoginModal } from "./login-modal";
 import { LoginModalContext } from "./login-modal-context";
 import { logoutAction } from "@/app/login/actions";
@@ -28,15 +27,12 @@ export const DEMO_AUTH_KEY = "mymeal-demo-authed";
 export function AppShell({
   children,
   pages = [],
-  announcement = "",
   walletBalance = 0,
   isSessionAuthed = false,
 }: {
   children: ReactNode;
   /** 已上架的頁面，前台側欄用來動態多顯示一個連結（見 sidebar.tsx）；後台新增頁面就會同步出現。 */
   pages?: PageNavItem[];
-  /** 後台「系統設定」的公告文字；空字串就不顯示。 */
-  announcement?: string;
   /** 目前登入會員的真實錢包餘額（未登入時為 0），側欄「會員錢包」小工具用。 */
   walletBalance?: number;
   /** 是否有真實登入 session，伺服器端（app/(app)/layout.tsx）算好傳進來。 */
@@ -102,8 +98,6 @@ export function AppShell({
           authed={authed}
           onLogout={logout}
         />
-
-        <AnnouncementBanner announcement={announcement} />
 
         <div className="mx-auto flex w-full max-w-[1400px] flex-1">
           {/* 桌機：固定側欄 */}

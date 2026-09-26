@@ -34,8 +34,6 @@ export function TopupForm({ memberId }: { memberId: string }) {
               <input
                 className={inputClass}
                 type="number"
-                min={100}
-                step={100}
                 name="amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

@@ -47,7 +47,7 @@ export function ItemCommentsTable({
             <Th>會員</Th>
             <Th>留言</Th>
             <Th>評分</Th>
-            <Th>時間</Th>
+            <Th className="text-right">時間</Th>
           </tr>
         </thead>
         <tbody>
@@ -56,7 +56,7 @@ export function ItemCommentsTable({
               <Td>{c.memberName}</Td>
               <Td className="text-muted">{c.text}</Td>
               <Td className="text-warning">{stars(c.stars)}</Td>
-              <Td className="text-muted">{formatTaiwanDateTime(c.at)}</Td>
+              <Td className="text-right text-muted">{formatTaiwanDateTime(c.at)}</Td>
             </tr>
           ))}
         </tbody>

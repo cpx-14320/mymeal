@@ -10,21 +10,13 @@ import {
   Badge,
   paginate,
   DEFAULT_PAGE_SIZE,
+  ItemLabel,
 } from "@/components/ui/primitives";
 import type { FavoriteView } from "@/lib/models/favorite";
 import type { ItemReviewView } from "@/lib/models/item-review";
 import type { WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
+import type { MemberOrderBreakdown } from "@/lib/models/group-order";
 import { formatTaiwanDateTime } from "@/lib/date";
-
-/** 訂餐分頁還沒有真的資料來源（要等團訂彙總依會員拆解做出來），先留空狀態。儲值分頁已接上真實 wallet_ledger。 */
-interface OrderBreakdownStub {
-  itemId: string;
-  itemName: string;
-  category: string;
-  tags: string[];
-  totalQuantity: number;
-  orderCount: number;
-}
 
 const ledgerTypeLabel: Record<LedgerType, string> = {
   topup: "儲值",
@@ -56,7 +48,7 @@ export function MemberInsightTabs({
   comments,
   ratings,
 }: {
-  breakdown: OrderBreakdownStub[];
+  breakdown: MemberOrderBreakdown[];
   ledger: WalletLedgerRow[];
   favorites: FavoriteView[];
   comments: ItemReviewView[];
@@ -99,7 +91,7 @@ export function MemberInsightTabs({
 
       {tab === "orders" &&
         (breakdown.length === 0 ? (
-          <p className="text-[13px] lg:text-[14px] text-muted">尚無訂餐紀錄（團訂功能尚未上線）。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">尚無訂餐紀錄。</p>
         ) : (
           <>
             <TableWrap>
@@ -108,19 +100,21 @@ export function MemberInsightTabs({
                   <Th>品項</Th>
                   <Th>分類</Th>
                   <Th>標籤</Th>
-                  <Th className="text-right">總訂購數量</Th>
+                  <Th>總訂購數量</Th>
                   <Th className="text-right">訂單次數</Th>
                 </tr>
               </thead>
               <tbody>
                 {orders.pageRows.map((o) => (
                   <tr key={o.itemId}>
-                    <Td>{o.itemName}</Td>
+                    <Td>
+                      <ItemLabel imageUrl={o.imageUrl} emoji={o.emoji} name={o.itemName} />
+                    </Td>
                     <Td className="text-muted">{o.category}</Td>
                     <Td className="text-muted">
                       {o.tags.length ? o.tags.join("、") : "—"}
                     </Td>
-                    <Td className="text-right tabular-nums">
+                    <Td className="tabular-nums">
                       {o.totalQuantity}
                     </Td>
                     <Td className="text-right tabular-nums">{o.orderCount}</Td>
@@ -149,9 +143,9 @@ export function MemberInsightTabs({
                 <tr>
                   <Th>類型</Th>
                   <Th>明細</Th>
-                  <Th className="text-right">金額</Th>
-                  <Th className="text-right">剩餘金額</Th>
-                  <Th>時間</Th>
+                  <Th>金額</Th>
+                  <Th>剩餘金額</Th>
+                  <Th className="text-right">時間</Th>
                 </tr>
               </thead>
               <tbody>
@@ -162,16 +156,16 @@ export function MemberInsightTabs({
                     </Td>
                     <Td className="text-muted">{t.detail}</Td>
                     <Td
-                      className={`text-right tabular-nums ${
+                      className={`tabular-nums ${
                         t.amount > 0 ? "text-positive" : ""
                       }`}
                     >
                       {t.amount > 0 ? `+NT$ ${t.amount}` : `-NT$ ${Math.abs(t.amount)}`}
                     </Td>
-                    <Td className="text-right tabular-nums">
+                    <Td className="tabular-nums">
                       NT$ {t.balanceAfter}
                     </Td>
-                    <Td className="text-muted">{formatTaiwanDateTime(t.at)}</Td>
+                    <Td className="text-right text-muted">{formatTaiwanDateTime(t.at)}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -198,21 +192,20 @@ export function MemberInsightTabs({
                   <Th>品項</Th>
                   <Th>分類</Th>
                   <Th>標籤</Th>
-                  <Th>收藏時間</Th>
+                  <Th className="text-right">收藏時間</Th>
                 </tr>
               </thead>
               <tbody>
                 {favoritesPaged.pageRows.map((f) => (
                   <tr key={f.itemId}>
                     <Td>
-                      <span className="mr-1.5">{f.emoji}</span>
-                      {f.itemName}
+                      <ItemLabel imageUrl={f.imageUrl} emoji={f.emoji} name={f.itemName} />
                     </Td>
                     <Td className="text-muted">{f.categoryName}</Td>
                     <Td className="text-muted">
                       {f.tags.length ? f.tags.join("、") : "—"}
                     </Td>
-                    <Td className="text-muted">{formatAt(f.at)}</Td>
+                    <Td className="text-right text-muted">{formatAt(f.at)}</Td>
                   </tr>
                 ))}
               </tbody>

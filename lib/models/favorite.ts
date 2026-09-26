@@ -26,6 +26,7 @@ export interface FavoriteView {
   itemId: string;
   itemName: string;
   emoji: string;
+  imageUrl?: string;
   categoryName: string;
   tags: string[];
   at: Date;
@@ -35,6 +36,7 @@ interface PopulatedItem {
   _id: Types.ObjectId;
   name: string;
   emoji: string;
+  imageUrl?: string;
   tags: string[];
   categoryId?: { name: string };
 }
@@ -54,6 +56,7 @@ export async function listFavoritesByMember(memberId: string): Promise<FavoriteV
         itemId: String(item._id),
         itemName: item.name,
         emoji: item.emoji,
+        imageUrl: item.imageUrl,
         categoryName: item.categoryId?.name ?? "",
         tags: item.tags,
         at: d.at,

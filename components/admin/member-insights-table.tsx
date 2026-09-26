@@ -46,12 +46,12 @@ export function MemberInsightsTable({
           <tr>
             <Th>姓名</Th>
             <Th>帳號</Th>
-            <Th className="text-right">訂單數</Th>
-            <Th className="text-right">便當數</Th>
-            <Th className="text-right">收藏</Th>
-            <Th className="text-right">評論</Th>
-            <Th className="text-right">評分</Th>
-            <Th className="text-right">剩餘儲值</Th>
+            <Th>訂單數</Th>
+            <Th>便當數</Th>
+            <Th>收藏</Th>
+            <Th>評論</Th>
+            <Th>評分</Th>
+            <Th>剩餘儲值</Th>
             <Th className="text-right">操作</Th>
           </tr>
         </thead>
@@ -67,12 +67,12 @@ export function MemberInsightsTable({
               <tr key={m.id}>
                 <Td>{m.name}</Td>
                 <Td className="text-muted">{m.account}</Td>
-                <Td className="text-right tabular-nums">0</Td>
-                <Td className="text-right tabular-nums">0</Td>
-                <Td className="text-right tabular-nums">{favoriteCounts[m.id] ?? 0}</Td>
-                <Td className="text-right tabular-nums">{commentCounts[m.id] ?? 0}</Td>
-                <Td className="text-right tabular-nums">{ratingCounts[m.id] ?? 0}</Td>
-                <Td className="text-right tabular-nums">NT$ {balances[m.id] ?? 0}</Td>
+                <Td className="tabular-nums">0</Td>
+                <Td className="tabular-nums">0</Td>
+                <Td className="tabular-nums">{favoriteCounts[m.id] ?? 0}</Td>
+                <Td className="tabular-nums">{commentCounts[m.id] ?? 0}</Td>
+                <Td className="tabular-nums">{ratingCounts[m.id] ?? 0}</Td>
+                <Td className="tabular-nums">NT$ {balances[m.id] ?? 0}</Td>
                 <Td className="text-right">
                   <ButtonLink
                     href={`/admin/insights/${m.id}`}

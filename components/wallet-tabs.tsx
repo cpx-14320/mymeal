@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   PillTabs,
   PageSizeSelect,
@@ -14,6 +15,7 @@ import {
 import { formatTaiwanDateTime } from "@/lib/date";
 import type { WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
 import type { TopupRequestView } from "@/lib/models/topup-request";
+import { deleteMyTopupRequestAction } from "@/app/(app)/wallet/topup/actions";
 
 const ledgerTypeLabel: Record<LedgerType, string> = {
   topup: "儲值入帳",
@@ -33,7 +35,8 @@ export function WalletTabs({
   ledger: WalletLedgerRow[];
   requests: TopupRequestView[];
 }) {
-  const [tab, setTab] = useState<Tab>("txns");
+  const router = useRouter();
+  const [tab, setTab] = useState<Tab>("pending");
   const [year, setYear] = useState<number | "all">("all");
   const [month, setMonth] = useState<number | "all">("all");
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -41,6 +44,22 @@ export function WalletTabs({
   const [pendingPage, setPendingPage] = useState(1);
   const [approvedPage, setApprovedPage] = useState(1);
   const [rejectedPage, setRejectedPage] = useState(1);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | undefined>();
+  const [deleting, startDelete] = useTransition();
+
+  function handleDelete(id: string) {
+    setDeleteError(undefined);
+    startDelete(async () => {
+      const result = await deleteMyTopupRequestAction(id);
+      if (result.error) {
+        setDeleteError(result.error);
+        return;
+      }
+      setConfirmingId(null);
+      router.refresh();
+    });
+  }
 
   const years = useMemo(() => {
     const all = [...ledger.map((l) => l.at), ...requests.map((r) => r.at)].map((d) => d.getFullYear());
@@ -73,10 +92,10 @@ export function WalletTabs({
   };
 
   const tabs = [
-    { key: "txns" as Tab, label: "交易明細", count: filteredLedger.length },
     { key: "pending" as Tab, label: "待審核", count: pending.length },
     { key: "approved" as Tab, label: "已核准", count: approved.length },
     { key: "rejected" as Tab, label: "已退件", count: rejected.length },
+    { key: "txns" as Tab, label: "交易明細", count: filteredLedger.length },
   ];
 
   return (
@@ -129,7 +148,7 @@ export function WalletTabs({
                 <Th>時間</Th>
                 <Th>類型</Th>
                 <Th>說明</Th>
-                <Th className="text-right">金額</Th>
+                <Th>金額</Th>
                 <Th className="text-right">餘額</Th>
               </tr>
             </thead>
@@ -139,7 +158,7 @@ export function WalletTabs({
                   <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(tx.at)}</Td>
                   <Td>{ledgerTypeLabel[tx.type]}</Td>
                   <Td className="text-muted">{tx.note ?? tx.detail}</Td>
-                  <Td className={`text-right tabular-nums ${tx.amount > 0 ? "text-positive" : ""}`}>
+                  <Td className={`tabular-nums ${tx.amount > 0 ? "text-positive" : ""}`}>
                     {tx.amount > 0 ? `+${tx.amount}` : tx.amount}
                   </Td>
                   <Td className="text-right tabular-nums">{tx.balanceAfter}</Td>
@@ -167,25 +186,60 @@ export function WalletTabs({
 
       {(tab === "pending" || tab === "approved" || tab === "rejected") && (
         <>
+          {tab === "pending" && deleteError && <p className="text-sm text-danger">{deleteError}</p>}
           <TableWrap>
             <thead>
               <tr>
                 <Th>時間</Th>
-                <Th className="text-right">金額</Th>
-                <Th>方式</Th>
+                <Th>金額</Th>
+                <Th className={tab === "pending" ? "" : "text-right"}>方式</Th>
+                {tab === "pending" && <Th className="text-right">操作</Th>}
               </tr>
             </thead>
             <tbody>
               {(tab === "pending" ? p : tab === "approved" ? a : r).pageRows.map((req) => (
                 <tr key={req.id}>
                   <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(req.at)}</Td>
-                  <Td className="text-right tabular-nums">NT$ {req.amount}</Td>
-                  <Td>{req.method}</Td>
+                  <Td className="tabular-nums">NT$ {req.amount}</Td>
+                  <Td className={tab === "pending" ? "" : "text-right"}>{req.method}</Td>
+                  {tab === "pending" && (
+                    <Td className="text-right">
+                      {confirmingId === req.id ? (
+                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                          <span className="text-xs text-danger">確定刪除？</span>
+                          <button
+                            type="button"
+                            disabled={deleting}
+                            onClick={() => handleDelete(req.id)}
+                            className="text-xs font-medium text-danger hover:underline disabled:opacity-50"
+                          >
+                            {deleting ? "刪除中…" : "確定"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deleting}
+                            onClick={() => setConfirmingId(null)}
+                            className="text-xs text-muted hover:underline disabled:opacity-50"
+                          >
+                            取消
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingId(req.id)}
+                          className="text-xs text-danger hover:underline"
+                        >
+                          刪除
+                        </button>
+                      )}
+                    </Td>
+                  )}
                 </tr>
               ))}
               {(tab === "pending" ? p : tab === "approved" ? a : r).pageRows.length === 0 && (
                 <tr>
-                  <Td colSpan={3} className="text-center text-muted">
+                  <Td colSpan={tab === "pending" ? 4 : 3} className="text-center text-muted">
                     這個範圍內沒有資料。
                   </Td>
                 </tr>

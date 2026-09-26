@@ -161,8 +161,8 @@ export function GroupOrderClusterView({
               <Th>單位</Th>
               <Th>同事</Th>
               <Th>餐點</Th>
-              <Th className="text-center">飯量</Th>
-              <Th className="text-center">數量</Th>
+              <Th>飯量</Th>
+              <Th>數量</Th>
               <Th>備註</Th>
               <Th className="text-right">小計</Th>
             </tr>
@@ -213,8 +213,8 @@ export function GroupOrderClusterView({
                           </Td>
                         )}
                         <Td>{l.itemName}</Td>
-                        <Td className="text-center">{riceLevelLabel[l.rice]}</Td>
-                        <Td className="text-center tabular-nums">{l.qty}</Td>
+                        <Td>{riceLevelLabel[l.rice]}</Td>
+                        <Td className="tabular-nums">{l.qty}</Td>
                         <Td className="text-muted">{l.note || "—"}</Td>
                         <Td className="text-right tabular-nums">
                           NT$ {l.price * l.qty}
@@ -230,7 +230,7 @@ export function GroupOrderClusterView({
               <Td />
               <Td />
               <Td />
-              <Td className="text-center tabular-nums">
+              <Td className="tabular-nums">
                 {combinedTotals.qty}
               </Td>
               <Td />

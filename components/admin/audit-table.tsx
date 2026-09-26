@@ -52,7 +52,7 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
             <Th>操作者</Th>
             <Th>動作</Th>
             <Th>對象</Th>
-            <Th>類別</Th>
+            <Th className="text-right">類別</Th>
           </tr>
         </thead>
         <tbody>
@@ -69,7 +69,7 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
                 <Td>{l.actor}</Td>
                 <Td>{l.action}</Td>
                 <Td className="text-muted">{l.target || "—"}</Td>
-                <Td>
+                <Td className="text-right">
                   <Badge tone={l.risk ? "danger" : "neutral"}>{l.risk ? "高風險" : "一般"}</Badge>
                 </Td>
               </tr>

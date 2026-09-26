@@ -11,7 +11,7 @@ import {
   CardBody,
   Field,
   inputClass,
-  ItemThumbnail,
+  ItemLabel,
 } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { TemplateDetail } from "@/lib/models/template";
@@ -201,10 +201,7 @@ export function TemplateEditor({
                 {sec.items.length === 0 && <li className="px-3 py-2.5 text-[13px] lg:text-[14px] text-muted">還沒有品項。</li>}
                 {sec.items.map((it) => (
                   <li key={it.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                    <span className="flex items-center gap-2">
-                      <ItemThumbnail imageUrl={it.imageUrl} emoji={it.emoji} alt="" size={20} className="size-5 rounded object-cover" />
-                      <span className="font-medium">{it.name}</span>
-                    </span>
+                    <ItemLabel imageUrl={it.imageUrl} emoji={it.emoji} name={it.name} />
                     <span className="flex items-center gap-3">
                       <span className="text-[13px] lg:text-[14px] tabular-nums text-muted">NT$ {it.price}</span>
                       <button
@@ -332,8 +329,7 @@ function ItemPicker({
         {filtered.map((it) => (
           <li key={it.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
             <span className="flex items-center gap-2">
-              <ItemThumbnail imageUrl={it.imageUrl} emoji={it.emoji} alt="" size={20} className="size-5 rounded object-cover" />
-              <span className="font-medium">{it.name}</span>
+              <ItemLabel imageUrl={it.imageUrl} emoji={it.emoji} name={it.name} />
               <span className="text-[13px] lg:text-[14px] text-muted">NT$ {it.price}</span>
             </span>
             <Button

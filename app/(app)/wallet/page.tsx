@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { PageContainer, PageHeader, Stat, ButtonLink } from "@/components/ui/primitives";
+import {
+  PageContainer,
+  PageHeader,
+  Stat,
+  StatGrid3,
+  COMPACT_STAT_VALUE_CLASS,
+  ButtonLink,
+} from "@/components/ui/primitives";
 import { WalletTabs } from "@/components/wallet-tabs";
 import { getSessionMemberId } from "@/lib/session";
 import { getMemberBalance, listLedgerForMember } from "@/lib/models/wallet";
@@ -35,11 +42,11 @@ export default async function WalletPage() {
         actions={<ButtonLink href="/wallet/topup">申請儲值</ButtonLink>}
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="目前餘額" value={`NT$ ${balance}`} />
-        <Stat label="本月儲值" value={`NT$ ${monthlyTopup}`} />
-        <Stat label="本月消費" value={`NT$ ${monthlySpend}`} />
-      </div>
+      <StatGrid3>
+        <Stat label="目前餘額" value={`NT$ ${balance}`} valueClassName={COMPACT_STAT_VALUE_CLASS} />
+        <Stat label="本月儲值" value={`NT$ ${monthlyTopup}`} valueClassName={COMPACT_STAT_VALUE_CLASS} />
+        <Stat label="本月消費" value={`NT$ ${monthlySpend}`} valueClassName={COMPACT_STAT_VALUE_CLASS} />
+      </StatGrid3>
 
       <WalletTabs ledger={ledger} requests={requests} />
     </PageContainer>

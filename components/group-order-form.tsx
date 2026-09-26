@@ -117,20 +117,22 @@ export function GroupOrderForm({
               return (
                 <div
                   key={d.id}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                  className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm sm:w-auto ${
                     selected ? "border-brand bg-brand-soft" : "border-line"
                   }`}
                 >
-                  <ItemThumbnail
-                    imageUrl={d.imageUrl}
-                    emoji={d.emoji}
-                    alt={d.name}
-                    size={20}
-                    className="size-5 shrink-0 rounded object-cover"
-                  />
-                  <span className="font-medium">{d.name}</span>
-                  <span className="text-xs text-muted">NT$ {d.price}</span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <ItemThumbnail
+                      imageUrl={d.imageUrl}
+                      emoji={d.emoji}
+                      alt={d.name}
+                      size={64}
+                      className="size-10 shrink-0 rounded object-cover sm:size-16"
+                    />
+                    <span className="truncate font-medium">{d.name}</span>
+                    <span className="shrink-0 text-sm text-muted">NT$ {d.price}</span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setQty(d.id, "normal", -1)}
