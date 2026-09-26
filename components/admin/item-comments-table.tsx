@@ -7,6 +7,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  paginate,
 } from "@/components/ui/primitives";
 import { formatTaiwanDateTime } from "@/lib/date";
 import type { ItemReviewEntry } from "@/lib/models/item-review";
@@ -23,10 +24,7 @@ export function ItemCommentsTable({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const pageCount = Math.max(1, Math.ceil(comments.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = comments.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(comments, page, pageSize);
 
   if (comments.length === 0) {
     return <p className="text-[13px] lg:text-[14px] text-muted">尚未有任何評論。</p>;
@@ -67,7 +65,7 @@ export function ItemCommentsTable({
         page={current}
         pageCount={pageCount}
         total={comments.length}
-        pageSize={pageSize}
+        pageSize={effectiveSize}
         onPage={setPage}
         unit="筆"
       />

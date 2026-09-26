@@ -175,11 +175,6 @@ export function GroupOrdersList({
                                 >
                                   {g.name}
                                 </Link>
-                                <p className="mt-0.5 text-sm text-muted">
-                                  {g.templateName}
-                                  {g.sectionName ? `（${g.sectionName}）` : ""}
-                                  {g.departmentName && g.unitName ? `．${g.departmentName} ${g.unitName}` : ""}
-                                </p>
                               </div>
                               <div className="flex shrink-0 gap-1.5">
                                 {categoryOf(g) && <Badge tone="brand">{categoryOf(g)}</Badge>}
@@ -190,6 +185,10 @@ export function GroupOrdersList({
                             <dl className="grid grid-cols-2 gap-y-1 text-sm">
                               <dt className="text-muted">團主</dt>
                               <dd>{g.hostName}</dd>
+                              <dt className="text-muted">部門</dt>
+                              <dd>{g.departmentName || "—"}</dd>
+                              <dt className="text-muted">單位</dt>
+                              <dd>{g.unitName || "—"}</dd>
                               <dt className="text-muted">已點份數</dt>
                               <dd className="tabular-nums">{g.qty}</dd>
                               <dt className="text-muted">截止</dt>

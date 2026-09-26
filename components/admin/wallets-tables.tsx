@@ -11,6 +11,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  paginate,
 } from "@/components/ui/primitives";
 import type { WalletBalanceRow, WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -22,13 +23,6 @@ const ledgerTypeLabel: Record<LedgerType, string> = {
   refund: "退款",
   adjustment: "手動調整",
 };
-
-function paginate<T>(rows: T[], page: number, size: number) {
-  const pageCount = Math.max(1, Math.ceil(rows.length / size));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * size;
-  return { pageCount, current, rows: rows.slice(start, start + size) };
-}
 
 /** 「調整餘額／調整」共用的內嵌表單：填金額（可正可負）+ 必填備註，送出後整頁 refresh。 */
 function AdjustForm({
@@ -155,14 +149,14 @@ export function WalletsTables({
               </tr>
             </thead>
             <tbody>
-              {b.rows.length === 0 ? (
+              {b.pageRows.length === 0 ? (
                 <tr>
                   <Td colSpan={6} className="text-center text-muted">
                     沒有符合的會員。
                   </Td>
                 </tr>
               ) : (
-                b.rows.map((r) => (
+                b.pageRows.map((r) => (
                   <Fragment key={r.memberId}>
                     <tr>
                       <Td>{r.name}</Td>
@@ -204,7 +198,7 @@ export function WalletsTables({
             page={b.current}
             pageCount={b.pageCount}
             total={filteredBalances.length}
-            pageSize={pageSize}
+            pageSize={b.effectiveSize}
             onPage={setBPage}
             unit="筆"
           />
@@ -224,14 +218,14 @@ export function WalletsTables({
               </tr>
             </thead>
             <tbody>
-              {t.rows.length === 0 ? (
+              {t.pageRows.length === 0 ? (
                 <tr>
                   <Td colSpan={7} className="text-center text-muted">
                     目前沒有任何交易紀錄。
                   </Td>
                 </tr>
               ) : (
-                t.rows.map((r) => (
+                t.pageRows.map((r) => (
                   <Fragment key={r.id}>
                     <tr>
                       <Td>{r.memberName}</Td>
@@ -268,7 +262,7 @@ export function WalletsTables({
               )}
             </tbody>
           </TableWrap>
-          <Pagination page={t.current} pageCount={t.pageCount} total={ledger.length} pageSize={pageSize} onPage={setTPage} />
+          <Pagination page={t.current} pageCount={t.pageCount} total={ledger.length} pageSize={t.effectiveSize} onPage={setTPage} />
         </>
       )}
     </Section>

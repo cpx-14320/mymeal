@@ -176,16 +176,55 @@ function buildDoc(input: CatalogItemInput) {
   };
 }
 
-export async function createCatalogItem(input: CatalogItemInput, createdBy?: string) {
+/** 更新用：跟 buildDoc 不同——pageId/imageUrl 清空時要真的用 $unset 拿掉欄位。
+ *  單純把 undefined 丟進 $set（buildDoc 的做法，給「新建文件」用沒問題）在
+ *  findByIdAndUpdate 這種更新情境會被 Mongoose 直接濾掉那個 key，等於沒送出
+ *  這個欄位，資料庫裡的舊值完全不會被改到——這就是「按清除再存檔，圖片還在」的成因。 */
+function buildUpdate(input: CatalogItemInput) {
+  if (!Types.ObjectId.isValid(input.categoryId)) throw new Error("請選擇有效的分類。");
+  if (input.pageId && !Types.ObjectId.isValid(input.pageId)) {
+    throw new Error("請選擇有效的頁面。");
+  }
+  const set: Record<string, unknown> = {
+    name: input.name,
+    categoryId: new Types.ObjectId(input.categoryId),
+    price: input.price,
+    tags: input.tags,
+    emoji: input.emoji || "🍽️",
+    active: input.active ?? true,
+  };
+  const unset: Record<string, ""> = {};
+  if (input.pageId) set.pageId = new Types.ObjectId(input.pageId);
+  else unset.pageId = "";
+  if (input.imageUrl) set.imageUrl = input.imageUrl;
+  else unset.imageUrl = "";
+
+  const update: Record<string, unknown> = { $set: set };
+  if (Object.keys(unset).length > 0) update.$unset = unset;
+  return update;
+}
+
+/** 新增品項頁一進來就先產生這個，讓圖片上傳（選檔當下就會傳到 Vercel Blob，
+ *  早於品項真正存檔）跟最終建立的品項用同一個 id 命名，不用等品項存檔後才知道 id。 */
+export function newCatalogItemId(): string {
+  return new Types.ObjectId().toString();
+}
+
+export async function createCatalogItem(input: CatalogItemInput, createdBy?: string, id?: string) {
   await connectMongo();
-  const doc = await CatalogItem.create({ ...buildDoc(input), createdBy: createdBy ?? "系統" });
+  if (id && !Types.ObjectId.isValid(id)) throw new Error("無效的品項 id");
+  const doc = await CatalogItem.create({
+    ...(id ? { _id: new Types.ObjectId(id) } : {}),
+    ...buildDoc(input),
+    createdBy: createdBy ?? "系統",
+  });
   return { id: String(doc._id) };
 }
 
 export async function updateCatalogItem(id: string, input: CatalogItemInput) {
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) throw new Error("無效的品項 id");
-  const doc = await CatalogItem.findByIdAndUpdate(id, { $set: buildDoc(input) }, { returnDocument: "after" });
+  const doc = await CatalogItem.findByIdAndUpdate(id, buildUpdate(input), { returnDocument: "after" });
   return doc;
 }
 
@@ -197,7 +236,7 @@ export async function upsertCatalogItemByName(
   await connectMongo();
   const existing = await CatalogItem.findOne({ name: input.name });
   if (existing) {
-    await CatalogItem.findByIdAndUpdate(existing._id, { $set: buildDoc(input) });
+    await CatalogItem.findByIdAndUpdate(existing._id, buildUpdate(input));
     return { id: String(existing._id), created: false };
   }
   const doc = await CatalogItem.create({ ...buildDoc(input), createdBy: createdBy ?? "系統" });

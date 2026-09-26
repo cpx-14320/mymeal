@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Card, Badge, Button } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import { useLoginModal } from "@/components/layout/login-modal-context";
@@ -99,8 +100,18 @@ export function ItemCard({
   return (
     <>
       <Card className="overflow-hidden">
-        <div className="grid h-28 place-items-center bg-brand-soft text-4xl">
-          {item.emoji}
+        <div className="relative grid aspect-video place-items-center overflow-hidden bg-brand-soft text-4xl">
+          {item.imageUrl ? (
+            <Image
+              src={item.imageUrl}
+              alt={item.name}
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+              className="object-cover"
+            />
+          ) : (
+            item.emoji
+          )}
         </div>
         <div className="space-y-2 p-4">
           <div className="flex items-start justify-between gap-2">

@@ -14,6 +14,7 @@ import {
   ListToolbar,
   BulkActionBar,
   Note,
+  paginate,
 } from "@/components/ui/primitives";
 import type { InterstitialView, InterstitialStatus } from "@/lib/models/interstitial";
 import { setPromosEnabledAction, deletePromosAction } from "@/app/(app)/admin/promos/actions";
@@ -50,10 +51,7 @@ export function PromosList({ promos }: { promos: InterstitialView[] }) {
   const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
   const now = new Date();
 
-  const pageCount = Math.max(1, Math.ceil(promos.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = promos.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(promos, page, pageSize);
 
   const toggleOne = (id: string) =>
     setSelected((prev) => {
@@ -177,7 +175,7 @@ export function PromosList({ promos }: { promos: InterstitialView[] }) {
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={promos.length} pageSize={pageSize} onPage={setPage} unit="筆" />
+      <Pagination page={current} pageCount={pageCount} total={promos.length} pageSize={effectiveSize} onPage={setPage} unit="筆" />
     </div>
   );
 }

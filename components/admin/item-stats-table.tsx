@@ -8,6 +8,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  paginate,
 } from "@/components/ui/primitives";
 import type { CatalogItemStat } from "@/lib/models/catalog-item";
 
@@ -15,10 +16,7 @@ export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const pageCount = Math.max(1, Math.ceil(stats.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = stats.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(stats, page, pageSize);
 
   return (
     <div className="space-y-4">
@@ -79,7 +77,7 @@ export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
         page={current}
         pageCount={pageCount}
         total={stats.length}
-        pageSize={pageSize}
+        pageSize={effectiveSize}
         onPage={setPage}
       />
     </div>

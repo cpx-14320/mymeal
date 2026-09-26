@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Badge,
   Button,
@@ -13,6 +14,7 @@ import {
   ListToolbar,
   BulkActionBar,
   inputClass,
+  paginate,
 } from "@/components/ui/primitives";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
@@ -76,11 +78,7 @@ export function ItemsTable({
 
   const countOf = (f: Filter) => (f === "all" ? items.length : items.filter((it) => it.categoryId === f).length);
 
-  const effectivePageSize = pageSize === 0 ? Math.max(rows.length, 1) : pageSize; // pageSize=0 代表「全部」
-  const pageCount = Math.max(1, Math.ceil(rows.length / effectivePageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * effectivePageSize;
-  const pageRows = rows.slice(start, start + effectivePageSize);
+  const { pageRows, pageCount, current, effectiveSize: effectivePageSize } = paginate(rows, page, pageSize);
 
   const pick = (f: Filter) => {
     setFilter(f);
@@ -170,7 +168,6 @@ export function ItemsTable({
       <ListToolbar
         tabs={{ tabs: tabs.map((t) => ({ ...t, count: countOf(t.key) })), value: filter, onChange: pick }}
         pageSize={pageSize}
-        pageSizeAllOption
         onPageSizeChange={(n) => {
           setPageSize(n);
           setPage(1);
@@ -249,7 +246,13 @@ export function ItemsTable({
                 />
               </Td>
               <Td>
-                <span className="mr-1.5">{it.emoji}</span>
+                <span className="mr-1.5 inline-flex size-10 items-center justify-center align-middle">
+                  {it.imageUrl ? (
+                    <Image src={it.imageUrl} alt="" width={40} height={40} className="size-10 rounded object-cover" />
+                  ) : (
+                    it.emoji
+                  )}
+                </span>
                 {it.name}
               </Td>
               <Td className="text-muted">

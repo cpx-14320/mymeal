@@ -12,6 +12,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  paginate,
 } from "@/components/ui/primitives";
 import type { TopupRequestView } from "@/lib/models/topup-request";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -23,13 +24,6 @@ import {
   bulkRejectTopupsAction,
   bulkDeleteTopupsAction,
 } from "@/app/(app)/admin/topups/actions";
-
-function paginate<T>(rows: T[], page: number, size: number) {
-  const pageCount = Math.max(1, Math.ceil(rows.length / size));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * size;
-  return { pageCount, current, rows: rows.slice(start, start + size) };
-}
 
 const st = {
   pending: { label: "待審核", tone: "warning" as const },
@@ -72,7 +66,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
     rejected: { data: rejected, page: rPage, setPage: setRPage },
   };
   const { data, page, setPage } = byTab[tab];
-  const { pageCount, current, rows } = paginate(data, page, pageSize);
+  const { pageCount, current, pageRows: rows, effectiveSize } = paginate(data, page, pageSize);
 
   function changeTab(next: Tab) {
     setTab(next);
@@ -272,7 +266,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
           )}
         </tbody>
       </TableWrap>
-      <Pagination page={current} pageCount={pageCount} total={data.length} pageSize={pageSize} onPage={setPage} unit="筆" />
+      <Pagination page={current} pageCount={pageCount} total={data.length} pageSize={effectiveSize} onPage={setPage} unit="筆" />
     </Section>
   );
 }

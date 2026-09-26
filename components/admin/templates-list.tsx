@@ -14,6 +14,7 @@ import {
   Pagination,
   PageSizeSelect,
   BulkActionBar,
+  paginate,
 } from "@/components/ui/primitives";
 import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import type { TemplateListItem } from "@/lib/models/template";
@@ -44,10 +45,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
       (month === "all" || t.createdAt.getMonth() + 1 === month),
   );
 
-  const pageCount = Math.max(1, Math.ceil(filteredTemplates.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = filteredTemplates.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(filteredTemplates, page, pageSize);
 
   const toggleOne = (id: string) =>
     setSelected((prev) => {
@@ -216,7 +214,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={filteredTemplates.length} pageSize={pageSize} onPage={setPage} unit="筆" />
+      <Pagination page={current} pageCount={pageCount} total={filteredTemplates.length} pageSize={effectiveSize} onPage={setPage} unit="筆" />
     </Section>
   );
 }

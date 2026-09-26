@@ -12,6 +12,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  paginate,
 } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { MemberListItem, MemberStatus } from "@/lib/models/member";
@@ -46,10 +47,7 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
       )
     : members;
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = filtered.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(filtered, page, pageSize);
 
   const toggleOne = (id: string) =>
     setSelected((prev) => {
@@ -253,7 +251,7 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
         page={current}
         pageCount={pageCount}
         total={filtered.length}
-        pageSize={pageSize}
+        pageSize={effectiveSize}
         onPage={setPage}
         unit="筆"
       />

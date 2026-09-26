@@ -13,6 +13,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  paginate,
 } from "@/components/ui/primitives";
 import type { OrderZoneView } from "@/lib/models/order-zone";
 import { setZonesActiveAction, deleteZonesAction } from "@/app/(app)/admin/zones/actions";
@@ -31,10 +32,7 @@ export function ZonesList({
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
 
-  const pageCount = Math.max(1, Math.ceil(zones.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = zones.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(zones, page, pageSize);
 
   const toggleOne = (id: string) =>
     setSelected((prev) => {
@@ -159,7 +157,7 @@ export function ZonesList({
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={zones.length} pageSize={pageSize} onPage={setPage} unit="筆" />
+      <Pagination page={current} pageCount={pageCount} total={zones.length} pageSize={effectiveSize} onPage={setPage} unit="筆" />
     </div>
   );
 }

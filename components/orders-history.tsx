@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PageSizeSelect, Pagination } from "@/components/ui/primitives";
+import { PageSizeSelect, Pagination, paginate } from "@/components/ui/primitives";
 import { OrderRow, type Order } from "@/components/order-row";
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -24,10 +24,7 @@ export function OrdersHistory({ rows: allHistory }: { rows: Order[] }) {
     return (year === "all" || y === year) && (month === "all" || m === month);
   });
 
-  const pageCount = Math.max(1, Math.ceil(history.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = history.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(history, page, pageSize);
 
   if (allHistory.length === 0) {
     return <p className="text-sm text-muted">還沒有已完成的訂單紀錄。</p>;
@@ -91,7 +88,7 @@ export function OrdersHistory({ rows: allHistory }: { rows: Order[] }) {
         page={current}
         pageCount={pageCount}
         total={history.length}
-        pageSize={pageSize}
+        pageSize={effectiveSize}
         onPage={setPage}
         unit="筆"
       />

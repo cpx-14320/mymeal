@@ -21,6 +21,7 @@ export async function createItemAction(
   const price = Number(formData.get("price") ?? 0);
   const emoji = String(formData.get("emoji") ?? "").trim();
   const imageUrl = String(formData.get("imageUrl") ?? "").trim();
+  const pendingItemId = String(formData.get("pendingItemId") ?? "").trim() || undefined;
   const tags = collectTagsFromFormData(formData);
   const active = formData.get("active") !== "false";
 
@@ -30,9 +31,8 @@ export async function createItemAction(
   const memberId = await getSessionMemberId();
   const member = memberId ? await findMemberById(memberId) : null;
 
-  let itemId: string;
   try {
-    const item = await createCatalogItem(
+    await createCatalogItem(
       {
         name,
         categoryId,
@@ -44,12 +44,12 @@ export async function createItemAction(
         active,
       },
       member?.name,
+      pendingItemId,
     );
-    itemId = item.id;
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
   revalidatePath("/admin/items");
-  redirect(`/admin/items/${itemId}`);
+  redirect("/admin/items");
 }

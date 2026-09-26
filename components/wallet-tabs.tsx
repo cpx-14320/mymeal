@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PillTabs, PageSizeSelect, Pagination, TableWrap, Th, Td } from "@/components/ui/primitives";
+import { PillTabs, PageSizeSelect, Pagination, TableWrap, Th, Td, paginate } from "@/components/ui/primitives";
 import { formatTaiwanDateTime } from "@/lib/date";
 import type { WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
 import type { TopupRequestView } from "@/lib/models/topup-request";
@@ -12,13 +12,6 @@ const ledgerTypeLabel: Record<LedgerType, string> = {
   refund: "退款",
   adjustment: "手動調整",
 };
-
-function paginate<T>(rows: T[], page: number, size: number) {
-  const pageCount = Math.max(1, Math.ceil(rows.length / size));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * size;
-  return { pageCount, current, rows: rows.slice(start, start + size) };
-}
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
@@ -132,7 +125,7 @@ export function WalletTabs({
               </tr>
             </thead>
             <tbody>
-              {t.rows.map((tx) => (
+              {t.pageRows.map((tx) => (
                 <tr key={tx.id}>
                   <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(tx.at)}</Td>
                   <Td>{ledgerTypeLabel[tx.type]}</Td>
@@ -143,7 +136,7 @@ export function WalletTabs({
                   <Td className="text-right tabular-nums">{tx.balanceAfter}</Td>
                 </tr>
               ))}
-              {t.rows.length === 0 && (
+              {t.pageRows.length === 0 && (
                 <tr>
                   <Td colSpan={5} className="text-center text-muted">
                     這個範圍內還沒有任何交易紀錄。
@@ -156,7 +149,7 @@ export function WalletTabs({
             page={t.current}
             pageCount={t.pageCount}
             total={filteredLedger.length}
-            pageSize={pageSize}
+            pageSize={t.effectiveSize}
             onPage={setTxnsPage}
             unit="筆"
           />
@@ -174,14 +167,14 @@ export function WalletTabs({
               </tr>
             </thead>
             <tbody>
-              {(tab === "pending" ? p : tab === "approved" ? a : r).rows.map((req) => (
+              {(tab === "pending" ? p : tab === "approved" ? a : r).pageRows.map((req) => (
                 <tr key={req.id}>
                   <Td className="whitespace-nowrap text-muted">{formatTaiwanDateTime(req.at)}</Td>
                   <Td className="text-right tabular-nums">NT$ {req.amount}</Td>
                   <Td>{req.method}</Td>
                 </tr>
               ))}
-              {(tab === "pending" ? p : tab === "approved" ? a : r).rows.length === 0 && (
+              {(tab === "pending" ? p : tab === "approved" ? a : r).pageRows.length === 0 && (
                 <tr>
                   <Td colSpan={3} className="text-center text-muted">
                     這個範圍內沒有資料。
@@ -194,7 +187,7 @@ export function WalletTabs({
             page={(tab === "pending" ? p : tab === "approved" ? a : r).current}
             pageCount={(tab === "pending" ? p : tab === "approved" ? a : r).pageCount}
             total={tab === "pending" ? pending.length : tab === "approved" ? approved.length : rejected.length}
-            pageSize={pageSize}
+            pageSize={(tab === "pending" ? p : tab === "approved" ? a : r).effectiveSize}
             onPage={tab === "pending" ? setPendingPage : tab === "approved" ? setApprovedPage : setRejectedPage}
             unit="筆"
           />

@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Section,
   Button,
@@ -201,7 +202,11 @@ export function TemplateEditor({
                 {sec.items.map((it) => (
                   <li key={it.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
                     <span className="flex items-center gap-2">
-                      <span>{it.emoji}</span>
+                      {it.imageUrl ? (
+                        <Image src={it.imageUrl} alt="" width={20} height={20} className="size-5 rounded object-cover" />
+                      ) : (
+                        <span>{it.emoji}</span>
+                      )}
                       <span className="font-medium">{it.name}</span>
                     </span>
                     <span className="flex items-center gap-3">
@@ -331,7 +336,11 @@ function ItemPicker({
         {filtered.map((it) => (
           <li key={it.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
             <span className="flex items-center gap-2">
-              <span>{it.emoji}</span>
+              {it.imageUrl ? (
+                <Image src={it.imageUrl} alt="" width={20} height={20} className="size-5 rounded object-cover" />
+              ) : (
+                <span>{it.emoji}</span>
+              )}
               <span className="font-medium">{it.name}</span>
               <span className="text-[13px] lg:text-[14px] text-muted">NT$ {it.price}</span>
             </span>

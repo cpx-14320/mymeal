@@ -283,17 +283,30 @@ export function PillTabs<T extends string>({
 
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
-/** 「每頁顯示 [10/25/50/100] 筆」下拉，放在表格上方最右邊。
- *  allOption 開了才多一個「全部」選項（value=0）——呼叫端自己把 0 換算成當下實際筆數，
- *  這支元件不管換算，維持跟其他頁面一樣「顯示固定筆數」的預設行為。 */
+/** 分頁共用邏輯：size<=0 代表「全部」，回傳這頁實際要渲染的資料＋給 Pagination 元件用的
+ *  頁碼/總頁數/「每頁筆數」（全部時就是全部筆數本身，讓 Pagination 顯示「全部 N 筆」正確）。
+ *  全站列表（品項設定、團訂、儲值審核、錢包、會員洞察、供應商、會員、專區、模板…）都共用這支，
+ *  不要各自手刻切片邏輯——要調整分頁行為（例如全部要不要有上限）只改這裡就好。 */
+export function paginate<T>(rows: T[], page: number, size: number) {
+  const effectiveSize = size > 0 ? size : Math.max(rows.length, 1);
+  const pageCount = Math.max(1, Math.ceil(rows.length / effectiveSize));
+  const current = Math.min(Math.max(1, page), pageCount);
+  const start = (current - 1) * effectiveSize;
+  return {
+    pageRows: rows.slice(start, start + effectiveSize),
+    pageCount,
+    current,
+    effectiveSize,
+  };
+}
+
+/** 「每頁顯示 [10/25/50/100/全部] 筆」下拉，放在表格上方最右邊。 */
 export function PageSizeSelect({
   value,
   onChange,
-  allOption = false,
 }: {
   value: number;
   onChange: (n: number) => void;
-  allOption?: boolean;
 }) {
   return (
     <label className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted">
@@ -309,7 +322,7 @@ export function PageSizeSelect({
             {n}
           </option>
         ))}
-        {allOption && <option value={0}>全部</option>}
+        <option value={0}>全部</option>
       </select>
       筆
     </label>
@@ -326,14 +339,11 @@ export function ListToolbar<T extends string = string>({
   search,
   pageSize,
   onPageSizeChange,
-  pageSizeAllOption,
 }: {
   tabs?: { tabs: { key: T; label: string; count?: number }[]; value: T; onChange: (key: T) => void };
   search?: { value: string; onChange: (value: string) => void; placeholder: string };
   pageSize: number;
   onPageSizeChange: (n: number) => void;
-  /** 轉發給 PageSizeSelect 的 allOption，加一個「全部」選項。 */
-  pageSizeAllOption?: boolean;
 }) {
   return (
     <div className="flex min-h-9 flex-wrap items-center justify-between gap-3">
@@ -348,7 +358,7 @@ export function ListToolbar<T extends string = string>({
           />
         )}
       </div>
-      <PageSizeSelect value={pageSize} onChange={onPageSizeChange} allOption={pageSizeAllOption} />
+      <PageSizeSelect value={pageSize} onChange={onPageSizeChange} />
     </div>
   );
 }

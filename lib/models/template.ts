@@ -96,7 +96,7 @@ export async function listTemplates(): Promise<TemplateListItem[]> {
 export interface TemplateSectionDetail {
   id: string;
   name: string;
-  items: { id: string; name: string; emoji: string; price: number; pageName?: string }[];
+  items: { id: string; name: string; emoji: string; imageUrl?: string; price: number; pageName?: string }[];
 }
 
 export interface TemplateDetail {
@@ -133,10 +133,11 @@ function toTemplateDetail(doc: PopulatedTemplateDoc): TemplateDetail {
     sections: doc.sections.map((s) => ({
       id: String(s._id),
       name: s.name,
-      items: (s.itemIds as unknown as Array<PopulatedRef & { emoji: string; price: number; pageId?: PopulatedRef }>).map((it) => ({
+      items: (s.itemIds as unknown as Array<PopulatedRef & { emoji: string; imageUrl?: string; price: number; pageId?: PopulatedRef }>).map((it) => ({
         id: String(it._id),
         name: it.name,
         emoji: it.emoji,
+        imageUrl: it.imageUrl,
         price: it.price,
         pageName: it.pageId?.name,
       })),

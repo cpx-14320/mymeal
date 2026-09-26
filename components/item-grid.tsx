@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PillTabs, PageSizeSelect, Pagination } from "@/components/ui/primitives";
+import { PillTabs, PageSizeSelect, Pagination, paginate } from "@/components/ui/primitives";
 import { ItemCard } from "@/components/item-card";
 import { useLoginModal } from "@/components/layout/login-modal-context";
 import { toggleFavoriteAction } from "@/app/(app)/favorite-actions";
@@ -71,10 +71,7 @@ export function ItemGrid({
       ? scopedItems.length
       : scopedItems.filter((it) => it.categoryName === f).length;
 
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const pageRows = rows.slice(start, start + pageSize);
+  const { pageRows, pageCount, current, effectiveSize } = paginate(rows, page, pageSize);
 
   async function toggleFavorite(id: string) {
     if (pendingIds.has(id)) return;
@@ -140,7 +137,7 @@ export function ItemGrid({
         page={current}
         pageCount={pageCount}
         total={rows.length}
-        pageSize={pageSize}
+        pageSize={effectiveSize}
         onPage={setPage}
         unit="項"
       />

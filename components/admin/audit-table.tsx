@@ -8,6 +8,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  paginate,
 } from "@/components/ui/primitives";
 import type { AuditLogRow } from "@/lib/models/audit-log";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -23,10 +24,7 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
     return l.actor.includes(q) || l.target.includes(q) || l.action.includes(q);
   });
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = filtered.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(filtered, page, pageSize);
 
   return (
     <div className="space-y-4">
@@ -83,7 +81,7 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
         page={current}
         pageCount={pageCount}
         total={filtered.length}
-        pageSize={pageSize}
+        pageSize={effectiveSize}
         onPage={setPage}
         unit="筆"
       />

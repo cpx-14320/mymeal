@@ -8,6 +8,7 @@ import {
   Th,
   Td,
   Badge,
+  paginate,
 } from "@/components/ui/primitives";
 import type { FavoriteView } from "@/lib/models/favorite";
 import type { ItemReviewView } from "@/lib/models/item-review";
@@ -36,13 +37,6 @@ const ledgerTypeTone: Record<LedgerType, "positive" | "warning" | "neutral"> = {
   spend: "warning",
   adjustment: "neutral",
 };
-
-function paginate<T>(rows: T[], page: number, size: number) {
-  const pageCount = Math.max(1, Math.ceil(rows.length / size));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * size;
-  return { pageCount, current, rows: rows.slice(start, start + size) };
-}
 
 function stars(n: number) {
   return "★".repeat(n) + "☆".repeat(5 - n);
@@ -118,7 +112,7 @@ export function MemberInsightTabs({
                 </tr>
               </thead>
               <tbody>
-                {orders.rows.map((o) => (
+                {orders.pageRows.map((o) => (
                   <tr key={o.itemId}>
                     <Td>{o.itemName}</Td>
                     <Td className="text-muted">{o.category}</Td>
@@ -137,7 +131,7 @@ export function MemberInsightTabs({
               page={orders.current}
               pageCount={orders.pageCount}
               total={breakdown.length}
-              pageSize={pageSize}
+              pageSize={orders.effectiveSize}
               onPage={setOrdersPage}
               unit="筆"
             />
@@ -160,7 +154,7 @@ export function MemberInsightTabs({
                 </tr>
               </thead>
               <tbody>
-                {topups.rows.map((t) => (
+                {topups.pageRows.map((t) => (
                   <tr key={t.id}>
                     <Td>
                       <Badge tone={ledgerTypeTone[t.type]}>{ledgerTypeLabel[t.type]}</Badge>
@@ -185,7 +179,7 @@ export function MemberInsightTabs({
               page={topups.current}
               pageCount={topups.pageCount}
               total={ledger.length}
-              pageSize={pageSize}
+              pageSize={topups.effectiveSize}
               onPage={setTopupsPage}
               unit="筆"
             />
@@ -207,7 +201,7 @@ export function MemberInsightTabs({
                 </tr>
               </thead>
               <tbody>
-                {favoritesPaged.rows.map((f) => (
+                {favoritesPaged.pageRows.map((f) => (
                   <tr key={f.itemId}>
                     <Td>
                       <span className="mr-1.5">{f.emoji}</span>
@@ -226,7 +220,7 @@ export function MemberInsightTabs({
               page={favoritesPaged.current}
               pageCount={favoritesPaged.pageCount}
               total={favorites.length}
-              pageSize={pageSize}
+              pageSize={favoritesPaged.effectiveSize}
               onPage={setFavoritesPage}
               unit="筆"
             />
@@ -248,7 +242,7 @@ export function MemberInsightTabs({
                 </tr>
               </thead>
               <tbody>
-                {commentsPaged.rows.map((c) => (
+                {commentsPaged.pageRows.map((c) => (
                   <tr key={c.itemId}>
                     <Td>{c.itemName}</Td>
                     <Td className="text-muted">{c.text}</Td>
@@ -262,7 +256,7 @@ export function MemberInsightTabs({
               page={commentsPaged.current}
               pageCount={commentsPaged.pageCount}
               total={comments.length}
-              pageSize={pageSize}
+              pageSize={commentsPaged.effectiveSize}
               onPage={setCommentsPage}
               unit="筆"
             />
@@ -283,7 +277,7 @@ export function MemberInsightTabs({
                 </tr>
               </thead>
               <tbody>
-                {ratingsPaged.rows.map((r) => (
+                {ratingsPaged.pageRows.map((r) => (
                   <tr key={r.itemId}>
                     <Td>{r.itemName}</Td>
                     <Td>
@@ -301,7 +295,7 @@ export function MemberInsightTabs({
               page={ratingsPaged.current}
               pageCount={ratingsPaged.pageCount}
               total={ratings.length}
-              pageSize={pageSize}
+              pageSize={ratingsPaged.effectiveSize}
               onPage={setRatingsPage}
               unit="筆"
             />

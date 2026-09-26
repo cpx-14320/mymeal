@@ -10,6 +10,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  paginate,
 } from "@/components/ui/primitives";
 import type { GroupOrderListItem, GroupOrderStatus } from "@/lib/models/group-order";
 import { setGroupOrdersStatusAction, deleteGroupOrdersAction } from "@/app/(app)/admin/group-orders/actions";
@@ -39,10 +40,7 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
   const activeFilter = filters.find((f) => f.label === filterLabel) ?? filters[0];
   const filtered = rows.filter(activeFilter.test);
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const pageRows = filtered.slice(start, start + pageSize);
+  const { pageRows, pageCount, current, effectiveSize } = paginate(filtered, page, pageSize);
 
   const toggleOne = (id: string) =>
     setSelected((prev) => {
@@ -165,7 +163,7 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={filtered.length} pageSize={pageSize} onPage={setPage} unit="筆" />
+      <Pagination page={current} pageCount={pageCount} total={filtered.length} pageSize={effectiveSize} onPage={setPage} unit="筆" />
     </div>
   );
 }

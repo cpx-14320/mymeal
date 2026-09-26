@@ -8,6 +8,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  paginate,
 } from "@/components/ui/primitives";
 import type { MemberListItem } from "@/lib/models/member";
 
@@ -27,10 +28,7 @@ export function MemberInsightsTable({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const pageCount = Math.max(1, Math.ceil(members.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = members.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(members, page, pageSize);
 
   return (
     <div className="space-y-4">
@@ -93,7 +91,7 @@ export function MemberInsightsTable({
         page={current}
         pageCount={pageCount}
         total={members.length}
-        pageSize={pageSize}
+        pageSize={effectiveSize}
         onPage={setPage}
         unit="筆"
       />

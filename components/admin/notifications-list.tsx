@@ -14,6 +14,7 @@ import {
   ListToolbar,
   BulkActionBar,
   Note,
+  paginate,
 } from "@/components/ui/primitives";
 import type { NotificationView } from "@/lib/models/notification";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -28,10 +29,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
   const [deleting, setDeleting] = useState(false);
   const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
 
-  const pageCount = Math.max(1, Math.ceil(notifications.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = notifications.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(notifications, page, pageSize);
 
   const toggleOne = (id: string) =>
     setSelected((prev) => {
@@ -148,7 +146,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={notifications.length} pageSize={pageSize} onPage={setPage} unit="筆" />
+      <Pagination page={current} pageCount={pageCount} total={notifications.length} pageSize={effectiveSize} onPage={setPage} unit="筆" />
     </div>
   );
 }

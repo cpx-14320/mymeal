@@ -14,6 +14,7 @@ import {
   ListToolbar,
   BulkActionBar,
   Note,
+  paginate,
 } from "@/components/ui/primitives";
 import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -29,10 +30,7 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
   const [deleting, setDeleting] = useState(false);
   const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
 
-  const pageCount = Math.max(1, Math.ceil(pages.length / pageSize));
-  const current = Math.min(page, pageCount);
-  const start = (current - 1) * pageSize;
-  const rows = pages.slice(start, start + pageSize);
+  const { pageRows: rows, pageCount, current, effectiveSize } = paginate(pages, page, pageSize);
 
   const toggleOne = (id: string) =>
     setSelected((prev) => {
@@ -163,7 +161,7 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
         </tbody>
       </TableWrap>
 
-      <Pagination page={current} pageCount={pageCount} total={pages.length} pageSize={pageSize} onPage={setPage} unit="筆" />
+      <Pagination page={current} pageCount={pageCount} total={pages.length} pageSize={effectiveSize} onPage={setPage} unit="筆" />
     </Section>
   );
 }

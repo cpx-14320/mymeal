@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { updateCatalogItem, collectTagsFromFormData } from "@/lib/models/catalog-item";
 
@@ -41,6 +42,5 @@ export async function updateItemAction(
   }
 
   revalidatePath("/admin/items");
-  revalidatePath(`/admin/items/${id}`);
-  return { success: true };
+  redirect("/admin/items");
 }

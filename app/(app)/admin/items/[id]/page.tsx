@@ -24,7 +24,7 @@ export default async function EditItemPage({
 
   return (
     <Section
-      title={`編輯品項：${item.name}`}
+      title={item.name}
       description="改名稱或預設價，所有引用此品項的模板同步；已成立的歷史訂單已快照，不受影響。"
     >
       <ItemForm item={item} categories={categories} pages={pages} tagGroups={tagGroups} />

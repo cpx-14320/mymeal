@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import { Card, CardBody, Field, inputClass, Button, ButtonLink } from "@/components/ui/primitives";
 import { ImageField } from "@/components/admin/image-field";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
@@ -11,42 +10,49 @@ import type { TagGroupView } from "@/lib/models/tag-group";
 import { createItemAction, type CreateItemState } from "@/app/(app)/admin/items/new/actions";
 import { updateItemAction, type UpdateItemState } from "@/app/(app)/admin/items/[id]/actions";
 
-/** 新增 / 編輯品項共用的表單。傳 item 就是編輯模式（欄位帶入現值）。 */
+/** 新增 / 編輯品項共用的表單。傳 item 就是編輯模式（欄位帶入現值）。
+ *  pendingItemId：新增模式下，進頁面就先產生好的品項 id（見 new/page.tsx），
+ *  讓圖片選檔當下上傳就能用「未來這個品項的 id」命名，不用等存檔後才知道 id。 */
 export function ItemForm({
   item,
   categories,
   pages,
   tagGroups,
+  pendingItemId,
 }: {
   item?: CatalogItemView;
   categories: ItemCategoryOption[];
   pages: PageView[];
   tagGroups: TagGroupView[];
+  pendingItemId?: string;
 }) {
-  const router = useRouter();
   const isEdit = !!item;
   const action = isEdit ? updateItemAction.bind(null, item.id) : createItemAction;
   const [state, formAction, pending] = useActionState<CreateItemState | UpdateItemState, FormData>(
     action,
     {},
   );
-
-  useEffect(() => {
-    if (isEdit && state.success) router.refresh();
-  }, [isEdit, state.success, router]);
+  const itemId = item?.id ?? pendingItemId!;
+  const [imageUploading, setImageUploading] = useState(false);
 
   return (
     <form action={formAction}>
       <Card>
         <CardBody className="space-y-5">
-          <ImageField defaultPath={item?.imageUrl} fallbackEmoji={item?.emoji} />
+          {!isEdit && <input type="hidden" name="pendingItemId" value={pendingItemId} />}
+          <ImageField
+            itemId={itemId}
+            defaultPath={item?.imageUrl}
+            fallbackEmoji={item?.emoji}
+            onUploadingChange={setImageUploading}
+          />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="品項名稱">
               <input className={inputClass} name="name" defaultValue={item?.name} placeholder="例：招牌雞腿飯" required />
             </Field>
 
-            <Field label="備用圖示 emoji" hint="沒有圖片時，清單縮圖顯示這個">
+            <Field label="備用圖示Emoji">
               <input className={inputClass} name="emoji" maxLength={4} defaultValue={item?.emoji} placeholder="🍗" />
             </Field>
           </div>
@@ -141,7 +147,9 @@ export function ItemForm({
         <ButtonLink href="/admin/items" variant="ghost">
           {isEdit ? "返回列表" : "取消"}
         </ButtonLink>
-        <Button disabled={pending}>{pending ? "儲存中…" : isEdit ? "儲存" : "建立品項"}</Button>
+        <Button disabled={pending || imageUploading}>
+          {pending ? "儲存中…" : imageUploading ? "圖片上傳中…" : isEdit ? "儲存" : "建立品項"}
+        </Button>
       </div>
     </form>
   );
