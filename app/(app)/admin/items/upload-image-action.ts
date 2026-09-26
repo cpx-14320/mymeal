@@ -1,7 +1,9 @@
 "use server";
 
 import { put } from "@vercel/blob";
+import { revalidatePath } from "next/cache";
 import { MAX_UPLOAD_IMAGE_BYTES, MAX_UPLOAD_IMAGE_LABEL } from "@/lib/upload-limits";
+import { listCatalogItems, setCatalogItemImage } from "@/lib/models/catalog-item";
 
 export interface UploadImageState {
   url?: string;
@@ -38,4 +40,60 @@ export async function uploadItemImageAction(formData: FormData): Promise<UploadI
   } catch (err) {
     return { error: err instanceof Error ? err.message : "上傳失敗，請稍後再試。" };
   }
+}
+
+export interface BatchUploadImagesResult {
+  /** 成功比對並上傳的品項名稱。 */
+  uploaded: string[];
+  /** 檔名（去除副檔名）比不到任何品項名稱。 */
+  unmatched: string[];
+  /** 「檔名：原因」。 */
+  errors: string[];
+}
+
+/** 批次上傳品項圖片：一次選多個檔案，以「檔名（去除副檔名）」比對品項名稱——
+ *  對上就用該品項真正的 _id 命名（跟單張上傳同一套命名邏輯）上傳到 Blob，
+ *  再把回傳網址存回該品項的 imageUrl；比不到名稱的檔案列在 unmatched，
+ *  不會自動建立新品項（批次上傳只補圖，不是用來新增品項的）。 */
+export async function batchUploadItemImagesAction(formData: FormData): Promise<BatchUploadImagesResult> {
+  const files = formData.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
+  const uploaded: string[] = [];
+  const unmatched: string[] = [];
+  const errors: string[] = [];
+  if (files.length === 0) return { uploaded, unmatched, errors };
+
+  const items = await listCatalogItems();
+  const idByName = new Map(items.map((it) => [it.name, it.id]));
+
+  for (const file of files) {
+    const dot = file.name.lastIndexOf(".");
+    const base = (dot > 0 ? file.name.slice(0, dot) : file.name).trim();
+    const ext = dot > 0 ? file.name.slice(dot) : "";
+
+    const itemId = idByName.get(base);
+    if (!itemId) {
+      unmatched.push(file.name);
+      continue;
+    }
+    if (!file.type.startsWith("image/")) {
+      errors.push(`${file.name}：不是圖片檔案，已略過。`);
+      continue;
+    }
+    if (file.size > MAX_UPLOAD_IMAGE_BYTES) {
+      errors.push(`${file.name}：圖片檔案過大（超過 ${MAX_UPLOAD_IMAGE_LABEL}），已略過。`);
+      continue;
+    }
+
+    try {
+      const filename = `mymeal/items_images/${itemId}${ext}`;
+      const blob = await put(filename, file, { access: "public", allowOverwrite: true });
+      await setCatalogItemImage(itemId, blob.url);
+      uploaded.push(base);
+    } catch (err) {
+      errors.push(`${file.name}：${err instanceof Error ? err.message : "上傳失敗"}`);
+    }
+  }
+
+  revalidatePath("/admin/items");
+  return { uploaded, unmatched, errors };
 }

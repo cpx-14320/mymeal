@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition, type ChangeEvent } from "react";
+import { useRef, useTransition, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { buttonClass } from "@/components/ui/primitives";
 import { downloadCsv, parseCsv } from "@/lib/csv-export";
@@ -69,10 +69,17 @@ function parseImportRows(text: string) {
   }));
 }
 
-export function ItemsCsvButtons({ items, tagGroups }: { items: CatalogItemView[]; tagGroups: TagGroupView[] }) {
+export function ItemsCsvButtons({
+  items,
+  tagGroups,
+  onResult,
+}: {
+  items: CatalogItemView[];
+  tagGroups: TagGroupView[];
+  onResult: (summary: ItemImportSummary) => void;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [summary, setSummary] = useState<ItemImportSummary | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
@@ -85,7 +92,7 @@ export function ItemsCsvButtons({ items, tagGroups }: { items: CatalogItemView[]
 
     startTransition(async () => {
       const result = await importItemsAction(rows);
-      setSummary(result);
+      onResult(result);
       router.refresh();
     });
   }
@@ -110,47 +117,6 @@ export function ItemsCsvButtons({ items, tagGroups }: { items: CatalogItemView[]
           onChange={handleFile}
         />
       </label>
-
-      {summary && (
-        <div className="fixed right-4 top-4 z-50 w-80 space-y-2 rounded-lg border border-line bg-surface p-4 text-sm shadow-lg">
-          <div className="flex items-center justify-between">
-            <p className="font-semibold">匯入結果</p>
-            <button
-              type="button"
-              onClick={() => setSummary(null)}
-              className="text-muted hover:text-ink"
-              aria-label="關閉"
-            >
-              ✕
-            </button>
-          </div>
-          <p className="text-muted">
-            新增 {summary.created} 筆，更新 {summary.updated} 筆。
-          </p>
-          {(summary.categoriesCreated.length > 0 ||
-            summary.tagGroupsCreated.length > 0 ||
-            summary.tagOptionsCreated.length > 0) && (
-            <ul className="max-h-32 list-disc space-y-0.5 overflow-y-auto pl-4 text-muted">
-              {summary.categoriesCreated.map((name, i) => (
-                <li key={`cat-${i}`}>已自動建立分類「{name}」</li>
-              ))}
-              {summary.tagGroupsCreated.map((name, i) => (
-                <li key={`grp-${i}`}>已自動建立標籤群組「{name}」</li>
-              ))}
-              {summary.tagOptionsCreated.map((label, i) => (
-                <li key={`opt-${i}`}>已自動新增標籤選項「{label}」</li>
-              ))}
-            </ul>
-          )}
-          {summary.errors.length > 0 && (
-            <ul className="max-h-40 list-disc space-y-0.5 overflow-y-auto pl-4 text-danger">
-              {summary.errors.map((err, i) => (
-                <li key={i}>{err}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
     </div>
   );
 }

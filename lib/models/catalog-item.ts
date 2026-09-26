@@ -159,11 +159,32 @@ export async function findCatalogItemById(id: string): Promise<CatalogItemView |
   return doc ? toView(doc) : null;
 }
 
+/** 圖片路徑欄位允許手動輸入（不一定是上傳出來的 Blob 網址），
+ *  但要嘛是「/」開頭的站內路徑，要嘛是完整網址，否則 next/image 在渲染時
+ *  會直接對這個字串呼叫 new URL() 而丟出例外，把整頁弄掛（例如「全部」顯示、
+ *  一次渲染所有品項卡片時中一張圖）——所以存檔前就先擋掉，不合格式的直接告知使用者。 */
+function isValidImageUrl(value: string): boolean {
+  if (value.startsWith("/")) return true;
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function checkImageUrl(imageUrl: string | undefined) {
+  if (imageUrl && !isValidImageUrl(imageUrl)) {
+    throw new Error("品項圖片路徑格式不正確，請用「/」開頭的路徑或完整網址，或改用上傳圖片。");
+  }
+}
+
 function buildDoc(input: CatalogItemInput) {
   if (!Types.ObjectId.isValid(input.categoryId)) throw new Error("請選擇有效的分類。");
   if (input.pageId && !Types.ObjectId.isValid(input.pageId)) {
     throw new Error("請選擇有效的頁面。");
   }
+  checkImageUrl(input.imageUrl);
   return {
     name: input.name,
     categoryId: new Types.ObjectId(input.categoryId),
@@ -185,6 +206,7 @@ function buildUpdate(input: CatalogItemInput) {
   if (input.pageId && !Types.ObjectId.isValid(input.pageId)) {
     throw new Error("請選擇有效的頁面。");
   }
+  checkImageUrl(input.imageUrl);
   const set: Record<string, unknown> = {
     name: input.name,
     categoryId: new Types.ObjectId(input.categoryId),
@@ -270,6 +292,13 @@ export async function patchCatalogItem(
   if (Object.keys(set).length === 0) return;
 
   await CatalogItem.updateOne({ _id: new Types.ObjectId(id) }, { $set: set });
+}
+
+/** 批次上傳圖片用：只更新 imageUrl，不動其他欄位（圖片本身已經上傳到 Blob，這裡只是把網址存回去）。 */
+export async function setCatalogItemImage(id: string, imageUrl: string): Promise<void> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(id)) throw new Error("無效的品項 id");
+  await CatalogItem.updateOne({ _id: new Types.ObjectId(id) }, { $set: { imageUrl } });
 }
 
 /** pageId 傳空字串／undefined 代表「取消掛頁面」，用 $unset 而非把欄位存成空字串。 */
