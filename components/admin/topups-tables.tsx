@@ -13,6 +13,7 @@ import {
   ListToolbar,
   BulkActionBar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { TopupRequestView } from "@/lib/models/topup-request";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -40,7 +41,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   const [pPage, setPPage] = useState(1);
   const [aPage, setAPage] = useState(1);
   const [rPage, setRPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());

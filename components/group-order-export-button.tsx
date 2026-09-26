@@ -8,7 +8,7 @@ export function GroupOrderExportButton({
   lines,
   host,
   filename,
-  label = "匯出資料",
+  label = "匯出 CSV",
 }: {
   lines: OrderLine[];
   host: string;

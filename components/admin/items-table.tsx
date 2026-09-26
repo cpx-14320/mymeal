@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import {
   Badge,
   Button,
@@ -15,6 +14,8 @@ import {
   BulkActionBar,
   inputClass,
   paginate,
+  DEFAULT_PAGE_SIZE,
+  ItemThumbnail,
 } from "@/components/ui/primitives";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
@@ -63,7 +64,7 @@ export function ItemsTable({
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
 
@@ -247,11 +248,13 @@ export function ItemsTable({
               </Td>
               <Td>
                 <span className="mr-1.5 inline-flex size-10 items-center justify-center align-middle">
-                  {it.imageUrl ? (
-                    <Image src={it.imageUrl} alt="" width={40} height={40} className="size-10 rounded object-cover" />
-                  ) : (
-                    it.emoji
-                  )}
+                  <ItemThumbnail
+                    imageUrl={it.imageUrl}
+                    emoji={it.emoji}
+                    alt=""
+                    size={40}
+                    className="size-10 rounded object-cover"
+                  />
                 </span>
                 {it.name}
               </Td>

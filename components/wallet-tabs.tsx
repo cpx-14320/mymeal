@@ -1,7 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PillTabs, PageSizeSelect, Pagination, TableWrap, Th, Td, paginate } from "@/components/ui/primitives";
+import {
+  PillTabs,
+  PageSizeSelect,
+  Pagination,
+  TableWrap,
+  Th,
+  Td,
+  paginate,
+  DEFAULT_PAGE_SIZE,
+} from "@/components/ui/primitives";
 import { formatTaiwanDateTime } from "@/lib/date";
 import type { WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
 import type { TopupRequestView } from "@/lib/models/topup-request";
@@ -27,7 +36,7 @@ export function WalletTabs({
   const [tab, setTab] = useState<Tab>("txns");
   const [year, setYear] = useState<number | "all">("all");
   const [month, setMonth] = useState<number | "all">("all");
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [txnsPage, setTxnsPage] = useState(1);
   const [pendingPage, setPendingPage] = useState(1);
   const [approvedPage, setApprovedPage] = useState(1);

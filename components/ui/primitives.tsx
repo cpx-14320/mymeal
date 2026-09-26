@@ -1,5 +1,58 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ComponentProps, ReactNode } from "react";
+
+/* ── 品項縮圖 ──────────────────────────────────────────
+ * 有上傳圖片就用 next/image，沒有就退回 emoji——全站每個顯示品項縮圖的地方
+ * （品項卡片、列表縮圖、模板編輯的品項清單、團訂點餐卡片…）都共用這兩支，
+ * 不要各自重寫一次「imageUrl ? <Image> : emoji」的判斷。
+ * ItemThumbnail：固定像素大小（列表縮圖、小圖示）。
+ * ItemThumbnailFill：填滿容器（卡片式、需要指定容器 aspect ratio 的大圖）。 */
+
+export function ItemThumbnail({
+  imageUrl,
+  emoji,
+  alt,
+  size,
+  className,
+  emojiClassName,
+}: {
+  imageUrl?: string;
+  emoji: string;
+  alt: string;
+  size: number;
+  className?: string;
+  emojiClassName?: string;
+}) {
+  if (imageUrl) {
+    return <Image src={imageUrl} alt={alt} width={size} height={size} className={className} />;
+  }
+  return emojiClassName ? <span className={emojiClassName}>{emoji}</span> : <>{emoji}</>;
+}
+
+export function ItemThumbnailFill({
+  imageUrl,
+  emoji,
+  alt,
+  sizes,
+  containerClassName,
+}: {
+  imageUrl?: string;
+  emoji: string;
+  alt: string;
+  sizes: string;
+  containerClassName: string;
+}) {
+  return (
+    <div className={containerClassName}>
+      {imageUrl ? (
+        <Image src={imageUrl} alt={alt} fill sizes={sizes} className="object-cover" />
+      ) : (
+        emoji
+      )}
+    </div>
+  );
+}
 
 /* ── 版面 ────────────────────────────────────────────── */
 
@@ -206,15 +259,18 @@ export function Stat({
   label,
   value,
   hint,
+  valueClassName = "text-xl",
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
+  /** 覆蓋數值文字大小——預設 "text-xl"；擠在手機版一列多欄時可以傳較小/響應式的 class（例如 "text-sm sm:text-xl"）。 */
+  valueClassName?: string;
 }) {
   return (
     <div className="rounded-xl border border-line bg-surface p-4">
       <p className="text-xs text-muted">{label}</p>
-      <p className="mt-1 text-xl font-bold tracking-tight tabular-nums">{value}</p>
+      <p className={`mt-1 font-bold tracking-tight tabular-nums ${valueClassName}`}>{value}</p>
       {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
     </div>
   );
@@ -282,6 +338,10 @@ export function PillTabs<T extends string>({
 }
 
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
+
+/** 全站「每頁顯示」的預設筆數——各列表元件的 pageSize 初始值都從這裡拿，
+ *  要調整預設值只改這裡就好，不用一個個列表元件改。 */
+export const DEFAULT_PAGE_SIZE = 25;
 
 /** 分頁共用邏輯：size<=0 代表「全部」，回傳這頁實際要渲染的資料＋給 Pagination 元件用的
  *  頁碼/總頁數/「每頁筆數」（全部時就是全部筆數本身，讓 Pagination 顯示「全部 N 筆」正確）。

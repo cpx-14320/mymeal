@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PageSizeSelect, Pagination, paginate } from "@/components/ui/primitives";
+import { PageSizeSelect, Pagination, paginate, DEFAULT_PAGE_SIZE } from "@/components/ui/primitives";
 import { OrderRow, type Order } from "@/components/order-row";
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 export function OrdersHistory({ rows: allHistory }: { rows: Order[] }) {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [year, setYear] = useState<number | "all">("all");
   const [month, setMonth] = useState<number | "all">("all");
 

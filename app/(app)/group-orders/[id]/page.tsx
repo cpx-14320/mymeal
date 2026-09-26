@@ -67,7 +67,7 @@ export default async function GroupOrderDetailPage({
       : tpl.sections;
     for (const sec of sections) {
       for (const it of sec.items) {
-        dishMap.set(it.id, { id: it.id, name: it.name, emoji: it.emoji, price: it.price });
+        dishMap.set(it.id, { id: it.id, name: it.name, emoji: it.emoji, price: it.price, imageUrl: it.imageUrl });
       }
     }
   }
@@ -102,29 +102,29 @@ export default async function GroupOrderDetailPage({
     <PageContainer>
       <PageHeader
         title={group.name}
-        description={`團訂 #${group.id}．模板：${group.templateName}${
-          group.sectionName ? `（${group.sectionName}）` : ""
-        }．${
-          group.departmentName && group.unitName ? `${group.departmentName} ${group.unitName}．` : ""
-        }${group.date} 取餐`}
         actions={<Badge tone={statusMap[group.status].tone}>{statusMap[group.status].label}</Badge>}
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="截止時間" value={group.deadline || "—"} />
-        <Stat label="目前份數" value={`${group.qty} 份`} hint={`NT$ ${group.amount}`} />
-        <Stat label="所屬單位" value={group.unitName || "—"} hint={`團主：${group.hostName}`} />
+      <div className="grid grid-cols-3 gap-4">
+        <Stat label="截止時間" value={group.deadline || "—"} valueClassName="text-sm sm:text-xl" />
+        <Stat
+          label="目前份數"
+          value={`${group.qty} 份`}
+          hint={`NT$ ${group.amount}`}
+          valueClassName="text-sm sm:text-xl"
+        />
+        <Stat
+          label="所屬單位"
+          value={group.unitName || "—"}
+          hint={`團主：${group.hostName}`}
+          valueClassName="text-sm sm:text-xl"
+        />
       </div>
 
       {/* 我的餐點 */}
       <Card>
         <CardBody className="space-y-4">
-          <h2 className="text-lg font-bold tracking-tight">
-            點餐{" "}
-            <span className="text-sm font-normal text-muted">
-              （品項來自這個團使用的模板；換品項請到「模板設定」調整）
-            </span>
-          </h2>
+          <h2 className="text-lg font-bold tracking-tight">點餐區</h2>
           {dishes.length === 0 ? (
             <p className="text-sm text-muted">這個模板還沒有品項可以點。</p>
           ) : (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import { ItemThumbnail } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemStat } from "@/lib/models/item-review";
@@ -69,11 +69,14 @@ export function TopItemsCarousel({
                   key={item.id}
                   className="flex flex-col items-center gap-1.5 rounded-lg bg-brand-soft p-4 text-center"
                 >
-                  {item.imageUrl ? (
-                    <Image src={item.imageUrl} alt="" width={40} height={40} className="size-10 rounded-lg object-cover" />
-                  ) : (
-                    <span className="text-4xl">{item.emoji}</span>
-                  )}
+                  <ItemThumbnail
+                    imageUrl={item.imageUrl}
+                    emoji={item.emoji}
+                    alt=""
+                    size={40}
+                    className="size-10 rounded-lg object-cover"
+                    emojiClassName="text-4xl"
+                  />
                   <span className="text-sm font-medium">{item.name}</span>
                   <div className="flex items-center gap-2 text-xs text-muted">
                     <span className="text-warning">
@@ -134,11 +137,14 @@ export function TopItemsCarousel({
           {ranked.map(({ item, stat }, i) => (
             <li key={item.id} className="flex items-center gap-3 px-4 py-2.5">
               <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted">{i + 1}</span>
-              {item.imageUrl ? (
-                <Image src={item.imageUrl} alt="" width={28} height={28} className="size-7 shrink-0 rounded object-cover" />
-              ) : (
-                <span className="text-2xl">{item.emoji}</span>
-              )}
+              <ItemThumbnail
+                imageUrl={item.imageUrl}
+                emoji={item.emoji}
+                alt=""
+                size={28}
+                className="size-7 shrink-0 rounded object-cover"
+                emojiClassName="text-2xl"
+              />
               <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.name}</span>
               <span className="shrink-0 text-sm tabular-nums text-muted">
                 ★ {stat.avgRating !== null ? stat.avgRating.toFixed(1) : "—"}・💬 {stat.commentCount}

@@ -9,6 +9,7 @@ import {
   Td,
   Badge,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { FavoriteView } from "@/lib/models/favorite";
 import type { ItemReviewView } from "@/lib/models/item-review";
@@ -62,7 +63,7 @@ export function MemberInsightTabs({
   ratings: ItemReviewView[];
 }) {
   const [tab, setTab] = useState<Tab>("orders");
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [ordersPage, setOrdersPage] = useState(1);
   const [topupsPage, setTopupsPage] = useState(1);
   const [favoritesPage, setFavoritesPage] = useState(1);

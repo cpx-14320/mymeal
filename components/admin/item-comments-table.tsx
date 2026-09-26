@@ -8,6 +8,7 @@ import {
   Pagination,
   ListToolbar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import { formatTaiwanDateTime } from "@/lib/date";
 import type { ItemReviewEntry } from "@/lib/models/item-review";
@@ -22,7 +23,7 @@ export function ItemCommentsTable({
   comments: ItemReviewEntry[];
 }) {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(comments, page, pageSize);
 

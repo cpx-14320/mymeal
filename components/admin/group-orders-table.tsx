@@ -11,6 +11,7 @@ import {
   ListToolbar,
   BulkActionBar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { GroupOrderListItem, GroupOrderStatus } from "@/lib/models/group-order";
 import { setGroupOrdersStatusAction, deleteGroupOrdersAction } from "@/app/(app)/admin/group-orders/actions";
@@ -32,7 +33,7 @@ const filters: { label: string; test: (r: GroupOrderListItem) => boolean }[] = [
 export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [filterLabel, setFilterLabel] = useState("全部");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);

@@ -13,6 +13,7 @@ import {
   ListToolbar,
   BulkActionBar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { MemberListItem, MemberStatus } from "@/lib/models/member";
@@ -29,7 +30,7 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
   const router = useRouter();
   const [members, setMembers] = useState(initialMembers);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);

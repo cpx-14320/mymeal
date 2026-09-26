@@ -14,6 +14,7 @@ import {
   ListToolbar,
   BulkActionBar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { OrderZoneView } from "@/lib/models/order-zone";
 import { setZonesActiveAction, deleteZonesAction } from "@/app/(app)/admin/zones/actions";
@@ -28,7 +29,7 @@ export function ZonesList({
   const router = useRouter();
   const zones = [...initialZones].sort((a, b) => a.sortOrder - b.sortOrder);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
 

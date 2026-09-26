@@ -12,6 +12,7 @@ import {
   Pagination,
   ListToolbar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { WalletBalanceRow, WalletLedgerRow, LedgerType } from "@/lib/models/wallet";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -100,7 +101,7 @@ export function WalletsTables({
   const [tab, setTab] = useState<Tab>("balances");
   const [bPage, setBPage] = useState(1);
   const [tPage, setTPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [search, setSearch] = useState("");
   const [adjustingMemberId, setAdjustingMemberId] = useState<string | null>(null);
 

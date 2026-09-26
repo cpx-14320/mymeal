@@ -9,6 +9,7 @@ import {
   Pagination,
   ListToolbar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { MemberListItem } from "@/lib/models/member";
 
@@ -26,7 +27,7 @@ export function MemberInsightsTable({
   balances: Record<string, number>;
 }) {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(members, page, pageSize);
 

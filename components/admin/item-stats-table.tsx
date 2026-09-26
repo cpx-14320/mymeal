@@ -9,12 +9,13 @@ import {
   Pagination,
   ListToolbar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { CatalogItemStat } from "@/lib/models/catalog-item";
 
 export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(stats, page, pageSize);
 

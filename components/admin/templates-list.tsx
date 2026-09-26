@@ -15,6 +15,7 @@ import {
   PageSizeSelect,
   BulkActionBar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import type { TemplateListItem } from "@/lib/models/template";
@@ -26,7 +27,7 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 export function TemplatesList({ templates }: { templates: TemplateListItem[] }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [year, setYear] = useState<number | "all">("all");
   const [month, setMonth] = useState<number | "all">("all");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, inputClass } from "@/components/ui/primitives";
+import { Button, Card, inputClass, ItemThumbnail, ItemThumbnailFill } from "@/components/ui/primitives";
 import type { RiceLevel } from "@/lib/models/group-order";
 import { submitGroupOrderLinesAction } from "@/app/(app)/group-orders/[id]/actions";
 
@@ -15,6 +15,7 @@ export interface OrderableDish {
   name: string;
   emoji: string;
   price: number;
+  imageUrl?: string;
 }
 
 export interface ExistingLine {
@@ -26,10 +27,8 @@ export interface ExistingLine {
   bankCode: string;
 }
 
-interface DishOrder {
-  qty: number;
-  rice: RiceLevel;
-}
+/** 同一品項可以同時點不同飯量（例如正常飯 1 份＋半飯 1 份），所以份數要分開存，不能只有一組 qty+rice。 */
+type RiceQtyMap = Partial<Record<RiceLevel, number>>;
 
 export function GroupOrderForm({
   groupOrderId,
@@ -50,9 +49,11 @@ export function GroupOrderForm({
   walletBalance: number;
 }) {
   const router = useRouter();
-  const [orders, setOrders] = useState<Record<string, DishOrder>>(() => {
-    const initial: Record<string, DishOrder> = {};
-    for (const l of existingLines) initial[l.itemId] = { qty: l.qty, rice: l.rice };
+  const [orders, setOrders] = useState<Record<string, RiceQtyMap>>(() => {
+    const initial: Record<string, RiceQtyMap> = {};
+    for (const l of existingLines) {
+      initial[l.itemId] = { ...initial[l.itemId], [l.rice]: l.qty };
+    }
     return initial;
   });
   const [note, setNote] = useState(existingLines[0]?.note ?? "");
@@ -61,32 +62,28 @@ export function GroupOrderForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
-  const getOrder = (id: string): DishOrder => orders[id] ?? { qty: 0, rice: "normal" };
+  const getQty = (id: string, rice: RiceLevel): number => orders[id]?.[rice] ?? 0;
+  const getTotalQty = (id: string): number => riceLevels.reduce((sum, r) => sum + getQty(id, r), 0);
 
   const recommendedDishes = recommendedDishIds
     .map((id) => dishes.find((d) => d.id === id))
     .filter((d): d is OrderableDish => Boolean(d));
 
-  const orderTotal = dishes.reduce((sum, d) => sum + getOrder(d.id).qty * d.price, 0);
+  const orderTotal = dishes.reduce((sum, d) => sum + getTotalQty(d.id) * d.price, 0);
   const estimatedBalance = walletBalance - orderTotal;
 
-  const setQty = (id: string, delta: number) =>
+  const setQty = (id: string, rice: RiceLevel, delta: number) =>
     setOrders((prev) => {
-      const cur = prev[id] ?? { qty: 0, rice: "normal" as RiceLevel };
-      return { ...prev, [id]: { ...cur, qty: Math.max(0, cur.qty + delta) } };
+      const cur = prev[id] ?? {};
+      const nextQty = Math.max(0, (cur[rice] ?? 0) + delta);
+      return { ...prev, [id]: { ...cur, [rice]: nextQty } };
     });
-
-  const setRice = (id: string, rice: RiceLevel) =>
-    setOrders((prev) => ({
-      ...prev,
-      [id]: { ...(prev[id] ?? { qty: 0, rice: "normal" }), rice },
-    }));
 
   async function submit() {
     setPending(true);
     setError(undefined);
     const lines = dishes
-      .map((d) => ({ ...getOrder(d.id), item: d }))
+      .flatMap((d) => riceLevels.map((rice) => ({ item: d, rice, qty: getQty(d.id, rice) })))
       .filter((l) => l.qty > 0)
       .map((l) => ({
         itemId: l.item.id,
@@ -115,8 +112,8 @@ export function GroupOrderForm({
           <p className="text-sm font-medium">你可能喜歡的餐點</p>
           <div className="flex flex-wrap gap-2">
             {recommendedDishes.map((d) => {
-              const order = getOrder(d.id);
-              const selected = order.qty > 0;
+              const totalQty = getTotalQty(d.id);
+              const selected = totalQty > 0;
               return (
                 <div
                   key={d.id}
@@ -124,21 +121,27 @@ export function GroupOrderForm({
                     selected ? "border-brand bg-brand-soft" : "border-line"
                   }`}
                 >
-                  <span>{d.emoji}</span>
+                  <ItemThumbnail
+                    imageUrl={d.imageUrl}
+                    emoji={d.emoji}
+                    alt={d.name}
+                    size={20}
+                    className="size-5 shrink-0 rounded object-cover"
+                  />
                   <span className="font-medium">{d.name}</span>
                   <span className="text-xs text-muted">NT$ {d.price}</span>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
-                      onClick={() => setQty(d.id, -1)}
+                      onClick={() => setQty(d.id, "normal", -1)}
                       className="grid size-6 place-items-center rounded-md border border-line hover:bg-surface-2"
                     >
                       −
                     </button>
-                    <span className="w-4 text-center tabular-nums">{order.qty}</span>
+                    <span className="w-4 text-center tabular-nums">{totalQty}</span>
                     <button
                       type="button"
-                      onClick={() => setQty(d.id, 1)}
+                      onClick={() => setQty(d.id, "normal", 1)}
                       className="grid size-6 place-items-center rounded-md border border-line hover:bg-surface-2"
                     >
                       +
@@ -151,10 +154,10 @@ export function GroupOrderForm({
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {dishes.map((d) => {
-          const order = getOrder(d.id);
-          const selected = order.qty > 0;
+          const totalQty = getTotalQty(d.id);
+          const selected = totalQty > 0;
           return (
             <Card
               key={d.id}
@@ -162,12 +165,16 @@ export function GroupOrderForm({
                 selected ? "ring-2 ring-brand" : ""
               }`}
             >
-              <div className="grid h-32 place-items-center bg-brand-soft text-5xl">
-                {d.emoji}
-              </div>
+              <ItemThumbnailFill
+                imageUrl={d.imageUrl}
+                emoji={d.emoji}
+                alt={d.name}
+                sizes="33vw"
+                containerClassName="relative grid aspect-[3/2] place-items-center overflow-hidden bg-brand-soft text-5xl"
+              />
               {selected && (
                 <span className="absolute right-2 top-2 rounded-full bg-brand px-2 py-0.5 text-xs font-semibold text-brand-fg shadow">
-                  已選 {order.qty} 份
+                  已選 {totalQty} 份
                 </span>
               )}
               <div className="space-y-3 p-4">
@@ -176,41 +183,36 @@ export function GroupOrderForm({
                   <p className="text-sm text-muted">NT$ {d.price}</p>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap gap-1">
-                    {riceLevels.map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setRice(d.id, r)}
-                        className={`rounded-full border px-2.5 py-1 text-xs ${
-                          order.rice === r
-                            ? "border-brand bg-brand-soft text-brand"
-                            : "border-line text-muted hover:text-ink"
-                        }`}
-                      >
-                        {riceLevelLabel[r]}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setQty(d.id, -1)}
-                      className="grid size-7 place-items-center rounded-lg border border-line hover:bg-surface-2"
-                    >
-                      −
-                    </button>
-                    <span className="w-5 text-center tabular-nums">{order.qty}</span>
-                    <button
-                      type="button"
-                      onClick={() => setQty(d.id, 1)}
-                      className="grid size-7 place-items-center rounded-lg border border-line hover:bg-surface-2"
-                    >
-                      +
-                    </button>
-                  </div>
+                <div className="space-y-1.5">
+                  {riceLevels.map((r) => {
+                    const qty = getQty(d.id, r);
+                    return (
+                      <div key={r} className="flex items-center justify-between gap-2">
+                        <span
+                          className={`text-xs ${qty > 0 ? "font-medium text-brand" : "text-muted"}`}
+                        >
+                          {riceLevelLabel[r]}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setQty(d.id, r, -1)}
+                            className="grid size-7 place-items-center rounded-lg border border-line hover:bg-surface-2"
+                          >
+                            −
+                          </button>
+                          <span className="w-5 text-center tabular-nums">{qty}</span>
+                          <button
+                            type="button"
+                            onClick={() => setQty(d.id, r, 1)}
+                            className="grid size-7 place-items-center rounded-lg border border-line hover:bg-surface-2"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </Card>

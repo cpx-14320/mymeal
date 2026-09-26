@@ -15,6 +15,7 @@ import {
   BulkActionBar,
   Note,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { InterstitialView, InterstitialStatus } from "@/lib/models/interstitial";
 import { setPromosEnabledAction, deletePromosAction } from "@/app/(app)/admin/promos/actions";
@@ -44,7 +45,7 @@ function statusOf(a: InterstitialView, now: Date): InterstitialStatus {
 export function PromosList({ promos }: { promos: InterstitialView[] }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [deleting, setDeleting] = useState(false);

@@ -15,6 +15,7 @@ import {
   BulkActionBar,
   Note,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { NotificationView } from "@/lib/models/notification";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -23,7 +24,7 @@ import { setNotificationsEnabledAction, deleteNotificationsAction } from "@/app/
 export function NotificationsList({ notifications }: { notifications: NotificationView[] }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [deleting, setDeleting] = useState(false);

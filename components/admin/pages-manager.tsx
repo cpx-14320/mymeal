@@ -15,6 +15,7 @@ import {
   BulkActionBar,
   Note,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -24,7 +25,7 @@ import { setPagesActiveAction, deletePagesAction } from "@/app/(app)/admin/pages
 export function PagesManager({ pages }: { pages: PageView[] }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PillTabs, PageSizeSelect, Pagination, paginate } from "@/components/ui/primitives";
+import { PillTabs, PageSizeSelect, Pagination, paginate, DEFAULT_PAGE_SIZE } from "@/components/ui/primitives";
 import { ItemCard } from "@/components/item-card";
 import { useLoginModal } from "@/components/layout/login-modal-context";
 import { toggleFavoriteAction } from "@/app/(app)/favorite-actions";
@@ -22,7 +22,7 @@ export function ItemGrid({
   items,
   stats,
   categories,
-  defaultPageSize = 12,
+  defaultPageSize = DEFAULT_PAGE_SIZE,
 }: {
   scope?: "all" | "favorites";
   initialFavoriteIds?: string[];

@@ -90,9 +90,9 @@ export function GroupOrderHostActions({
     <div className="space-y-2">
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      {status === "open" && (
-        <div className="flex flex-wrap items-center gap-2">
-          {editingDeadline ? (
+      <div className="flex flex-wrap items-center gap-2">
+        {status === "open" &&
+          (editingDeadline ? (
             <form
               action={handleUpdateDeadline}
               className="flex flex-wrap items-end gap-2"
@@ -120,48 +120,47 @@ export function GroupOrderHostActions({
                 {pending ? "處理中…" : "提前結單"}
               </Button>
             </>
-          )}
-        </div>
-      )}
+          ))}
 
-      {status === "closed" &&
-        (reopening ? (
-          <form action={handleReopen} className="flex flex-wrap items-end gap-2">
-            <Field label="新的截止時間" hint="預設現在時間 +1 小時，可手動調整">
-              <input
-                className={inputClass}
-                type="datetime-local"
-                name="deadline"
-                defaultValue={defaultReopenDeadline()}
-                required
-              />
-            </Field>
-            <Button type="button" variant="ghost" onClick={() => setReopening(false)}>
-              取消
+        {status === "closed" &&
+          (reopening ? (
+            <form action={handleReopen} className="flex flex-wrap items-end gap-2">
+              <Field label="新的截止時間" hint="預設現在時間 +1 小時，可手動調整">
+                <input
+                  className={inputClass}
+                  type="datetime-local"
+                  name="deadline"
+                  defaultValue={defaultReopenDeadline()}
+                  required
+                />
+              </Field>
+              <Button type="button" variant="ghost" onClick={() => setReopening(false)}>
+                取消
+              </Button>
+              <Button disabled={pending}>{pending ? "處理中…" : "確認重新開放"}</Button>
+            </form>
+          ) : (
+            <Button disabled={pending} onClick={() => setReopening(true)}>
+              重新開放
             </Button>
-            <Button disabled={pending}>{pending ? "處理中…" : "確認重新開放"}</Button>
-          </form>
-        ) : (
-          <Button disabled={pending} onClick={() => setReopening(true)}>
-            重新開放
-          </Button>
-        ))}
+          ))}
 
-      {confirmingCancel ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm text-danger">確定要取消整團嗎？大家目前點的餐點都會一併刪除，無法復原。</p>
-          <Button type="button" variant="ghost" disabled={pending} onClick={() => setConfirmingCancel(false)}>
-            返回
+        {confirmingCancel ? (
+          <>
+            <p className="text-sm text-danger">確定要取消團訂嗎？大家目前點的餐點都會一併刪除，無法復原。</p>
+            <Button type="button" variant="ghost" disabled={pending} onClick={() => setConfirmingCancel(false)}>
+              返回
+            </Button>
+            <Button variant="danger" disabled={pending} onClick={handleCancel}>
+              {pending ? "取消中…" : "確認取消團訂"}
+            </Button>
+          </>
+        ) : (
+          <Button variant="danger" disabled={pending} onClick={() => setConfirmingCancel(true)}>
+            取消團訂
           </Button>
-          <Button variant="danger" disabled={pending} onClick={handleCancel}>
-            {pending ? "取消中…" : "確認取消整團"}
-          </Button>
-        </div>
-      ) : (
-        <Button variant="danger" disabled={pending} onClick={() => setConfirmingCancel(true)}>
-          取消整團
-        </Button>
-      )}
+        )}
+      </div>
     </div>
   );
 }

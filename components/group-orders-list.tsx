@@ -161,7 +161,7 @@ export function GroupOrdersList({
                   </Link>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-3">
                   {[...byTemplate.entries()].map(([templateId, group]) => (
                     <Fragment key={templateId}>
                       {group.map((g) => (

@@ -9,6 +9,7 @@ import {
   Pagination,
   ListToolbar,
   paginate,
+  DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { AuditLogRow } from "@/lib/models/audit-log";
 import { formatTaiwanDateTime } from "@/lib/date";
@@ -16,7 +17,7 @@ import { formatTaiwanDateTime } from "@/lib/date";
 export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const filtered = logs.filter((l) => {
     const q = search.trim();
