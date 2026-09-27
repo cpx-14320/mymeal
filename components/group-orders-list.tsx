@@ -16,7 +16,6 @@ import { dateToSlug } from "@/lib/date";
 const statusMap: Record<GroupOrderStatus, { label: string; tone: "positive" | "warning" | "neutral" }> = {
   open: { label: "開放中", tone: "positive" },
   closed: { label: "已截止", tone: "warning" },
-  completed: { label: "已完成", tone: "neutral" },
 };
 
 const weekdayNames = ["日", "一", "二", "三", "四", "五", "六"];

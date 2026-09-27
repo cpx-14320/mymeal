@@ -64,12 +64,6 @@ export function GroupOrderHostActions({
     else router.push("/group-orders");
   }
 
-  if (status === "completed") {
-    return trailingActions ? (
-      <div className="flex flex-wrap items-center justify-end gap-2">{trailingActions}</div>
-    ) : null;
-  }
-
   return (
     <div className="space-y-2">
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -79,7 +73,9 @@ export function GroupOrderHostActions({
 
         {confirmingCancel ? (
           <>
-            <p className="text-sm text-danger">確定要取消團訂嗎？大家目前點的餐點都會一併刪除，無法復原。</p>
+            <p className="text-sm text-danger">
+              確定要取消團訂嗎？大家目前點的餐點都會一併刪除，已經扣款的部分會退回錢包，此動作無法復原。
+            </p>
             <Button type="button" variant="ghost" disabled={pending} onClick={() => setConfirmingCancel(false)}>
               返回
             </Button>

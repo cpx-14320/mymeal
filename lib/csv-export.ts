@@ -59,14 +59,8 @@ export function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
 }
 
-export function downloadCsv(
-  filename: string,
-  headers: (string | number)[],
-  rows: (string | number)[][],
-) {
-  const lines = [headers, ...rows].map((row) => row.map(escapeCsvCell).join(","));
-  const csv = String.fromCharCode(0xfeff) + lines.join("\r\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+/** 純前端觸發瀏覽器下載一個 Blob——CSV 匯出、圖片打包 ZIP 都共用這支，只是內容不同。 */
+export function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -75,4 +69,14 @@ export function downloadCsv(
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export function downloadCsv(
+  filename: string,
+  headers: (string | number)[],
+  rows: (string | number)[][],
+) {
+  const lines = [headers, ...rows].map((row) => row.map(escapeCsvCell).join(","));
+  const csv = String.fromCharCode(0xfeff) + lines.join("\r\n");
+  downloadBlob(filename, new Blob([csv], { type: "text/csv;charset=utf-8;" }));
 }

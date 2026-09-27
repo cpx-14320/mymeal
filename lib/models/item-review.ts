@@ -78,6 +78,18 @@ export async function listCommentsByMember(memberId: string): Promise<ItemReview
   return all.filter((r) => r.text && r.text.trim() !== "");
 }
 
+/** 週期任務用：這位會員從 since 這個時間點到現在，評分／留言（withText 篩有寫文字的）各發生了幾次；
+ *  重複評論同一品項是更新既有那筆、把 at 刷新成現在（見 upsertReview），所以編輯也會算進當下週期。 */
+export async function countReviewsSince(memberId: string, since: Date, withText: boolean): Promise<number> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return 0;
+  return ItemReview.countDocuments({
+    memberId,
+    at: { $gte: since },
+    ...(withText ? { text: { $exists: true, $ne: "" } } : {}),
+  });
+}
+
 /** 給會員洞察列表頁用：一次算出多位會員各自的評分數／評論數（有寫文字的）。 */
 export async function countReviewsByMembers(
   memberIds: string[],

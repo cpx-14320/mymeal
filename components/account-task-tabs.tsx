@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { PillTabs, Card, CardBody, Badge, Progress } from "@/components/ui/primitives";
-import { taskPeriodLabel, type TaskConfig, type TaskPeriod } from "@/lib/mock";
+import { taskPeriodLabel, type TaskPeriod } from "@/lib/mock";
+import type { DailyTaskView } from "@/lib/models/gamification";
 
 type Tab = TaskPeriod | "achievement";
 
@@ -16,7 +17,7 @@ const TAB_LABELS: Record<Tab, string> = {
 export function AccountTaskTabs({
   tasks,
 }: {
-  tasks: { task: TaskConfig; progress: number }[];
+  tasks: { task: DailyTaskView; progress: number }[];
 }) {
   const [tab, setTab] = useState<Tab>("daily");
 

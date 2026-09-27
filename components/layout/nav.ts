@@ -165,17 +165,17 @@ export const adminNav: AdminNavGroup[] = [
     items: [
       { key: "gamification", label: "任務與經驗", href: "/admin/tasks" },
       { key: "promos", label: "廣宣版位", href: "/admin/promos" },
+      { key: "feedback", label: "意見列表", href: "/admin/feedback" },
     ],
   },
   {
     key: "system",
-    label: "系統",
+    label: "數據統計",
     items: [
       { key: "grouporders", label: "團訂狀況", href: "/admin/group-orders" },
       { key: "itemStats", label: "餐點統計", href: "/admin/item-stats" },
       { key: "reports", label: "報表", href: "/admin/reports" },
       { key: "audit", label: "稽核紀錄", href: "/admin/audit" },
-      { key: "feedback", label: "意見列表", href: "/admin/feedback" },
     ],
   },
 ];

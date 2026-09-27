@@ -128,6 +128,17 @@ export async function getMemberTopupCount(memberId: string): Promise<number> {
   return WalletLedger.countDocuments({ memberId: new Types.ObjectId(memberId), type: "topup" });
 }
 
+/** 週期任務（每週儲值）用：跟 getMemberTopupCount 一樣，但只算 since 之後的儲值入帳筆數。 */
+export async function getMemberTopupCountSince(memberId: string, since: Date): Promise<number> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return 0;
+  return WalletLedger.countDocuments({
+    memberId: new Types.ObjectId(memberId),
+    type: "topup",
+    createdAt: { $gte: since },
+  });
+}
+
 export interface WalletBalanceRow {
   memberId: string;
   name: string;
@@ -154,7 +165,11 @@ export async function listMemberBalances(): Promise<WalletBalanceRow[]> {
   const spendByMember = new Map<string, number>();
   for (const t of totals) {
     const key = String(t._id.memberId);
-    if (t._id.type === "topup") topupByMember.set(key, (topupByMember.get(key) ?? 0) + t.sum);
+    // topup_reversal 的 amount 本來就是負數（撤銷核准時沖銷用），直接加回去
+    // 自然會把對應的 topup 扣掉，讓「累計儲值」反映撤銷後的淨值。
+    if (t._id.type === "topup" || t._id.type === "topup_reversal") {
+      topupByMember.set(key, (topupByMember.get(key) ?? 0) + t.sum);
+    }
     if (t._id.type === "spend") spendByMember.set(key, (spendByMember.get(key) ?? 0) + Math.abs(t.sum));
   }
 

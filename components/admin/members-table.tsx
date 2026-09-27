@@ -15,10 +15,9 @@ import {
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
-import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { MemberListItem, MemberStatus } from "@/lib/models/member";
 import { formatTaiwanDateTime } from "@/lib/date";
-import { bulkDeleteMembersAction, setMembersStatusAction } from "@/app/(app)/admin/members/actions";
+import { setMembersStatusAction } from "@/app/(app)/admin/members/actions";
 
 const statusMap = {
   active: { label: "啟用", tone: "positive" as const },
@@ -32,9 +31,6 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | undefined>();
   const [search, setSearch] = useState("");
   const [statusUpdatingIds, setStatusUpdatingIds] = useState<Set<string>>(() => new Set());
   const [statusError, setStatusError] = useState<string | undefined>();
@@ -94,23 +90,6 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
     setSelected(new Set());
   };
 
-  const bulkDelete = async () => {
-    setDeleting(true);
-    setDeleteError(undefined);
-    const ids = selected;
-    const result = await bulkDeleteMembersAction(Array.from(ids));
-    if (result.error) {
-      setDeleteError(result.error);
-      setDeleting(false);
-      return;
-    }
-    setMembers((prev) => prev.filter((m) => !ids.has(m.id)));
-    setConfirmDelete(false);
-    setDeleting(false);
-    setSelected(new Set());
-    router.refresh();
-  };
-
   const toggleStatus = (id: string, current: MemberStatus) =>
     applyStatus([id], current === "active" ? "suspended" : "active");
 
@@ -151,7 +130,6 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
             onClick: () => bulkSetStatus("suspended"),
             disabled: statusUpdatingIds.size > 0,
           },
-          { label: "刪除選取", tone: "danger", onClick: () => setConfirmDelete(true) },
         ]}
       />
 
@@ -256,34 +234,6 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
         onPage={setPage}
         unit="筆"
       />
-
-      <Modal
-        open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-        ariaLabel="確認刪除會員"
-        className="max-w-sm"
-      >
-        <ModalHeader title="確認刪除會員" onClose={() => setConfirmDelete(false)} />
-        <div className="space-y-4 p-4">
-          <p className="text-[13px] lg:text-[14px] text-ink">
-            確定要刪除選取的 <b className="tabular-nums">{selected.size}</b>{" "}
-            位會員嗎？此動作無法復原。
-          </p>
-          {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => setConfirmDelete(false)}
-              disabled={deleting}
-            >
-              否
-            </Button>
-            <Button variant="danger" onClick={bulkDelete} disabled={deleting}>
-              {deleting ? "刪除中…" : "是"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

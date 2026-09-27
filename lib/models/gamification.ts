@@ -3,11 +3,15 @@ import { connectMongo } from "@/lib/mongoose";
 
 /**
  * daily_task / exp_rule / member_level collections —— 任務／經驗值／等級，三張後台設定表。
- * daily/weekly/monthly 任務的會員進度目前還是從 lib/mock.ts 的假訂單/儲值/評分數量換算出來
- * （見 memberExp／memberTaskProgress），因為還沒有真的period-bucketed活動歷程可以算；
- * achievement（成就）任務不一樣：進度是帳號註冊至今的真實累積次數，見 lib/models/achievements.ts
- * 的 getMemberLifetimeCounts／achievementProgress，直接查 group_orders／wallet_ledger／
- * favorite／item_review 算出來，不經過 lib/mock.ts。
+ * daily/weekly/monthly 任務的會員進度是「這個週期內」真的做了幾次，見 lib/models/achievements.ts
+ * 的 getMemberPeriodCounts／periodTaskProgress——訂餐查訂單行的 createdAt（改單是整批刪舊建新，
+ * 見 group-order.ts 的 replaceMemberLines），儲值/收藏/評分留言各自查自己集合的時間欄位，
+ * 週期起始時間（今天/這週/這個月）算法見 lib/date.ts 的 periodStartTaiwan。
+ * achievement（成就）任務不一樣：進度是帳號註冊至今、不分週期的真實累積次數，見
+ * getMemberLifetimeCounts／achievementProgress，一樣是直接查上述幾個集合算出來的。
+ * exp／等級（memberExp／memberLevelInfo，見 lib/mock.ts）套用的是帳號累積次數，不分週期，
+ * 目前沒有實作 ExpRule 的 dailyLimit/weeklyLimit/monthlyLimit 上限——這三個欄位存在但還沒有
+ * 任何地方真的拿來限制每天/每週/每月能拿到的經驗值上限，是已知還沒做的部分。
  * 這裡只負責讓「設定」本身是真資料，能新增/編輯/刪除任務、規則、等級。
  * 集合是空的才會種入原本寫死的預設值，跟 org.ts 的 seedIfEmpty 同一套做法。
  */

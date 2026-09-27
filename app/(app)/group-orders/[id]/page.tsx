@@ -27,7 +27,6 @@ import { getSessionMemberId } from "@/lib/session";
 const statusMap = {
   open: { label: "開放中", tone: "positive" as const },
   closed: { label: "已截止", tone: "warning" as const },
-  completed: { label: "已完成", tone: "neutral" as const },
 };
 
 const riceLevelLabel: Record<RiceLevel, string> = { normal: "正常", half: "半飯", none: "不要飯" };

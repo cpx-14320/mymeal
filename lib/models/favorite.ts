@@ -79,6 +79,13 @@ export async function toggleFavorite(memberId: string, itemId: string): Promise<
   return { favorited: true };
 }
 
+/** 週期任務用：這位會員從 since 這個時間點到現在，新增了幾筆收藏。 */
+export async function countFavoritesSince(memberId: string, since: Date): Promise<number> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return 0;
+  return Favorite.countDocuments({ memberId, at: { $gte: since } });
+}
+
 /** 給會員洞察列表頁用：一次算出多位會員各自的收藏數量，避免逐筆查詢。 */
 export async function countFavoritesByMembers(memberIds: string[]): Promise<Record<string, number>> {
   await connectMongo();

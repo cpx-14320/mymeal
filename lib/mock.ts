@@ -250,17 +250,17 @@ export const permissionCategories: PermissionCategory[] = [
     items: [
       { key: "gamification", label: "任務與經驗" },
       { key: "promos", label: "廣宣版位" },
+      { key: "feedback", label: "意見列表" },
     ],
   },
   {
     key: "system",
-    label: "系統",
+    label: "數據統計",
     items: [
       { key: "grouporders", label: "團訂狀況" },
       { key: "itemStats", label: "餐點統計" },
       { key: "reports", label: "報表" },
       { key: "audit", label: "稽核" },
-      { key: "feedback", label: "意見列表" },
     ],
   },
 ];
@@ -675,16 +675,6 @@ export const taskPeriodLabel: Record<TaskPeriod, string> = {
   achievement: "成就",
 };
 
-export interface TaskConfig {
-  id: string;
-  name: string;
-  type: TaskType;
-  period: TaskPeriod;
-  targetCount: number;
-  rewardPoints: number;
-  active: boolean;
-}
-
 export interface ExpRuleConfig {
   id: string;
   type: TaskType;
@@ -728,17 +718,6 @@ export function memberLevelInfo(
   const expToNext = next ? next.minExp - exp : null;
   const progressInLevel = next ? (exp - level.minExp) / (next.minExp - level.minExp) : 1;
   return { exp, level, levelIndex, next, expToNext, progressInLevel };
-}
-
-/** 會員目前各任務的期間內完成進度——簡化模擬（沒有另存 daily/weekly/monthly 期間內的任務完成歷程），
- *  用會員真實的累積活動次數對任務目標取餘數，做出看起來合理、會隨真實活動變化的進度展示。 */
-export function memberTaskProgress(counts: Record<TaskType, number>, tasks: TaskConfig[]) {
-  return tasks
-    .filter((t) => t.active)
-    .map((t) => ({
-      task: t,
-      progress: (counts[t.type] ?? 0) % (t.targetCount + 1),
-    }));
 }
 
 /* ── 餐點統計 ──────────────────────────────────────────

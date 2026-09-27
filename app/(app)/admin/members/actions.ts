@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { deleteMembers, setMembersStatus, findMemberNames, type MemberStatus } from "@/lib/models/member";
+import { setMembersStatus, findMemberNames, type MemberStatus } from "@/lib/models/member";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
 
@@ -9,25 +9,6 @@ import { getCurrentActorName } from "@/lib/session";
 function summarizeNames(names: string[]): string {
   if (names.length <= 3) return names.join("、");
   return `${names.slice(0, 3).join("、")} 等 ${names.length} 位`;
-}
-
-export interface BulkDeleteMembersState {
-  error?: string;
-  deletedCount?: number;
-}
-
-export async function bulkDeleteMembersAction(ids: string[]): Promise<BulkDeleteMembersState> {
-  if (ids.length === 0) return { error: "請先選取要刪除的會員。" };
-
-  const actor = await getCurrentActorName();
-  const names = await findMemberNames(ids);
-  const deletedCount = await deleteMembers(ids);
-
-  await createAuditLog({ actor, action: "刪除會員", target: summarizeNames(names), risk: true });
-
-  revalidatePath("/admin/members");
-  revalidatePath("/admin/audit");
-  return { deletedCount };
 }
 
 export interface SetMembersStatusState {

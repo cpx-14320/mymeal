@@ -11,7 +11,8 @@ import {
   deleteGroupOrders,
   type RiceLevel,
 } from "@/lib/models/group-order";
-import { getSessionMemberId } from "@/lib/session";
+import { getSessionMemberId, getCurrentActorName } from "@/lib/session";
+import { createAuditLog } from "@/lib/models/audit-log";
 
 export interface SubmitOrderLineInput {
   itemId: string;
@@ -127,14 +128,21 @@ export async function updateGroupOrderDeadlineAction(
   return { success: true };
 }
 
-/** 取消整團：直接刪除這筆團訂（含所有人已點的品項），只有團主能操作；刪除後前端要導回列表頁。 */
+/** 取消整團：已經扣過錢包款的行先全部退款，再刪除這筆團訂（含所有人已點的品項），
+ *  只有團主能操作；刪除後前端要導回列表頁。這是會動到金流的操作，要留稽核紀錄。 */
 export async function cancelGroupOrderAction(groupOrderId: string): Promise<HostActionState> {
   try {
-    await assertHost(groupOrderId);
+    const order = await assertHost(groupOrderId);
+    await refundWalletForGroupOrder(groupOrderId);
     await deleteGroupOrders([groupOrderId]);
+
+    const actor = await getCurrentActorName();
+    await createAuditLog({ actor, action: "取消團訂", target: order.name, risk: true });
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
   revalidatePath("/group-orders");
+  revalidatePath("/wallet");
+  revalidatePath("/admin/audit");
   return { success: true };
 }

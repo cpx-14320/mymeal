@@ -9,10 +9,10 @@ import {
   Badge,
   Progress,
 } from "@/components/ui/primitives";
-import { memberLevelInfo, memberTaskProgress } from "@/lib/mock";
+import { memberLevelInfo } from "@/lib/mock";
 import { AccountTaskTabs } from "@/components/account-task-tabs";
 import { listDailyTasks, listExpRules, listMemberLevels } from "@/lib/models/gamification";
-import { getMemberLifetimeCounts, achievementProgress } from "@/lib/models/achievements";
+import { getMemberLifetimeCounts, achievementProgress, periodTaskProgress } from "@/lib/models/achievements";
 import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
 
@@ -22,12 +22,13 @@ export default async function AccountPage() {
   const memberId = await getSessionMemberId();
   if (!memberId) redirect("/login");
 
-  const [member, dailyTasks, expRules, memberLevels, lifetimeCounts] = await Promise.all([
+  const dailyTasks = await listDailyTasks();
+  const [member, expRules, memberLevels, lifetimeCounts, periodicTasks] = await Promise.all([
     findMemberById(memberId),
-    listDailyTasks(),
     listExpRules(),
     listMemberLevels(),
     getMemberLifetimeCounts(memberId),
+    periodTaskProgress(memberId, dailyTasks),
   ]);
   if (!member) redirect("/login");
 
@@ -40,14 +41,10 @@ export default async function AccountPage() {
     ["專屬碼", member.memberCode],
   ];
 
-  // exp／等級跟 daily/weekly/monthly 任務進度沒有真的 period-bucketed 活動歷史可用
-  // （沒有另存「這週已完成幾次」這種紀錄），所以進度仍是用 lifetimeCounts 取餘數模擬；
-  // 但 lifetimeCounts 本身是這位真實登入者的累積次數，不再是 mock 示範會員的假資料。
+  // exp／等級是累積型指標，用 lifetimeCounts（帳號註冊至今的真實累積次數）換算沒有問題；
+  // daily/weekly/monthly 任務進度則是「這個週期內」做了幾次，見 periodTaskProgress（查各集合
+  // 自己的時間欄位，例如訂單行的 createdAt、儲值/收藏/評分留言各自的時間），不是用取餘數模擬出來的。
   const { exp, level, levelIndex, next, expToNext } = memberLevelInfo(lifetimeCounts, expRules, memberLevels);
-  const periodicTasks = memberTaskProgress(
-    lifetimeCounts,
-    dailyTasks.filter((t) => t.period !== "achievement"),
-  );
   const achievements = achievementProgress(dailyTasks, lifetimeCounts);
   const tasks = [...periodicTasks, ...achievements];
   return (

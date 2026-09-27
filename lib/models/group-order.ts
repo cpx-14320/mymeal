@@ -8,7 +8,7 @@ import { connectMongo } from "@/lib/mongoose";
  * 前台實際送出訂單的流程還沒接（見 replaceMemberLines，函式先備著），這裡先讓後台
  * 「團訂管理」「依部門匯出」能對著真資料運作，管理員可用「代開團」建立真的團。
  */
-export type GroupOrderStatus = "open" | "closed" | "completed";
+export type GroupOrderStatus = "open" | "closed";
 export type RiceLevel = "normal" | "half" | "none";
 
 export interface OrderLineSubdoc {
@@ -25,6 +25,7 @@ export interface OrderLineSubdoc {
   bankCode: string; // 銀行轉帳時的匯款後5碼；其他付款方式留空
   paid: boolean; // 後台手動標記「錢收到了」，跟下面 walletCharged 無關（現金/轉帳用這個，人工核對）
   walletCharged: boolean; // 錢包扣款這筆是否已經真的扣過款——結單時只扣未扣過的，避免重新開放後再次結單被扣兩次
+  createdAt: Date; // 這一行的建立時間（會員改單是整批刪舊建新，見 replaceMemberLines，所以改單會更新成新時間）——週期任務（每日/每週訂餐）用來判斷這個行為發生在哪個週期
 }
 
 export interface GroupOrderDocument {
@@ -43,20 +44,23 @@ export interface GroupOrderDocument {
   updatedAt: Date;
 }
 
-const orderLineSchema = new Schema<OrderLineSubdoc>({
-  memberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
-  memberName: { type: String, required: true },
-  itemId: { type: Schema.Types.ObjectId, ref: "CatalogItem", required: true },
-  itemName: { type: String, required: true },
-  price: { type: Number, required: true },
-  qty: { type: Number, required: true, default: 1 },
-  note: { type: String, default: "" },
-  rice: { type: String, enum: ["normal", "half", "none"], required: true, default: "normal" },
-  paymentMethod: { type: String, default: "" },
-  bankCode: { type: String, default: "" },
-  paid: { type: Boolean, required: true, default: false },
-  walletCharged: { type: Boolean, required: true, default: false },
-});
+const orderLineSchema = new Schema<OrderLineSubdoc>(
+  {
+    memberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
+    memberName: { type: String, required: true },
+    itemId: { type: Schema.Types.ObjectId, ref: "CatalogItem", required: true },
+    itemName: { type: String, required: true },
+    price: { type: Number, required: true },
+    qty: { type: Number, required: true, default: 1 },
+    note: { type: String, default: "" },
+    rice: { type: String, enum: ["normal", "half", "none"], required: true, default: "normal" },
+    paymentMethod: { type: String, default: "" },
+    bankCode: { type: String, default: "" },
+    paid: { type: Boolean, required: true, default: false },
+    walletCharged: { type: Boolean, required: true, default: false },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
 
 const groupOrderSchema = new Schema<GroupOrderDocument>(
   {
@@ -68,7 +72,7 @@ const groupOrderSchema = new Schema<GroupOrderDocument>(
     hostId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
     date: { type: String, required: true },
     deadline: { type: String, default: "" },
-    status: { type: String, enum: ["open", "closed", "completed"], required: true, default: "open" },
+    status: { type: String, enum: ["open", "closed"], required: true, default: "open" },
     lines: { type: [orderLineSchema], required: true, default: [] },
   },
   { timestamps: true, collection: "group_orders" },
@@ -477,8 +481,7 @@ export async function replaceMemberLines(
   return { id: groupOrderId };
 }
 
-/** 「我的訂單」取消單一筆（一道菜）用：這道已經扣過錢包款的話先退款，再把這行從團訂裡移除。
- *  已完成的團不能再取消——那已經是歷史紀錄，不是還在走的訂單。 */
+/** 「我的訂單」取消單一筆（一道菜）用：這道已經扣過錢包款的話先退款，再把這行從團訂裡移除。 */
 export async function cancelMemberLine(groupOrderId: string, memberId: string, lineId: string) {
   await connectMongo();
   if (
@@ -490,7 +493,6 @@ export async function cancelMemberLine(groupOrderId: string, memberId: string, l
   }
   const doc = await GroupOrder.findById(groupOrderId);
   if (!doc) throw new Error("找不到這個團，可能已被刪除。");
-  if (doc.status === "completed") throw new Error("這個團已經完成，無法取消訂單。");
 
   const memberObjId = new Types.ObjectId(memberId);
   const line = doc.lines.find(
@@ -592,7 +594,7 @@ export interface ItemOrderStat {
 }
 
 /** 給後台「餐點統計」頁用：一次算出所有品項各自的被訂購次數／總份數，資料來源是所有團訂的 lines。
- *  只算「已結單」的團（closed／completed）——還開放中（open）的團訂大家隨時可能改份數或整團被取消，
+ *  只算「已結單」的團（closed）——還開放中（open）的團訂大家隨時可能改份數或整團被取消，
  *  在結單前不該算進正式的訂購統計；團訂被取消是直接刪除整筆文件，這裡本來就是即時查詢，
  *  被取消的團訂自然也不會再被算進來，不用額外處理。 */
 export async function getItemOrderStats(): Promise<Record<string, ItemOrderStat>> {
@@ -728,6 +730,22 @@ export async function getMemberOrderCount(memberId: string): Promise<number> {
     { $match: { "lines.memberId": memberObjId } },
     { $unwind: "$lines" },
     { $match: { "lines.memberId": memberObjId } },
+    { $count: "count" },
+  ]);
+  return rows[0]?.count ?? 0;
+}
+
+/** 週期任務（每日/每週訂餐）用：跟 getMemberOrderCount 一樣算訂單行數，但只算 since 之後建立的行——
+ *  改單是整批刪舊建新（見 replaceMemberLines），所以行的建立時間就是「最後一次確認這筆訂單」的時間。 */
+export async function getMemberOrderCountSince(memberId: string, since: Date): Promise<number> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return 0;
+  const memberObjId = new Types.ObjectId(memberId);
+
+  const rows = await GroupOrder.aggregate<{ count: number }>([
+    { $match: { "lines.memberId": memberObjId } },
+    { $unwind: "$lines" },
+    { $match: { "lines.memberId": memberObjId, "lines.createdAt": { $gte: since } } },
     { $count: "count" },
   ]);
   return rows[0]?.count ?? 0;

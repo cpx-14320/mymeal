@@ -287,15 +287,6 @@ export async function setMembersStatus(ids: string[], status: MemberStatus): Pro
   return result.modifiedCount;
 }
 
-/** 後台會員列表「刪除選取」用：一次刪多筆，忽略格式不對的 id，回傳實際刪除的筆數。 */
-export async function deleteMembers(ids: string[]): Promise<number> {
-  await connectMongo();
-  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
-  if (objIds.length === 0) return 0;
-  const result = await Member.deleteMany({ _id: { $in: objIds } });
-  return result.deletedCount;
-}
-
 /** 稽核紀錄用：把一批 id 換成姓名，方便寫「操作對象」欄位；忽略格式不對或找不到的 id。 */
 export async function findMemberNames(ids: string[]): Promise<string[]> {
   await connectMongo();

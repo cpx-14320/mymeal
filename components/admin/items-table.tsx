@@ -12,6 +12,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  Note,
   inputClass,
   paginate,
   DEFAULT_PAGE_SIZE,
@@ -28,6 +29,7 @@ import {
   deleteItemsAction,
 } from "@/app/(app)/admin/items/actions";
 import { ItemsBulkEditModal } from "@/components/admin/items-bulk-edit-modal";
+import { ItemsImageZipButton, type ImageZipSummary } from "@/components/admin/items-image-zip-button";
 
 type Filter = "all" | string; // "all" 或 categoryId
 
@@ -67,6 +69,7 @@ export function ItemsTable({
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [zipSummary, setZipSummary] = useState<ImageZipSummary | null>(null);
 
   const tabs: { key: Filter; label: string }[] = [
     { key: "all", label: "全部" },
@@ -181,14 +184,21 @@ export function ItemsTable({
         unit="項"
         onCancel={() => setSelected(new Set())}
         extra={
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setBulkEditOpen(true)}
-            className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
-          >
-            批次編輯
-          </button>
+          <>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setBulkEditOpen(true)}
+              className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
+            >
+              批次編輯
+            </button>
+            <ItemsImageZipButton
+              items={items}
+              selectedIds={[...selected]}
+              onResult={setZipSummary}
+            />
+          </>
         }
         actions={[
           { label: "啟用選取", tone: "neutral", onClick: () => bulkSetActive(true), disabled: busy },
@@ -196,6 +206,37 @@ export function ItemsTable({
           { label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy },
         ]}
       />
+
+      {zipSummary && (
+        <Note tone={zipSummary.failed.length > 0 ? "danger" : "positive"}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="space-y-1">
+              <p>
+                成功打包 {zipSummary.packed} 張圖片
+                {zipSummary.skippedNoImage > 0 && `，${zipSummary.skippedNoImage} 項沒有圖片已略過`}。
+              </p>
+              {zipSummary.failed.length > 0 && (
+                <div>
+                  <p>下載失敗（{zipSummary.failed.length}）：</p>
+                  <ul className="max-h-32 list-disc space-y-0.5 overflow-y-auto pl-4">
+                    {zipSummary.failed.map((name, i) => (
+                      <li key={i}>{name}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setZipSummary(null)}
+              className="shrink-0 opacity-70 hover:opacity-100"
+              aria-label="關閉"
+            >
+              ✕
+            </button>
+          </div>
+        </Note>
+      )}
 
       <TableWrap>
         <thead>
