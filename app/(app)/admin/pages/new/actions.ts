@@ -46,5 +46,5 @@ export async function createPageAction(
   }
 
   revalidatePath("/admin/pages");
-  redirect(`/admin/pages/${pageId}`);
+  redirect(`/admin/pages/${pageId}?created=1`);
 }

@@ -6,17 +6,28 @@ import { listPages } from "@/lib/models/page";
 
 export const metadata = { title: "品項設定" };
 
-export default async function AdminItemsPage() {
-  const [items, categories, tagGroups, pages] = await Promise.all([
+export default async function AdminItemsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ created?: string }>;
+}) {
+  const [items, categories, tagGroups, pages, params] = await Promise.all([
     listCatalogItems({ withCreatorLabels: true }),
     listItemCategories(),
     listTagGroups(),
     listPages(),
+    searchParams,
   ]);
 
   return (
     <div className="space-y-8">
-      <ItemsAdminSection items={items} categories={categories} tagGroups={tagGroups} pages={pages} />
+      <ItemsAdminSection
+        items={items}
+        categories={categories}
+        tagGroups={tagGroups}
+        pages={pages}
+        justCreated={params.created === "1"}
+      />
     </div>
   );
 }

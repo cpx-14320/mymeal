@@ -86,6 +86,14 @@ export async function countFavoritesSince(memberId: string, since: Date): Promis
   return Favorite.countDocuments({ memberId, at: { $gte: since } });
 }
 
+/** 刪除會員時一起清掉：這位會員的所有收藏紀錄。 */
+export async function deleteFavoritesByMembers(memberIds: string[]): Promise<void> {
+  await connectMongo();
+  const objIds = memberIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return;
+  await Favorite.deleteMany({ memberId: { $in: objIds } });
+}
+
 /** 給會員洞察列表頁用：一次算出多位會員各自的收藏數量，避免逐筆查詢。 */
 export async function countFavoritesByMembers(memberIds: string[]): Promise<Record<string, number>> {
   await connectMongo();

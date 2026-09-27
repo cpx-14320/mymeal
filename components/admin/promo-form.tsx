@@ -8,6 +8,7 @@ import { PROMO_PAGE_OPTIONS } from "@/lib/promo-pages";
 import type { InterstitialView } from "@/lib/models/interstitial";
 import { createPromoAction, type CreatePromoState } from "@/app/(app)/admin/promos/new/actions";
 import { updatePromoAction, type UpdatePromoState } from "@/app/(app)/admin/promos/[id]/actions";
+import { CreatedBanner } from "@/components/admin/created-banner";
 
 /** 新增 / 編輯蓋台廣告共用的表單。傳 promo 就是編輯模式（欄位帶入現值）。 */
 export function PromoForm({ promo }: { promo?: InterstitialView }) {
@@ -27,6 +28,8 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
     <form action={formAction}>
       <Card>
         <CardBody className="space-y-5">
+          <CreatedBanner message="廣告已建立成功，可以繼續編輯以下內容。" />
+
           <Field label="活動名稱" hint="只在後台顯示，方便辨識">
             <input
               className={inputClass}

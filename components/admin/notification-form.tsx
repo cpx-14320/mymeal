@@ -9,6 +9,7 @@ import {
   updateNotificationAction,
   type UpdateNotificationState,
 } from "@/app/(app)/admin/notifications/[id]/actions";
+import { CreatedBanner } from "@/components/admin/created-banner";
 
 /** 新增 / 編輯通知訊息共用的表單。傳 notification 就是編輯模式（欄位帶入現值）。 */
 export function NotificationForm({ notification }: { notification?: NotificationView }) {
@@ -28,6 +29,8 @@ export function NotificationForm({ notification }: { notification?: Notification
     <form action={formAction}>
       <Card>
         <CardBody className="space-y-5">
+          <CreatedBanner message="通知已建立成功，可以繼續編輯以下內容。" />
+
           <Field label="標題" hint="顯示在通知清單裡的第一行">
             <input
               className={inputClass}

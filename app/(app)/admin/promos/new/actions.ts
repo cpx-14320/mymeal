@@ -43,5 +43,5 @@ export async function createPromoAction(
   }
 
   revalidatePath("/admin/promos");
-  redirect(`/admin/promos/${promoId}`);
+  redirect(`/admin/promos/${promoId}?created=1`);
 }

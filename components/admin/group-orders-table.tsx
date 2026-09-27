@@ -11,6 +11,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  DismissibleNote,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -38,6 +39,7 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
   const [filterLabel, setFilterLabel] = useState("全部");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
+  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   const activeFilter = filters.find((f) => f.label === filterLabel) ?? filters[0];
   const filtered = rows.filter(activeFilter.test);
@@ -71,10 +73,12 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
   }
 
   async function bulkDelete() {
+    const count = selected.size;
     setBusy(true);
     await deleteGroupOrdersAction([...selected]);
     setSelected(new Set());
     setBusy(false);
+    setDeletedCount(count);
     router.refresh();
   }
 
@@ -106,6 +110,12 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
           { label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy },
         ]}
       />
+
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 個團訂。</p>
+        </DismissibleNote>
+      )}
 
       <TableWrap>
         <thead>

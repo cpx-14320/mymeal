@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { setMembersStatus, findMemberNames, type MemberStatus } from "@/lib/models/member";
+import { setMembersStatus, deleteMembers, findMemberNames, type MemberStatus } from "@/lib/models/member";
+import { deleteFavoritesByMembers } from "@/lib/models/favorite";
+import { deleteItemReviewsByMembers } from "@/lib/models/item-review";
+import { deleteFeedbackByMembers } from "@/lib/models/feedback";
+import { removeMemberOrderLines } from "@/lib/models/group-order";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
 
@@ -41,4 +45,36 @@ export async function setMembersStatusAction(
   revalidatePath("/admin/members");
   revalidatePath("/admin/audit");
   return { updatedCount };
+}
+
+export interface DeleteMembersState {
+  error?: string;
+  deletedCount?: number;
+}
+
+/** 真的刪除會員（不是停權）：連同收藏／評論／意見回饋／團訂點餐紀錄一起清掉，見 deleteMembers 註解。 */
+export async function deleteMembersAction(ids: string[]): Promise<DeleteMembersState> {
+  if (ids.length === 0) return { error: "請先選取要刪除的會員。" };
+
+  const actor = await getCurrentActorName();
+  const names = await findMemberNames(ids);
+
+  await Promise.all([
+    deleteFavoritesByMembers(ids),
+    deleteItemReviewsByMembers(ids),
+    deleteFeedbackByMembers(ids),
+    removeMemberOrderLines(ids),
+  ]);
+  const deletedCount = await deleteMembers(ids);
+
+  await createAuditLog({
+    actor,
+    action: "刪除會員",
+    target: summarizeNames(names),
+    risk: true,
+  });
+
+  revalidatePath("/admin/members");
+  revalidatePath("/admin/audit");
+  return { deletedCount };
 }

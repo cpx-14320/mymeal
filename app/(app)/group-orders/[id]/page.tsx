@@ -18,11 +18,13 @@ import { GroupOrderForm, type OrderableDish } from "@/components/group-order-for
 import { GroupOrderExportButton } from "@/components/group-order-export-button";
 import { GroupOrderHostActions } from "@/components/group-order-host-actions";
 import { GroupOrderDeadlineStat } from "@/components/group-order-deadline-stat";
+import { GroupOrderSettingsEditor } from "@/components/group-order-settings-editor";
 import { findGroupOrderById, getMemberFrequentItems, type RiceLevel } from "@/lib/models/group-order";
-import { findTemplateById } from "@/lib/models/template";
+import { findTemplateById, listActiveTemplateDetails } from "@/lib/models/template";
 import { findMemberById } from "@/lib/models/member";
 import { getMemberBalance } from "@/lib/models/wallet";
 import { getSessionMemberId } from "@/lib/session";
+import { listDepartments, listUnits } from "@/lib/models/org";
 
 const statusMap = {
   open: { label: "開放中", tone: "positive" as const },
@@ -55,9 +57,13 @@ export default async function GroupOrderDetailPage({
   const viewer = await findMemberById(memberId);
   if (!viewer) redirect("/login");
 
-  const [tpl, walletBalance] = await Promise.all([
+  const isHost = memberId === group.hostId;
+  const [tpl, walletBalance, editableTemplates, departments, units] = await Promise.all([
     findTemplateById(group.templateId),
     getMemberBalance(memberId),
+    isHost ? listActiveTemplateDetails() : Promise.resolve([]),
+    isHost ? listDepartments() : Promise.resolve([]),
+    isHost ? listUnits() : Promise.resolve([]),
   ]);
 
   const dishMap = new Map<string, OrderableDish>();
@@ -114,7 +120,7 @@ export default async function GroupOrderDetailPage({
         <GroupOrderDeadlineStat
           groupOrderId={group.id}
           deadline={group.deadline}
-          editable={memberId === group.hostId && group.status === "open"}
+          editable={isHost && group.status === "open"}
         />
         <Stat
           label="目前份數"
@@ -200,7 +206,7 @@ export default async function GroupOrderDetailPage({
         </TableWrap>
       </div>
 
-      {memberId === group.hostId ? (
+      {isHost ? (
         <GroupOrderHostActions
           groupOrderId={group.id}
           status={group.status}
@@ -213,6 +219,18 @@ export default async function GroupOrderDetailPage({
                 lines={group.lines}
                 host={group.hostName}
                 filename={`${group.name}_訂購彙總.csv`}
+              />
+              <GroupOrderSettingsEditor
+                groupOrderId={group.id}
+                current={{
+                  name: group.name,
+                  templateId: group.templateId,
+                  sectionId: group.sectionId,
+                  unitId: group.unitId,
+                }}
+                templates={editableTemplates}
+                departments={departments}
+                units={units}
               />
             </>
           }

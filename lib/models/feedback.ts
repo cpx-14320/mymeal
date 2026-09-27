@@ -75,6 +75,14 @@ export async function listFeedback(): Promise<FeedbackView[]> {
   }));
 }
 
+/** 刪除會員時一起清掉：這位會員送出過的意見回饋。 */
+export async function deleteFeedbackByMembers(memberIds: string[]): Promise<void> {
+  await connectMongo();
+  const objIds = memberIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return;
+  await Feedback.deleteMany({ memberId: { $in: objIds } });
+}
+
 export async function deleteFeedback(ids: string[]): Promise<number> {
   await connectMongo();
   const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));

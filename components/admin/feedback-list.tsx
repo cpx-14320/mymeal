@@ -10,6 +10,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  DismissibleNote,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -22,6 +23,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleted, setDeleted] = useState(false);
 
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(feedback, page, pageSize);
 
@@ -30,6 +32,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
     setBusyId(id);
     await deleteFeedbackAction(id);
     setBusyId(null);
+    setDeleted(true);
     router.refresh();
   }
 
@@ -42,6 +45,12 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
           setPage(1);
         }}
       />
+
+      {deleted && (
+        <DismissibleNote tone="positive" onClose={() => setDeleted(false)}>
+          <p>已刪除這筆意見回饋。</p>
+        </DismissibleNote>
+      )}
 
       <TableWrap>
         <thead>

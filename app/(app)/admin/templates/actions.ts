@@ -37,7 +37,7 @@ export async function createTemplateAction(
   }
 
   revalidatePath("/admin/templates");
-  redirect(`/admin/templates/${templateId}`);
+  redirect(`/admin/templates/${templateId}?created=1`);
 }
 
 export async function setTemplatesActiveAction(ids: string[], active: boolean) {

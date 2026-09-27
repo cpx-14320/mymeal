@@ -708,7 +708,7 @@ export function Field({
 
 const noteToneCls: Record<"brand" | "positive" | "danger", string> = {
   brand: "border border-line border-l-[3px] border-l-brand bg-surface text-muted",
-  positive: "border border-line border-l-[3px] border-l-positive bg-surface text-muted",
+  positive: "border border-positive/40 bg-positive/10 text-positive",
   danger: "border border-danger/40 bg-danger/10 text-danger",
 };
 
@@ -721,5 +721,34 @@ export function Note({
 }) {
   return (
     <div className={`rounded-lg p-4 text-[13px] lg:text-[14px] ${noteToneCls[tone]}`}>{children}</div>
+  );
+}
+
+/** 執行完一個動作（匯入、上傳、打包下載…）後顯示的結果訊息，帶一顆關閉鈕自己收掉——
+ *  CSV 匯入、批次上傳圖片、打包圖片下載…等後台批次操作的「結果摘要」都共用這個殼，
+ *  呼叫端只要管一個 state（成功與否、有沒有內容）就好，不用每個地方都重寫一次外層排版跟關閉鈕。 */
+export function DismissibleNote({
+  tone,
+  onClose,
+  children,
+}: {
+  tone: "brand" | "positive" | "danger";
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Note tone={tone}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1">{children}</div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 opacity-70 hover:opacity-100"
+          aria-label="關閉"
+        >
+          ✕
+        </button>
+      </div>
+    </Note>
   );
 }

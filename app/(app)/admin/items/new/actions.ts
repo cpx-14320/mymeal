@@ -52,5 +52,5 @@ export async function createItemAction(
   }
 
   revalidatePath("/admin/items");
-  redirect("/admin/items");
+  redirect("/admin/items?created=1");
 }

@@ -37,5 +37,5 @@ export async function createNotificationAction(
   }
 
   revalidatePath("/admin/promos");
-  redirect(`/admin/notifications/${notificationId}`);
+  redirect(`/admin/notifications/${notificationId}?created=1`);
 }

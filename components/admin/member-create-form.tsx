@@ -28,39 +28,37 @@ export function MemberCreateForm({ departments, units, roleNames }: MemberCreate
     <form action={formAction}>
       <Card>
         <CardBody className="space-y-5">
+          <Field label="帳號">
+            <input className={inputClass} type="text" name="email" required />
+          </Field>
+
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="員工編號">
-              <input
-                className={inputClass}
-                name="employeeId"
-                placeholder="例：E010001"
-                required
-              />
-            </Field>
-
-            <Field label="姓名">
-              <input className={inputClass} name="name" placeholder="例：林佩珊" required />
-            </Field>
-
-            <Field label="帳號(公司email)">
-              <input
-                className={inputClass}
-                type="email"
-                name="email"
-                placeholder="user1@company.com"
-                required
-              />
-            </Field>
-
-            <Field label="初始密碼">
+            <Field label="密碼">
               <input
                 className={inputClass}
                 type="password"
                 name="password"
-                placeholder="至少 8 碼"
                 required
                 minLength={8}
               />
+            </Field>
+
+            <Field label="確認密碼">
+              <input
+                className={inputClass}
+                type="password"
+                name="confirmPassword"
+                required
+                minLength={8}
+              />
+            </Field>
+
+            <Field label="姓名">
+              <input className={inputClass} name="name" required />
+            </Field>
+
+            <Field label="員工編號">
+              <input className={inputClass} name="employeeId" required />
             </Field>
 
             <Field label="部門">
@@ -75,7 +73,7 @@ export function MemberCreateForm({ departments, units, roleNames }: MemberCreate
                 }}
               >
                 <option value="" disabled>
-                  選擇部門
+                  請選擇部門
                 </option>
                 {departments.map((d) => (
                   <option key={d.id} value={d.name}>
@@ -95,7 +93,7 @@ export function MemberCreateForm({ departments, units, roleNames }: MemberCreate
                 disabled={!deptName}
               >
                 <option value="" disabled>
-                  {deptName ? "選擇單位" : "請先選擇部門"}
+                  {deptName ? "請選擇單位" : "請先選擇部門"}
                 </option>
                 {availableUnits.map((u) => (
                   <option key={u.id} value={u.name}>
@@ -104,15 +102,19 @@ export function MemberCreateForm({ departments, units, roleNames }: MemberCreate
                 ))}
               </select>
             </Field>
-
-            <Field label="權限">
-              <select className={inputClass} name="role" defaultValue={roleNames[0]} required>
-                {roleNames.map((r) => (
-                  <option key={r}>{r}</option>
-                ))}
-              </select>
-            </Field>
           </div>
+
+          <Field label="邀請碼（選填）" hint="填對某位會員的專屬碼會記為推薦人；權限請直接用下面的「權限」欄位設定">
+            <input className={inputClass} name="inviteCode" />
+          </Field>
+
+          <Field label="權限">
+            <select className={inputClass} name="role" defaultValue={roleNames[0]} required>
+              {roleNames.map((r) => (
+                <option key={r}>{r}</option>
+              ))}
+            </select>
+          </Field>
 
           <div>
             <span className="mb-1.5 block text-sm font-medium">狀態</span>

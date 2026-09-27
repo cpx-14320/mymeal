@@ -33,5 +33,5 @@ export async function createRoleAction(
   }
 
   revalidatePath("/admin/roles");
-  redirect(`/admin/roles/${roleId}`);
+  redirect(`/admin/roles/${roleId}?created=1`);
 }

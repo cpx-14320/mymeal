@@ -80,6 +80,21 @@ const groupOrderSchema = new Schema<GroupOrderDocument>(
 
 export const GroupOrder = models.GroupOrder ?? model<GroupOrderDocument>("GroupOrder", groupOrderSchema);
 
+/**
+ * 刪除會員時一起清掉：把這位會員自己點的品項行從所有團訂裡移除（只拔這幾行，不動整張團訂——
+ * 團訂是團主開的、其他人還在裡面點餐，不能因為這個人被刪除就整團消失）。
+ * hostId 保留不動：團訂列表已經會用「（已刪除會員）」顯示團主查無資料的情況。
+ */
+export async function removeMemberOrderLines(memberIds: string[]): Promise<void> {
+  await connectMongo();
+  const objIds = memberIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return;
+  await GroupOrder.updateMany(
+    { "lines.memberId": { $in: objIds } },
+    { $pull: { lines: { memberId: { $in: objIds } } } },
+  );
+}
+
 function orderLineTotals(lines: OrderLineSubdoc[]) {
   return lines.reduce(
     (acc, l) => ({ qty: acc.qty + l.qty, amount: acc.amount + l.price * l.qty }),
@@ -334,6 +349,61 @@ export async function createGroupOrder(input: CreateGroupOrderInput) {
     lines: [],
   });
   return { id: String(doc._id) };
+}
+
+export interface UpdateGroupOrderSettingsInput {
+  name: string;
+  templateId: string;
+  sectionId?: string;
+  unitId: string;
+}
+
+/**
+ * 團主修正「開團時設錯模板／分類／單位／團名」用。改這些欄位不會動到已經點好的品項——
+ * lines 只存各自的品項 id、名稱與價格快照，不記 section/unit，見檔案開頭的說明。
+ */
+export async function updateGroupOrderSettings(id: string, input: UpdateGroupOrderSettingsInput) {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(id)) throw new Error("無效的團 id");
+  if (!Types.ObjectId.isValid(input.templateId)) throw new Error("請選擇有效的模板。");
+  if (!Types.ObjectId.isValid(input.unitId)) throw new Error("請選擇有效的單位。");
+  const name = input.name.trim();
+  if (!name) throw new Error("請填寫團名。");
+
+  const current = await GroupOrder.findById(id);
+  if (!current) throw new Error("找不到這個團，可能已被刪除。");
+
+  // 改名時才需要查重複；同一天不能有兩團同名（跟 createGroupOrder 的規則一致），
+  // 排除自己這一筆，避免沒改名字時被自己卡住。
+  if (name !== current.name) {
+    const duplicate = await GroupOrder.findOne({ _id: { $ne: current._id }, date: current.date, name });
+    if (duplicate) throw new Error(`${current.date} 已經有一團叫「${name}」了，請改一個名稱。`);
+  }
+
+  const hasSection = !!input.sectionId && Types.ObjectId.isValid(input.sectionId);
+  let sectionName = "";
+  if (hasSection) {
+    const { Template } = await import("@/lib/models/template");
+    const tpl = await Template.findById(input.templateId);
+    sectionName = tpl?.sections.find((s: { _id: Types.ObjectId }) => String(s._id) === input.sectionId)?.name ?? "";
+  }
+
+  const doc = await GroupOrder.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        name,
+        templateId: new Types.ObjectId(input.templateId),
+        unitId: new Types.ObjectId(input.unitId),
+        sectionName,
+        ...(hasSection ? { sectionId: new Types.ObjectId(input.sectionId!) } : {}),
+      },
+      ...(hasSection ? {} : { $unset: { sectionId: "" } }),
+    },
+    { new: true },
+  );
+  if (!doc) throw new Error("找不到這個團，可能已被刪除。");
+  return { id };
 }
 
 export async function setGroupOrdersStatus(ids: string[], status: GroupOrderStatus): Promise<number> {

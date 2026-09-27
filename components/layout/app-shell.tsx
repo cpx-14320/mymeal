@@ -34,6 +34,7 @@ export function AppShell({
   registerDepartments = [],
   registerUnits = [],
   adminPermissions = {},
+  avatarUrl,
 }: {
   children: ReactNode;
   /** 已上架的頁面，前台側欄用來動態多顯示一個連結（見 sidebar.tsx）；後台新增頁面就會同步出現。 */
@@ -47,6 +48,8 @@ export function AppShell({
   registerUnits?: UnitOption[];
   /** 目前會員套用組別的權限鍵——側欄「後台管理」跟後台內部項目要不要顯示，都看這個。 */
   adminPermissions?: RolePermissions;
+  /** 目前會員的大頭貼網址（沒上傳過就是 undefined），header 頭像選單用。 */
+  avatarUrl?: string;
 }) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -115,6 +118,7 @@ export function AppShell({
           mounted={mounted}
           authed={authed}
           onLogout={logout}
+          avatarUrl={avatarUrl}
         />
 
         <div className="mx-auto flex w-full max-w-[1400px] flex-1">

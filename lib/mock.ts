@@ -228,7 +228,7 @@ export const permissionCategories: PermissionCategory[] = [
   },
   {
     key: "finance",
-    label: "財務",
+    label: "財務管理",
     items: [
       { key: "topups", label: "儲值審核" },
       { key: "wallets", label: "錢包與交易" },

@@ -14,6 +14,7 @@ import {
   Pagination,
   PageSizeSelect,
   BulkActionBar,
+  DismissibleNote,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -32,6 +33,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
   const [month, setMonth] = useState<number | "all">("all");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
+  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   // 依「模板建立時間」篩選——目前模板沒有另外記錄「這是哪一週的菜單」，
   // 以每週建立一個模板的實際節奏來看，建立時間可以直接當作篩選依據。
@@ -75,10 +77,12 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
   }
 
   async function bulkDelete() {
+    const count = selected.size;
     setBusy(true);
     await deleteTemplatesAction([...selected]);
     setSelected(new Set());
     setBusy(false);
+    setDeletedCount(count);
     router.refresh();
   }
 
@@ -94,6 +98,12 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
       <AdminHeaderActions>
         <ButtonLink href="/admin/templates/new" size="sm">新增模板</ButtonLink>
       </AdminHeaderActions>
+
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 個模板。</p>
+        </DismissibleNote>
+      )}
 
       <div className="flex min-h-9 flex-wrap items-center justify-end gap-2">
         <PageSizeSelect

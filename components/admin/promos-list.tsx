@@ -13,7 +13,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
-  Note,
+  DismissibleNote,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -49,7 +49,7 @@ export function PromosList({ promos }: { promos: InterstitialView[] }) {
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [deleting, setDeleting] = useState(false);
-  const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
+  const [deletedCount, setDeletedCount] = useState<number | null>(null);
   const now = new Date();
 
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(promos, page, pageSize);
@@ -85,8 +85,7 @@ export function PromosList({ promos }: { promos: InterstitialView[] }) {
     await deletePromosAction([...selected]);
     setSelected(new Set());
     setDeleting(false);
-    setDeletedMessage(`已刪除 ${count} 筆資料`);
-    setTimeout(() => setDeletedMessage(null), 3000);
+    setDeletedCount(count);
     router.refresh();
   }
 
@@ -100,7 +99,11 @@ export function PromosList({ promos }: { promos: InterstitialView[] }) {
         }}
       />
 
-      {deletedMessage && <Note tone="danger">{deletedMessage}</Note>}
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 則廣告。</p>
+        </DismissibleNote>
+      )}
 
       <BulkActionBar
         count={selected.size}

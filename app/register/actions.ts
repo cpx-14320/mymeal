@@ -1,8 +1,7 @@
 "use server";
 
-import { createMember, findMemberByCode } from "@/lib/models/member";
+import { createMember, parseMemberForm } from "@/lib/models/member";
 import { createSession } from "@/lib/session";
-import { listDepartments, listUnits } from "@/lib/models/org";
 
 export interface RegisterState {
   error?: string;
@@ -15,6 +14,8 @@ export interface RegisterState {
  * 1. 填對這組固定碼（存在 .env.local 的 ADMIN_INVITE_CODE）→ 註冊帳號直接開超級管理員（所有權限全開）。
  * 2. 填的是某位現有會員的專屬碼（memberCode）→ 當推薦碼，記下推薦人，權限不受影響。
  * 兩種都沒對到就當沒填，照常註冊一般使用者，不擋註冊流程。
+ * 共用的必填/密碼/部門單位/推薦碼解析見 parseMemberForm；這裡只處理前台獨有的
+ * 「邀請碼也能換管理員角色」邏輯（後台新增會員本來就有「權限」欄位可選，不需要這個後門）。
  */
 const ADMIN_ROLE_NAME = "超級管理員";
 
@@ -22,54 +23,24 @@ export async function registerAction(
   _prevState: RegisterState,
   formData: FormData,
 ): Promise<RegisterState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  const confirmPassword = String(formData.get("confirmPassword") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
-  const employeeId = String(formData.get("employeeId") ?? "").trim();
-  const dept = String(formData.get("dept") ?? "").trim();
-  const unit = String(formData.get("unit") ?? "").trim();
-  const inviteCode = String(formData.get("inviteCode") ?? "").trim();
+  const parsed = await parseMemberForm(formData);
+  if (!parsed.ok) return { error: parsed.error };
+  const fields = parsed.fields;
 
-  if (!email || !password || !name || !employeeId || !dept || !unit) {
-    return { error: "請填寫所有必填欄位。" };
-  }
-  if (password.length < 8) {
-    return { error: "密碼至少需要 8 碼。" };
-  }
-  if (password !== confirmPassword) {
-    return { error: "兩次輸入的密碼不一致。" };
-  }
-  const departments = await listDepartments();
-  const matchedDept = departments.find((d) => d.name === dept);
-  if (!matchedDept) {
-    return { error: "請選擇有效的部門。" };
-  }
-  const units = await listUnits(matchedDept.id);
-  if (!units.some((u) => u.name === unit)) {
-    return { error: "請選擇有效的單位。" };
-  }
-
-  let role: string | undefined;
-  let referrer: Awaited<ReturnType<typeof findMemberByCode>> = null;
-
-  if (inviteCode && inviteCode === process.env.ADMIN_INVITE_CODE) {
-    role = ADMIN_ROLE_NAME;
-  } else if (inviteCode) {
-    referrer = await findMemberByCode(inviteCode.toUpperCase());
-  }
+  const isAdminInvite = fields.inviteCode && fields.inviteCode === process.env.ADMIN_INVITE_CODE;
+  const role = isAdminInvite ? ADMIN_ROLE_NAME : undefined;
 
   try {
     const member = await createMember({
-      email,
-      password,
-      name,
-      employeeId,
-      dept,
-      unit,
+      email: fields.email,
+      password: fields.password,
+      name: fields.name,
+      employeeId: fields.employeeId,
+      dept: fields.dept,
+      unit: fields.unit,
       role,
-      referredByCode: referrer?.memberCode,
-      referredByName: referrer?.name,
+      referredByCode: isAdminInvite ? undefined : fields.referredByCode,
+      referredByName: isAdminInvite ? undefined : fields.referredByName,
     });
     // 註冊後不需要審核，直接視為登入成功。
     await createSession(String(member._id));

@@ -37,11 +37,15 @@ interface HeaderProps {
   authed: boolean;
   /** 真正登出（清掉 session cookie） */
   onLogout: () => void;
+  /** 目前會員的大頭貼網址，沒上傳過就顯示預設的人形圖示。 */
+  avatarUrl?: string;
 }
 
-export function Header({ onMenuClick, mounted, authed, onLogout }: HeaderProps) {
+export function Header({ onMenuClick, mounted, authed, onLogout, avatarUrl }: HeaderProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const { openLogin } = useLoginModal();
 
   const [notifications, setNotifications] = useState<NotificationView[]>([]);
@@ -72,6 +76,17 @@ export function Header({ onMenuClick, mounted, authed, onLogout }: HeaderProps) 
     return () => document.removeEventListener("mousedown", onClick);
   }, [notifOpen]);
 
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [userMenuOpen]);
+
   function toggleNotifOpen() {
     setNotifOpen((v) => {
       const next = !v;
@@ -87,6 +102,7 @@ export function Header({ onMenuClick, mounted, authed, onLogout }: HeaderProps) 
 
   function handleLogout() {
     setNotifOpen(false);
+    setUserMenuOpen(false);
     onLogout();
   }
 
@@ -154,15 +170,57 @@ export function Header({ onMenuClick, mounted, authed, onLogout }: HeaderProps) 
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={handleLogout}
-                aria-label="登出"
-                title="登出"
-                className="grid size-9 place-items-center rounded-full text-brand hover:bg-surface-2"
+              <div
+                className="relative"
+                ref={userMenuRef}
+                onMouseEnter={() => setUserMenuOpen(true)}
+                onMouseLeave={() => setUserMenuOpen(false)}
               >
-                <UserCircleIcon className="h-7 w-7" />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  aria-label="帳號選單"
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                  className="grid size-9 place-items-center overflow-hidden rounded-full text-brand hover:bg-surface-2"
+                >
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt="" className="size-full object-cover" />
+                  ) : (
+                    <UserCircleIcon className="h-7 w-7" />
+                  )}
+                </button>
+
+                {userMenuOpen && (
+                  // 外層從按鈕底部直接無縫接上（top-full，沒有 margin），用 padding 撐出視覺間距——
+                  // 這段 padding 仍算在這個 div 的可 hover 範圍內，滑鼠從按鈕移到選單途中才不會
+                  // 經過一段沒有任何元素接住的空隙，導致 mouseleave 提早觸發、選單消失。
+                  <div className="absolute right-0 top-full w-40 pt-2">
+                    <div
+                      role="menu"
+                      className="overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-xl"
+                    >
+                      <Link
+                        href="/account"
+                        role="menuitem"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block px-3 py-2 text-sm hover:bg-surface-2"
+                      >
+                        會員資料
+                      </Link>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={handleLogout}
+                        className="block w-full px-3 py-2 text-left text-sm text-danger hover:bg-surface-2"
+                      >
+                        登出
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>

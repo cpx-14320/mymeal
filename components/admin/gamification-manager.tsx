@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Section, Button, Badge, TableWrap, Th, Td, PillTabs, BulkActionBar } from "@/components/ui/primitives";
+import { Section, Button, Badge, TableWrap, Th, Td, PillTabs, BulkActionBar, DismissibleNote } from "@/components/ui/primitives";
 import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { taskTypeLabel, taskPeriodLabel } from "@/lib/mock";
 import type {
@@ -39,6 +39,7 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   function patch(id: string, p: Parameters<typeof updateDailyTaskAction>[1]) {
     startTransition(async () => {
@@ -61,9 +62,11 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
     });
 
   function bulkDelete() {
+    const count = selected.size;
     startTransition(async () => {
       await deleteDailyTasksAction([...selected]);
       setSelected(new Set());
+      setDeletedCount(count);
       router.refresh();
     });
   }
@@ -90,6 +93,12 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
         onCancel={() => setSelected(new Set())}
         actions={[{ label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy }]}
       />
+
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 個任務。</p>
+        </DismissibleNote>
+      )}
 
       <TableWrap>
         <thead>
@@ -206,6 +215,7 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   function patch(id: string, p: Parameters<typeof updateExpRuleAction>[1]) {
     startTransition(async () => {
@@ -237,9 +247,11 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
     });
 
   function bulkDelete() {
+    const count = selected.size;
     startTransition(async () => {
       await deleteExpRulesAction([...selected]);
       setSelected(new Set());
+      setDeletedCount(count);
       router.refresh();
     });
   }
@@ -266,6 +278,12 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
         onCancel={() => setSelected(new Set())}
         actions={[{ label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy }]}
       />
+
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 項規則。</p>
+        </DismissibleNote>
+      )}
 
       <TableWrap>
         <thead>
@@ -355,6 +373,7 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   function patch(id: string, p: { name?: string; minExp?: number }) {
     startTransition(async () => {
@@ -377,9 +396,11 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
     });
 
   function bulkDelete() {
+    const count = selected.size;
     startTransition(async () => {
       await deleteMemberLevelsAction([...selected]);
       setSelected(new Set());
+      setDeletedCount(count);
       router.refresh();
     });
   }
@@ -406,6 +427,12 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
         onCancel={() => setSelected(new Set())}
         actions={[{ label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy }]}
       />
+
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 個等級。</p>
+        </DismissibleNote>
+      )}
 
       <TableWrap>
         <thead>

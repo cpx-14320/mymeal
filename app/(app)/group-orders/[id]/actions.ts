@@ -5,6 +5,7 @@ import {
   replaceMemberLines,
   findGroupOrderById,
   setGroupOrderStatusAndDeadline,
+  updateGroupOrderSettings,
   chargeWalletForGroupOrder,
   refundWalletForGroupOrder,
   cancelMemberLine,
@@ -125,6 +126,28 @@ export async function updateGroupOrderDeadlineAction(
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
   revalidatePath(`/group-orders/${groupOrderId}`);
+  return { success: true };
+}
+
+export interface UpdateGroupOrderSettingsState {
+  error?: string;
+  success?: boolean;
+}
+
+/** 團主修正開團時設錯的模板／分類／單位／團名用；不影響大家已經點好的品項
+ *  （見 lib/models/group-order 的 updateGroupOrderSettings 說明）。 */
+export async function updateGroupOrderSettingsAction(
+  groupOrderId: string,
+  input: { name: string; templateId: string; sectionId?: string; unitId: string },
+): Promise<UpdateGroupOrderSettingsState> {
+  try {
+    await assertHost(groupOrderId);
+    await updateGroupOrderSettings(groupOrderId, input);
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
+  }
+  revalidatePath(`/group-orders/${groupOrderId}`);
+  revalidatePath("/group-orders");
   return { success: true };
 }
 

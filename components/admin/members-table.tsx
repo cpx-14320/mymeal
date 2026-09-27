@@ -12,12 +12,14 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  DismissibleNote,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { MemberListItem, MemberStatus } from "@/lib/models/member";
 import { formatTaiwanDateTime } from "@/lib/date";
-import { setMembersStatusAction } from "@/app/(app)/admin/members/actions";
+import { setMembersStatusAction, deleteMembersAction } from "@/app/(app)/admin/members/actions";
+import { CreatedBanner } from "@/components/admin/created-banner";
 
 const statusMap = {
   active: { label: "啟用", tone: "positive" as const },
@@ -34,6 +36,9 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
   const [search, setSearch] = useState("");
   const [statusUpdatingIds, setStatusUpdatingIds] = useState<Set<string>>(() => new Set());
   const [statusError, setStatusError] = useState<string | undefined>();
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | undefined>();
+  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   const query = search.trim().toLowerCase();
   const filtered = query
@@ -93,6 +98,22 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
   const toggleStatus = (id: string, current: MemberStatus) =>
     applyStatus([id], current === "active" ? "suspended" : "active");
 
+  const bulkDelete = async () => {
+    const ids = Array.from(selected);
+    setDeleting(true);
+    setDeleteError(undefined);
+    const result = await deleteMembersAction(ids);
+    setDeleting(false);
+    if (result.error) {
+      setDeleteError(result.error);
+      return;
+    }
+    setMembers((prev) => prev.filter((m) => !ids.includes(m.id)));
+    setSelected(new Set());
+    setDeletedCount(result.deletedCount ?? 0);
+    router.refresh();
+  };
+
   return (
     <div className="space-y-4">
       <ListToolbar
@@ -111,7 +132,16 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
         }}
       />
 
+      <CreatedBanner message="會員已建立成功。" />
+
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 位會員。</p>
+        </DismissibleNote>
+      )}
+
       {statusError && <p className="text-[13px] lg:text-[14px] text-danger">{statusError}</p>}
+      {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
 
       <BulkActionBar
         count={selected.size}
@@ -122,13 +152,19 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
             label: "啟用選取",
             tone: "neutral",
             onClick: () => bulkSetStatus("active"),
-            disabled: statusUpdatingIds.size > 0,
+            disabled: statusUpdatingIds.size > 0 || deleting,
           },
           {
             label: "停用選取",
             tone: "neutral",
             onClick: () => bulkSetStatus("suspended"),
-            disabled: statusUpdatingIds.size > 0,
+            disabled: statusUpdatingIds.size > 0 || deleting,
+          },
+          {
+            label: deleting ? "刪除中…" : "刪除選取",
+            tone: "danger",
+            onClick: bulkDelete,
+            disabled: statusUpdatingIds.size > 0 || deleting,
           },
         ]}
       />

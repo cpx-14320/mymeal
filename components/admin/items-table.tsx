@@ -12,7 +12,6 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
-  Note,
   inputClass,
   paginate,
   DEFAULT_PAGE_SIZE,
@@ -55,11 +54,18 @@ export function ItemsTable({
   categories,
   tagGroups,
   pages,
+  onZipResult,
+  onDeleted,
 }: {
   items: CatalogItemView[];
   categories: ItemCategoryOption[];
   tagGroups: TagGroupView[];
   pages: PageView[];
+  /** 打包圖片下載的結果摘要——交給上層 ItemsAdminSection 用同一個訊息框顯示，
+   *  位置才會跟「新增品項成功」「匯入 CSV」那些結果訊息一致（在分頁籤上方，不是表格區塊裡）。 */
+  onZipResult: (summary: ImageZipSummary) => void;
+  /** 批次刪除成功後回報刪了幾筆，同樣交給上層用同一個訊息框顯示。 */
+  onDeleted: (count: number) => void;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
@@ -69,7 +75,6 @@ export function ItemsTable({
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
-  const [zipSummary, setZipSummary] = useState<ImageZipSummary | null>(null);
 
   const tabs: { key: Filter; label: string }[] = [
     { key: "all", label: "全部" },
@@ -123,10 +128,12 @@ export function ItemsTable({
   }
 
   async function bulkDelete() {
+    const count = selected.size;
     setBusy(true);
     await deleteItemsAction([...selected]);
     setSelected(new Set());
     setBusy(false);
+    onDeleted(count);
     router.refresh();
   }
 
@@ -196,7 +203,7 @@ export function ItemsTable({
             <ItemsImageZipButton
               items={items}
               selectedIds={[...selected]}
-              onResult={setZipSummary}
+              onResult={onZipResult}
             />
           </>
         }
@@ -206,37 +213,6 @@ export function ItemsTable({
           { label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy },
         ]}
       />
-
-      {zipSummary && (
-        <Note tone={zipSummary.failed.length > 0 ? "danger" : "positive"}>
-          <div className="flex items-start justify-between gap-2">
-            <div className="space-y-1">
-              <p>
-                成功打包 {zipSummary.packed} 張圖片
-                {zipSummary.skippedNoImage > 0 && `，${zipSummary.skippedNoImage} 項沒有圖片已略過`}。
-              </p>
-              {zipSummary.failed.length > 0 && (
-                <div>
-                  <p>下載失敗（{zipSummary.failed.length}）：</p>
-                  <ul className="max-h-32 list-disc space-y-0.5 overflow-y-auto pl-4">
-                    {zipSummary.failed.map((name, i) => (
-                      <li key={i}>{name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => setZipSummary(null)}
-              className="shrink-0 opacity-70 hover:opacity-100"
-              aria-label="關閉"
-            >
-              ✕
-            </button>
-          </div>
-        </Note>
-      )}
 
       <TableWrap>
         <thead>

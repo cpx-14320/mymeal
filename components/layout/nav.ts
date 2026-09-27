@@ -139,7 +139,7 @@ export const adminNav: AdminNavGroup[] = [
   },
   {
     key: "finance",
-    label: "財務",
+    label: "財務管理",
     items: [
       { key: "topups", label: "儲值審核", href: "/admin/topups" },
       { key: "wallets", label: "錢包與交易", href: "/admin/wallets" },

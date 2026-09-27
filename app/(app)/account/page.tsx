@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/primitives";
 import { memberLevelInfo } from "@/lib/mock";
 import { AccountTaskTabs } from "@/components/account-task-tabs";
+import { AccountAvatarUploader } from "@/components/account-avatar-uploader";
 import { listDailyTasks, listExpRules, listMemberLevels } from "@/lib/models/gamification";
 import { getMemberLifetimeCounts, achievementProgress, periodTaskProgress } from "@/lib/models/achievements";
 import { getSessionMemberId } from "@/lib/session";
@@ -58,15 +59,11 @@ export default async function AccountPage() {
       {/* 個人資料 */}
       <Card>
         <CardBody className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="grid size-16 place-items-center rounded-full bg-brand-soft text-2xl">
-              🙂
-            </div>
-            <div>
-              <p className="text-lg font-bold">{member.name}</p>
-              <p className="text-sm text-muted">{member.role || "一般使用者"}</p>
-            </div>
-          </div>
+          <AccountAvatarUploader
+            initialAvatarUrl={member.avatarUrl}
+            name={member.name}
+            role={member.role || "一般使用者"}
+          />
           <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
             {profile.map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 border-b border-line py-2 text-sm">

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Section, ButtonLink, Note } from "@/components/ui/primitives";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Section, ButtonLink, DismissibleNote } from "@/components/ui/primitives";
 import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { ItemsTable } from "@/components/admin/items-table";
 import { ItemsCsvButtons } from "@/components/admin/items-csv-buttons";
 import { ItemsBatchImageUpload } from "@/components/admin/items-batch-image-upload";
 import type { ItemImportSummary } from "@/app/(app)/admin/items/actions";
 import type { BatchUploadImagesResult } from "@/app/(app)/admin/items/upload-image-action";
+import type { ImageZipSummary } from "@/components/admin/items-image-zip-button";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
 import type { TagGroupView } from "@/lib/models/tag-group";
@@ -78,18 +80,54 @@ function batchUploadResultMessage(result: BatchUploadImagesResult): Message {
   };
 }
 
+function zipResultMessage(summary: ImageZipSummary): Message {
+  return {
+    tone: summary.failed.length > 0 ? "danger" : "positive",
+    content: (
+      <>
+        <p>
+          成功打包 {summary.packed} 張圖片
+          {summary.skippedNoImage > 0 && `，${summary.skippedNoImage} 項沒有圖片已略過`}。
+        </p>
+        {summary.failed.length > 0 && (
+          <div className="mt-1">
+            <p>下載失敗（{summary.failed.length}）：</p>
+            <ul className="max-h-32 list-disc space-y-0.5 overflow-y-auto pl-4">
+              {summary.failed.map((name, i) => (
+                <li key={i}>{name}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </>
+    ),
+  };
+}
+
 export function ItemsAdminSection({
   items,
   categories,
   tagGroups,
   pages,
+  justCreated = false,
 }: {
   items: CatalogItemView[];
   categories: ItemCategoryOption[];
   tagGroups: TagGroupView[];
   pages: PageView[];
+  /** 新增品項存檔後帶著 ?created=1 導回這頁——進來就跳成功訊息，並把網址列的參數清掉，
+   *  避免使用者重新整理這一頁時又跳出一次「新增成功」。 */
+  justCreated?: boolean;
 }) {
-  const [message, setMessage] = useState<Message | null>(null);
+  const router = useRouter();
+  const [message, setMessage] = useState<Message | null>(
+    justCreated ? { tone: "positive", content: <p>新增品項成功。</p> } : null,
+  );
+
+  useEffect(() => {
+    if (justCreated) router.replace("/admin/items");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Section>
@@ -100,22 +138,21 @@ export function ItemsAdminSection({
       </AdminHeaderActions>
 
       {message && (
-        <Note tone={message.tone}>
-          <div className="flex items-start justify-between gap-2">
-            <div className="space-y-1">{message.content}</div>
-            <button
-              type="button"
-              onClick={() => setMessage(null)}
-              className="shrink-0 opacity-70 hover:opacity-100"
-              aria-label="關閉"
-            >
-              ✕
-            </button>
-          </div>
-        </Note>
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)}>
+          {message.content}
+        </DismissibleNote>
       )}
 
-      <ItemsTable items={items} categories={categories} tagGroups={tagGroups} pages={pages} />
+      <ItemsTable
+        items={items}
+        categories={categories}
+        tagGroups={tagGroups}
+        pages={pages}
+        onZipResult={(s) => setMessage(zipResultMessage(s))}
+        onDeleted={(count) =>
+          setMessage({ tone: "positive", content: <p>已刪除 {count} 項品項。</p> })
+        }
+      />
     </Section>
   );
 }

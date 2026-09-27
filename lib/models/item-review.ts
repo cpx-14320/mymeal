@@ -32,6 +32,14 @@ itemReviewSchema.index({ memberId: 1, itemId: 1 }, { unique: true });
 
 export const ItemReview = models.ItemReview ?? model<ItemReviewDocument>("ItemReview", itemReviewSchema);
 
+/** 刪除會員時一起清掉：這位會員留下的所有評論／評分（評論者姓名沒有存快照，留著會變成沒人認領的資料）。 */
+export async function deleteItemReviewsByMembers(memberIds: string[]): Promise<void> {
+  await connectMongo();
+  const objIds = memberIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return;
+  await ItemReview.deleteMany({ memberId: { $in: objIds } });
+}
+
 export interface ItemReviewView {
   itemId: string;
   itemName: string;

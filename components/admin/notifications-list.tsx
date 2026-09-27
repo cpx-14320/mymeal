@@ -13,7 +13,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
-  Note,
+  DismissibleNote,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -28,7 +28,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [deleting, setDeleting] = useState(false);
-  const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
+  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(notifications, page, pageSize);
 
@@ -63,8 +63,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
     await deleteNotificationsAction([...selected]);
     setSelected(new Set());
     setDeleting(false);
-    setDeletedMessage(`已刪除 ${count} 筆資料`);
-    setTimeout(() => setDeletedMessage(null), 3000);
+    setDeletedCount(count);
     router.refresh();
   }
 
@@ -78,7 +77,11 @@ export function NotificationsList({ notifications }: { notifications: Notificati
         }}
       />
 
-      {deletedMessage && <Note tone="danger">{deletedMessage}</Note>}
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 則通知。</p>
+        </DismissibleNote>
+      )}
 
       <BulkActionBar
         count={selected.size}

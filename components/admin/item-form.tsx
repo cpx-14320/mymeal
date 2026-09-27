@@ -89,8 +89,7 @@ export function ItemForm({
                 name="price"
                 min={0}
                 step={5}
-                defaultValue={item?.price}
-                placeholder="25"
+                defaultValue={item?.price ?? 25}
                 required
               />
             </Field>

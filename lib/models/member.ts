@@ -29,6 +29,7 @@ export interface MemberDocument {
   referredByName?: string; // 推薦人當下的姓名快照，避免之後推薦人改名要多查一次
   status: MemberStatus; // 註冊後直接是 active，不需審核；suspended：停權不可登入；pending 保留給未來若需要審核流程時用
   balance: number; // 錢包餘額快取；異動一律透過 wallet_ledger 的 createLedgerEntry 寫入，不直接改這個欄位
+  avatarUrl?: string; // 會員自行上傳的大頭貼，見 setMemberAvatar
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt?: Date;
@@ -55,6 +56,7 @@ const memberSchema = new Schema<MemberDocument>(
     },
     lastLoginAt: { type: Date },
     balance: { type: Number, required: true, default: 0 },
+    avatarUrl: { type: String },
   },
   { timestamps: true, collection: "member" },
 );
@@ -89,6 +91,73 @@ async function resolveDeptUnit(
   if (!unit) throw new Error("請選擇有效的單位。");
 
   return { departmentId: new Types.ObjectId(dept.id), unitId: new Types.ObjectId(unit.id) };
+}
+
+export interface ParsedMemberForm {
+  email: string;
+  password: string;
+  name: string;
+  employeeId: string;
+  dept: string;
+  unit: string;
+  inviteCode: string; // 原始輸入，兩邊各自決定怎麼用（前台的邀請碼可以換管理員角色，後台不行）
+  referredByCode?: string;
+  referredByName?: string;
+}
+
+export type ParsedMemberFormResult = { ok: false; error: string } | { ok: true; fields: ParsedMemberForm };
+
+/**
+ * /register 跟後台新增會員共用的表單解析：必填檢查、密碼長度／兩次輸入一致、部門單位
+ * 是否真的存在、邀請碼是否對到某位會員的專屬碼（推薦人）。兩邊欄位順序/名稱刻意做成一致
+ * （見 register-form.tsx／member-create-form.tsx），改驗證規則只要改這裡，不用兩邊同步改。
+ */
+export async function parseMemberForm(formData: FormData): Promise<ParsedMemberFormResult> {
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const employeeId = String(formData.get("employeeId") ?? "").trim();
+  const dept = String(formData.get("dept") ?? "").trim();
+  const unit = String(formData.get("unit") ?? "").trim();
+  const inviteCode = String(formData.get("inviteCode") ?? "").trim();
+
+  if (!email || !password || !name || !employeeId || !dept || !unit) {
+    return { ok: false, error: "請填寫所有必填欄位。" };
+  }
+  if (password.length < 8) {
+    return { ok: false, error: "密碼至少需要 8 碼。" };
+  }
+  if (password !== confirmPassword) {
+    return { ok: false, error: "兩次輸入的密碼不一致。" };
+  }
+
+  const departments = await listDepartments();
+  const matchedDept = departments.find((d) => d.name === dept);
+  if (!matchedDept) {
+    return { ok: false, error: "請選擇有效的部門。" };
+  }
+  const units = await listUnits(matchedDept.id);
+  if (!units.some((u) => u.name === unit)) {
+    return { ok: false, error: "請選擇有效的單位。" };
+  }
+
+  const referrer = inviteCode ? await findMemberByCode(inviteCode.toUpperCase()) : null;
+
+  return {
+    ok: true,
+    fields: {
+      email,
+      password,
+      name,
+      employeeId,
+      dept,
+      unit,
+      inviteCode,
+      referredByCode: referrer?.memberCode,
+      referredByName: referrer?.name,
+    },
+  };
 }
 
 const MEMBER_CODE_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -163,6 +232,7 @@ export interface MemberDetail {
   referredByCode?: string;
   referredByName?: string;
   status: MemberStatus;
+  avatarUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt?: Date;
@@ -192,10 +262,27 @@ export async function findMemberById(id: string): Promise<MemberDetail | null> {
     referredByCode: doc.referredByCode,
     referredByName: doc.referredByName,
     status: doc.status,
+    avatarUrl: doc.avatarUrl,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
     lastLoginAt: doc.lastLoginAt,
   };
+}
+
+/** Header 頭像用：只需要 avatarUrl 這一個欄位，不用像 findMemberById 一樣多 populate 部門/單位。 */
+export async function getMemberAvatarUrl(memberId: string): Promise<string | undefined> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return undefined;
+  const doc = await Member.findById(memberId).select("avatarUrl");
+  return doc?.avatarUrl;
+}
+
+/** 會員自行在會員中心上傳大頭貼後寫入；檔名固定用會員自己的 _id 命名並 allowOverwrite，
+ *  見 app/(app)/account/actions.ts 的 uploadAvatarAction，同一人重新上傳一律覆蓋舊檔。 */
+export async function setMemberAvatar(memberId: string, avatarUrl: string): Promise<void> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) throw new Error("無效的會員 id");
+  await Member.findByIdAndUpdate(memberId, { $set: { avatarUrl } });
 }
 
 export interface MemberListItem {
@@ -285,6 +372,20 @@ export async function setMembersStatus(ids: string[], status: MemberStatus): Pro
   if (objIds.length === 0) return 0;
   const result = await Member.updateMany({ _id: { $in: objIds } }, { $set: { status } });
   return result.modifiedCount;
+}
+
+/**
+ * 刪除會員本體。真的刪除（不是停權）——呼叫端（見 admin/members/actions.ts 的
+ * deleteMembersAction）要先清掉這位會員自己的收藏／評論／意見回饋／團訂點餐紀錄；
+ * 錢包流水帳／儲值申請刻意不動，那兩份是 append-only 的財務紀錄，本來就設計成
+ * 會員被刪也留著、用「（已刪除會員）」顯示，不因為這裡刪會員就跟著消失。
+ */
+export async function deleteMembers(ids: string[]): Promise<number> {
+  await connectMongo();
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return 0;
+  const result = await Member.deleteMany({ _id: { $in: objIds } });
+  return result.deletedCount;
 }
 
 /** 稽核紀錄用：把一批 id 換成姓名，方便寫「操作對象」欄位；忽略格式不對或找不到的 id。 */
