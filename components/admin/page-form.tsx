@@ -118,19 +118,33 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
             </Field>
 
             <Field label="套用模板" hint="指定的話這個頁面改顯示模板內容（依分類分組），取代頁面自己標註的品項；不套用就維持原本顯示頁面標註的品項。">
-              <select
-                key={page?.templateId ?? "none"}
-                className={inputClass}
-                name="templateId"
-                defaultValue={page?.templateId ?? ""}
-              >
-                <option value="">不套用（顯示頁面自己標註的品項）</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}（{t.sections.length} 分類）
-                  </option>
-                ))}
-              </select>
+              {(() => {
+                // 頁面存的 templateId 如果指向一個已經被刪除的模板，選項清單裡完全找不到它，
+                // 瀏覽器會誤顯示成清單第一個選項（不套用）——如果管理者沒發現、直接存檔，
+                // 會在不知情的狀況下把模板設定改掉。用一個不可選的選項把這個狀態明確標出來，
+                // 逼管理者自己選「不套用」或選一個真的存在的模板，才能繼續存檔。
+                const templateMissing = !!page?.templateId && !templates.some((t) => t.id === page.templateId);
+                return (
+                  <select
+                    key={page?.templateId ?? "none"}
+                    className={inputClass}
+                    name="templateId"
+                    defaultValue={page?.templateId ?? ""}
+                  >
+                    <option value="">不套用（顯示頁面自己標註的品項）</option>
+                    {templateMissing && (
+                      <option value={page!.templateId} disabled>
+                        （查無模板，原模板已被刪除，請重新選擇）
+                      </option>
+                    )}
+                    {templates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}（{t.sections.length} 分類）
+                      </option>
+                    ))}
+                  </select>
+                );
+              })()}
             </Field>
 
             <div className="sm:col-span-2">

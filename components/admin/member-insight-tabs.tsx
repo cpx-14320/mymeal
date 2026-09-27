@@ -23,12 +23,14 @@ const ledgerTypeLabel: Record<LedgerType, string> = {
   spend: "消費",
   refund: "退款",
   adjustment: "調整",
+  topup_reversal: "撤銷儲值",
 };
 const ledgerTypeTone: Record<LedgerType, "positive" | "warning" | "neutral"> = {
   topup: "positive",
   refund: "positive",
   spend: "warning",
   adjustment: "neutral",
+  topup_reversal: "warning",
 };
 
 function stars(n: number) {

@@ -2,6 +2,7 @@ import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
 import "@/lib/models/catalog-item"; // 確保 populate("pageId"/"sections.itemIds") 前 Page／CatalogItem model 一定已註冊
 import "@/lib/models/item-category"; // 確保 populate("categoryId") 前 ItemCategory model 一定已註冊
+import { getCreatorLabels, backfillCreatorMemberIds, type CreatorLabel } from "@/lib/models/creator";
 
 export interface TemplateSection {
   _id: Types.ObjectId;
@@ -19,6 +20,7 @@ export interface TemplateDocument {
   sections: TemplateSection[];
   active: boolean;
   createdBy: string; // 建立者姓名快照；無登入會員時記「系統」
+  createdByMemberId?: Types.ObjectId | null; // 建立者會員 id，用來查目前是否還有這項權限；null 代表補過但對不到人
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +38,7 @@ const templateSchema = new Schema<TemplateDocument>(
     sections: { type: [templateSectionSchema], required: true, default: [] },
     active: { type: Boolean, required: true, default: true },
     createdBy: { type: String, required: true, trim: true, default: "系統" },
+    createdByMemberId: { type: Schema.Types.ObjectId, ref: "Member" },
   },
   { timestamps: true, collection: "menu_templates" },
 );
@@ -63,15 +66,20 @@ export interface TemplateListItem {
   active: boolean;
   sections: { id: string; name: string; itemCount: number }[];
   createdBy: string;
+  createdByMemberId?: string;
+  /** 建立者現在的權限狀態——查得到才會有值，例如「已無此權限」「帳號已刪除」。 */
+  createdByLabel?: CreatorLabel;
   createdAt: Date;
 }
 
-export async function listTemplates(): Promise<TemplateListItem[]> {
+/** withCreatorLabels：只有模板設定清單頁（會顯示「建立者」欄）才需要開，理由同 listCatalogItems。 */
+export async function listTemplates(options?: { withCreatorLabels?: boolean }): Promise<TemplateListItem[]> {
   await connectMongo();
+  if (options?.withCreatorLabels) await backfillCreatorMemberIds(Template);
   const docs = await Template.find({})
     .sort({ createdAt: -1 })
     .populate<{ pageId?: PopulatedRef; categoryId: PopulatedRef }>(["pageId", "categoryId"]);
-  return docs.map((d) => {
+  const templates = docs.map((d) => {
     const page = d.pageId as unknown as PopulatedRef | undefined;
     const category = d.categoryId as unknown as PopulatedRef;
     return {
@@ -88,9 +96,20 @@ export async function listTemplates(): Promise<TemplateListItem[]> {
         itemCount: s.itemIds.length,
       })),
       createdBy: d.createdBy,
+      createdByMemberId: d.createdByMemberId ? String(d.createdByMemberId) : undefined,
       createdAt: d.createdAt,
     };
   });
+  if (!options?.withCreatorLabels) return templates;
+
+  const labels = await getCreatorLabels(
+    templates.map((t) => t.createdByMemberId),
+    "templates",
+  );
+  return templates.map((t) => ({
+    ...t,
+    createdByLabel: t.createdByMemberId ? labels.get(t.createdByMemberId) : undefined,
+  }));
 }
 
 export interface TemplateSectionDetail {
@@ -181,7 +200,11 @@ function assertCategoryId(categoryId: string) {
   return new Types.ObjectId(categoryId);
 }
 
-export async function createTemplate(input: TemplateBasicInput, createdBy?: string) {
+export async function createTemplate(
+  input: TemplateBasicInput,
+  createdBy?: string,
+  createdByMemberId?: string,
+) {
   await connectMongo();
   const doc = await Template.create({
     name: input.name,
@@ -190,6 +213,10 @@ export async function createTemplate(input: TemplateBasicInput, createdBy?: stri
     sections: [],
     active: true,
     createdBy: createdBy ?? "系統",
+    createdByMemberId:
+      createdByMemberId && Types.ObjectId.isValid(createdByMemberId)
+        ? new Types.ObjectId(createdByMemberId)
+        : undefined,
   });
   return { id: String(doc._id) };
 }
@@ -216,12 +243,6 @@ export async function deleteTemplates(ids: string[]): Promise<number> {
   await connectMongo();
   const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
   if (objIds.length === 0) return 0;
-
-  const { OrderZone } = await import("@/lib/models/order-zone");
-  await OrderZone.updateMany(
-    { templateIds: { $in: objIds } },
-    { $pull: { templateIds: { $in: objIds } } },
-  );
 
   const result = await Template.deleteMany({ _id: { $in: objIds } });
   return result.deletedCount;

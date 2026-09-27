@@ -85,7 +85,6 @@ export const primaryNav: NavItem[] = [
 
 export type AdminNavKey =
   | "overview"
-  | "zones"
   | "pages"
   | "items"
   | "itemClassification"
@@ -101,7 +100,9 @@ export type AdminNavKey =
   | "gamification"
   | "reports"
   | "audit"
-  | "promos";
+  | "promos"
+  | "feedback"
+  | "guide";
 
 export interface AdminNavItem {
   key: AdminNavKey;
@@ -121,19 +122,14 @@ export interface AdminNavGroup {
 export const adminNav: AdminNavGroup[] = [
   {
     key: "overview",
-    items: [{ key: "overview", label: "總覽", href: "/admin" }],
-  },
-  {
-    key: "ordering",
-    label: "訂餐與開團",
     items: [
-      { key: "zones", label: "訂餐專區", href: "/admin/zones" },
-      { key: "grouporders", label: "團訂", href: "/admin/group-orders" },
+      { key: "overview", label: "總覽", href: "/admin" },
+      { key: "guide", label: "功能說明", href: "/admin/guide" },
     ],
   },
   {
     key: "catalog",
-    label: "菜單管理",
+    label: "品項管理",
     items: [
       { key: "pages", label: "頁面設定", href: "/admin/pages" },
       { key: "templates", label: "模板設定", href: "/admin/templates" },
@@ -175,9 +171,11 @@ export const adminNav: AdminNavGroup[] = [
     key: "system",
     label: "系統",
     items: [
+      { key: "grouporders", label: "團訂狀況", href: "/admin/group-orders" },
       { key: "itemStats", label: "餐點統計", href: "/admin/item-stats" },
       { key: "reports", label: "報表", href: "/admin/reports" },
       { key: "audit", label: "稽核紀錄", href: "/admin/audit" },
+      { key: "feedback", label: "意見列表", href: "/admin/feedback" },
     ],
   },
 ];

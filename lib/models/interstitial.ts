@@ -101,7 +101,7 @@ async function seedIfEmpty() {
     name: "下午茶專區上線",
     enabled: true,
     imageUrl: demoBanner,
-    linkUrl: "/menu",
+    linkUrl: "/group-orders",
     dismissSeconds: 8,
     frequency: "always",
     showOnPages: ["group-orders", "pages"],

@@ -102,6 +102,29 @@ export async function addTagOption(id: string, option: string): Promise<TagGroup
   return doc ? toView(doc) : null;
 }
 
+/** 改名/移除選項、砍整組時，選項字串（跟這個字串一樣的品項標籤）都要跟著 cascade 處理；
+ *  但 tags 是純字串、不分群組，如果別的群組剛好也有一模一樣的選項字串，這個字串的品項
+ *  也會被一起波及——呼叫端（後台介面）要先用這支查有沒有這個風險，讓管理者確認後再繼續。
+ *  回傳值是 { 選項字串: 有用到它的其他群組名稱[] }，只列出真的有風險（非空陣列）的選項。 */
+export async function findGroupsUsingOptions(
+  excludeGroupId: string,
+  options: string[],
+): Promise<Record<string, string[]>> {
+  await connectMongo();
+  if (options.length === 0) return {};
+  const docs = await TagGroup.find({ _id: { $ne: excludeGroupId }, options: { $in: options } }).select(
+    "name options",
+  );
+  const result: Record<string, string[]> = {};
+  for (const opt of options) {
+    const names = docs.filter((d) => d.options.includes(opt)).map((d) => d.name);
+    if (names.length > 0) result[opt] = names;
+  }
+  return result;
+}
+
+/** 改名同步套用到所有已經標記這個選項的品項——tags 是純字串陣列，直接把陣列裡等於
+ *  舊字串的元素換成新字串（arrayFilters 只換命中的那個元素，其他標籤原樣保留）。 */
 export async function renameTagOption(
   id: string,
   oldOption: string,
@@ -118,9 +141,18 @@ export async function renameTagOption(
   if (trimmed !== oldOption && doc.options.includes(trimmed)) throw new Error("這個選項名稱已經存在了。");
   doc.options[idx] = trimmed;
   await doc.save();
+
+  const { CatalogItem } = await import("@/lib/models/catalog-item");
+  await CatalogItem.updateMany(
+    { tags: oldOption },
+    { $set: { "tags.$[elem]": trimmed } },
+    { arrayFilters: [{ elem: oldOption }] },
+  );
+
   return toView(doc);
 }
 
+/** 移除選項同步從所有已經標記這個選項的品項的 tags 裡拿掉，不會留下孤兒標籤字串。 */
 export async function removeTagOption(id: string, option: string): Promise<TagGroupView | null> {
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) throw new Error("無效的 id");
@@ -129,12 +161,26 @@ export async function removeTagOption(id: string, option: string): Promise<TagGr
     { $pull: { options: option } },
     { returnDocument: "after" },
   );
-  return doc ? toView(doc) : null;
+  if (!doc) return null;
+
+  const { CatalogItem } = await import("@/lib/models/catalog-item");
+  await CatalogItem.updateMany({ tags: option }, { $pull: { tags: option } });
+
+  return toView(doc);
 }
 
+/** 刪除整組同步清掉所有已經標記這組任一選項的品項的 tags，不會留下孤兒標籤字串。 */
 export async function deleteTagGroup(id: string): Promise<boolean> {
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) throw new Error("無效的 id");
-  const result = await TagGroup.deleteOne({ _id: new Types.ObjectId(id) });
+  const doc = await TagGroup.findById(id);
+  if (!doc) return false;
+
+  if (doc.options.length > 0) {
+    const { CatalogItem } = await import("@/lib/models/catalog-item");
+    await CatalogItem.updateMany({ tags: { $in: doc.options } }, { $pull: { tags: { $in: doc.options } } });
+  }
+
+  const result = await TagGroup.deleteOne({ _id: doc._id });
   return result.deletedCount > 0;
 }

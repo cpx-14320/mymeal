@@ -11,6 +11,7 @@ import {
   deleteTagGroup,
   reorderTagGroups,
   reorderTagOptions,
+  findGroupsUsingOptions,
 } from "@/lib/models/tag-group";
 
 function refresh() {
@@ -38,6 +39,15 @@ export async function toggleTagGroupMultiAction(id: string, multi: boolean) {
 export async function addTagOptionAction(id: string, option: string) {
   await addTagOption(id, option);
   refresh();
+}
+
+/** 改名/移除/整組刪除前先呼叫這支：回傳哪些選項在其他群組也有用到（連帶會被 cascade 波及），
+ *  讓後台介面在動手前跳出確認訊息。 */
+export async function checkTagOptionsUsageAction(
+  id: string,
+  options: string[],
+): Promise<Record<string, string[]>> {
+  return findGroupsUsingOptions(id, options);
 }
 
 export async function renameTagOptionAction(id: string, oldOption: string, newOption: string) {

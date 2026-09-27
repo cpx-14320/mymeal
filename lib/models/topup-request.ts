@@ -175,12 +175,45 @@ export async function deleteOwnPendingTopupRequest(memberId: string, id: string)
   return { id };
 }
 
-/** 刪除一筆申請紀錄（不論狀態）。純粹移除申請本身，若已核准，對應的 wallet_ledger 儲值紀錄與會員餘額不會被復原。 */
+/** 刪除一筆申請紀錄。已核准的申請不能直接刪除——對應的 wallet_ledger 儲值紀錄與會員餘額
+ *  不會跟著被復原，會變成「申請單消失了但錢還在」的斷帳；要刪除已核准的申請，
+ *  得先呼叫 revokeApprovedTopupRequest 把餘額沖銷、狀態退回 pending，才能刪除。 */
 export async function deleteTopupRequest(id: string): Promise<{ id: string }> {
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) throw new Error("無效的申請 id");
-  const result = await TopupRequest.deleteOne({ _id: id });
-  if (result.deletedCount === 0) throw new Error("找不到這筆申請，可能已被刪除。");
+  const doc = await TopupRequest.findById(id);
+  if (!doc) throw new Error("找不到這筆申請，可能已被刪除。");
+  if (doc.status === "approved") {
+    throw new Error("已核准的申請請先撤銷核准，才能刪除。");
+  }
+  await TopupRequest.deleteOne({ _id: id });
+  return { id };
+}
+
+/** 撤銷一筆已核准的申請（誤按核准時用）：寫一筆等額反向的 wallet_ledger 分錄把餘額扣回去，
+ *  並把狀態退回 pending、清掉原本的核准紀錄，讓管理員可以重新正確地核准或退件。
+ *  只能對 status === "approved" 的申請執行。 */
+export async function revokeApprovedTopupRequest(id: string, by = "管理員"): Promise<{ id: string }> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(id)) throw new Error("無效的申請 id");
+  const doc = await TopupRequest.findById(id);
+  if (!doc) throw new Error("找不到這筆申請，可能已被刪除。");
+  if (doc.status !== "approved") throw new Error("只有已核准的申請可以撤銷核准。");
+
+  await createLedgerEntry({
+    memberId: String(doc.memberId),
+    type: "topup_reversal",
+    amount: -doc.amount,
+    detail: `撤銷儲值核准．${doc.method}`,
+    referenceType: "topup_request",
+    referenceId: String(doc._id),
+    by,
+  });
+
+  doc.status = "pending";
+  doc.reviewedBy = undefined;
+  doc.reviewedAt = undefined;
+  await doc.save();
   return { id };
 }
 

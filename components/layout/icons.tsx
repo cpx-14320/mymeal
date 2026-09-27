@@ -101,13 +101,6 @@ export const adminNavIcons: Record<
       <rect x="3" y="16" width="7" height="5" rx="1" />
     </Base>
   ),
-  zones: (props) => (
-    <Base {...props}>
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <path d="M3 9h18" />
-      <path d="M8 9v11" />
-    </Base>
-  ),
   pages: (props) => (
     <Base {...props}>
       <path d="M4 9h16v11H4z" />
@@ -216,6 +209,19 @@ export const adminNavIcons: Record<
     <Base {...props}>
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <rect x="7" y="8" width="10" height="8" rx="1" />
+    </Base>
+  ),
+  feedback: (props) => (
+    <Base {...props}>
+      <path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" />
+      <path d="M7 9h10M7 13h6" />
+    </Base>
+  ),
+  guide: (props) => (
+    <Base {...props}>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+      <path d="M9 7h7M9 11h5" />
     </Base>
   ),
 };

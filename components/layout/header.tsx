@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Brand } from "./brand";
 import { MenuIcon, BellIcon, UserCircleIcon } from "./icons";
 import { ThemeToggle } from "./theme-toggle";
-import { REGISTER_HREF } from "./nav";
 import { useLoginModal } from "./login-modal-context";
 import type { NotificationView } from "@/lib/models/notification";
 import { getEnabledNotificationsAction } from "@/app/(app)/notification-actions";
@@ -169,17 +168,18 @@ export function Header({ onMenuClick, mounted, authed, onLogout }: HeaderProps) 
             <>
               <button
                 type="button"
-                onClick={openLogin}
+                onClick={() => openLogin()}
                 className="rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-surface-2"
               >
                 登入
               </button>
-              <Link
-                href={REGISTER_HREF}
+              <button
+                type="button"
+                onClick={() => openLogin("register")}
                 className="rounded-lg bg-brand px-3.5 py-2 text-sm font-semibold text-brand-fg hover:opacity-90"
               >
                 申請帳號
-              </Link>
+              </button>
             </>
           )}
         </div>

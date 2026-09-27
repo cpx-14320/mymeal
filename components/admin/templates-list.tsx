@@ -190,7 +190,16 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
                 <Td>
                   <Badge tone={t.active ? "positive" : "neutral"}>{t.active ? "啟用" : "停用"}</Badge>
                 </Td>
-                <Td className="text-muted">{t.createdBy}</Td>
+                <Td className="text-muted">
+                  <span className="inline-flex items-center gap-1.5">
+                    {t.createdBy}
+                    {t.createdByLabel && (
+                      <Badge tone={t.createdByLabel === "帳號已刪除" ? "danger" : "warning"}>
+                        {t.createdByLabel}
+                      </Badge>
+                    )}
+                  </span>
+                </Td>
                 <Td className="text-muted">{formatTaiwanDateTime(t.createdAt)}</Td>
                 <Td className="text-right">
                   <div className="flex justify-end gap-2">

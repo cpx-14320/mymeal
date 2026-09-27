@@ -11,4 +11,7 @@ export async function setPagesActiveAction(ids: string[], active: boolean) {
 export async function deletePagesAction(ids: string[]) {
   await deletePages(ids);
   revalidatePath("/admin/pages");
+  // deletePages 會把指到這些頁面的品項／模板 pageId 清掉，這兩個列表也要重新整理才看得到「頁面：—」。
+  revalidatePath("/admin/items");
+  revalidatePath("/admin/templates");
 }

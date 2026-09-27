@@ -6,7 +6,6 @@ import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemStat } from "@/lib/models/item-review";
 
-const ITEMS_PER_SLIDE = 4;
 const EMPTY_STAT: ItemStat = { avgRating: null, commentCount: 0 };
 
 /**
@@ -24,6 +23,17 @@ export function TopItemsCarousel({
 }) {
   const [index, setIndex] = useState(0);
   const [showAll, setShowAll] = useState(false);
+  // 手機版一列只顯示 2 欄、桌面版 4 欄——每組（slide）要剛好塞滿一列，
+  // 不然手機版會變成 2 欄 x 2 列，「下一組」按鈕還沒按就已經看到第二列的品項了。
+  const [itemsPerSlide, setItemsPerSlide] = useState(4);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const update = () => setItemsPerSlide(mq.matches ? 4 : 2);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const ranked = [...items]
     .map((item) => ({ item, stat: stats[item.id] ?? EMPTY_STAT }))
@@ -34,19 +44,14 @@ export function TopItemsCarousel({
 
   const topItems = ranked.slice(0, 12);
   const slides = Array.from(
-    { length: Math.ceil(topItems.length / ITEMS_PER_SLIDE) },
-    (_, i) => topItems.slice(i * ITEMS_PER_SLIDE, i * ITEMS_PER_SLIDE + ITEMS_PER_SLIDE),
+    { length: Math.ceil(topItems.length / itemsPerSlide) },
+    (_, i) => topItems.slice(i * itemsPerSlide, i * itemsPerSlide + itemsPerSlide),
   );
 
-  useEffect(() => {
-    if (slides.length <= 1) return;
-    const t = setInterval(() => {
-      setIndex((i) => (i + 1) % slides.length);
-    }, 4000);
-    return () => clearInterval(t);
-  }, [slides.length]);
-
   if (slides.length === 0) return null;
+
+  // itemsPerSlide 隨螢幕寬度變動時 slides 數量也會跟著變，index 可能超出新的範圍。
+  const current = Math.min(index, slides.length - 1);
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-line bg-surface">
@@ -60,7 +65,7 @@ export function TopItemsCarousel({
       <div className="relative">
         <div
           className="flex transition-transform duration-500 ease-out"
-          style={{ transform: `translateX(-${index * 100}%)` }}
+          style={{ transform: `translateX(-${current * 100}%)` }}
         >
           {slides.map((slide, si) => (
             <div key={si} className="grid w-full shrink-0 grid-cols-2 gap-3 p-4 sm:grid-cols-4">
@@ -120,7 +125,7 @@ export function TopItemsCarousel({
               type="button"
               aria-label={`第 ${si + 1} 組`}
               onClick={() => setIndex(si)}
-              className={`size-1.5 rounded-full ${si === index ? "bg-brand" : "bg-line"}`}
+              className={`size-1.5 rounded-full ${si === current ? "bg-brand" : "bg-line"}`}
             />
           ))}
         </div>

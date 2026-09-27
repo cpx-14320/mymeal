@@ -10,7 +10,7 @@ import "@/lib/models/member"; // 確保 populate("memberId"/"departmentId") 前 
  * 不用重新加總整份流水帳。referenceType/referenceId 是多型參照（比照舊系統
  * balance_transactions 的 reference_type/reference_id），指回觸發這筆異動的來源。
  */
-export type LedgerType = "topup" | "spend" | "refund" | "adjustment";
+export type LedgerType = "topup" | "spend" | "refund" | "adjustment" | "topup_reversal";
 export type LedgerReferenceType = "topup_request" | "group_order" | "manual";
 
 export interface WalletLedgerDocument {
@@ -31,7 +31,11 @@ export interface WalletLedgerDocument {
 const walletLedgerSchema = new Schema<WalletLedgerDocument>(
   {
     memberId: { type: Schema.Types.ObjectId, ref: "Member", required: true },
-    type: { type: String, enum: ["topup", "spend", "refund", "adjustment"], required: true },
+    type: {
+      type: String,
+      enum: ["topup", "spend", "refund", "adjustment", "topup_reversal"],
+      required: true,
+    },
     amount: { type: Number, required: true },
     detail: { type: String, required: true, trim: true },
     note: { type: String, trim: true },

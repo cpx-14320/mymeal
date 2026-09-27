@@ -138,7 +138,16 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
                 <Badge tone={s.active ? "positive" : "neutral"}>{s.active ? "啟用" : "停用"}</Badge>
               </Td>
               <Td className="text-muted">{s.openInNewTab ? "否" : "是"}</Td>
-              <Td className="text-muted">{s.createdBy}</Td>
+              <Td className="text-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  {s.createdBy}
+                  {s.createdByLabel && (
+                    <Badge tone={s.createdByLabel === "帳號已刪除" ? "danger" : "warning"}>
+                      {s.createdByLabel}
+                    </Badge>
+                  )}
+                </span>
+              </Td>
               <Td className="text-muted">{formatTaiwanDateTime(s.updatedAt)}</Td>
               <Td className="text-right">
                 <div className="flex justify-end gap-2">

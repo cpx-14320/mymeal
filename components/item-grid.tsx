@@ -119,7 +119,7 @@ export function ItemGrid({
           {scope === "favorites" ? "還沒有收藏的品項。" : "沒有符合的品項。"}
         </p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {pageRows.map((it) => (
             <ItemCard
               key={it.id}

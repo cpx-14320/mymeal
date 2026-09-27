@@ -14,52 +14,6 @@ export const itemKindLabel: Record<ItemKind, string> = {
   other: "其他",
 };
 
-export type TemplateKind = "bento" | "drinks" | "tea" | "other";
-
-export const templateKindLabel: Record<TemplateKind, string> = {
-  bento: "便當",
-  drinks: "飲料",
-  tea: "下午茶",
-  other: "其他",
-};
-
-/* ── 店家（餐廳泛化） ─────────────────────────────── */
-
-export interface Supplier {
-  id: string;
-  name: string;
-  type: string;
-  phone: string;
-  active: boolean;
-}
-
-export const suppliers: Supplier[] = [
-  { id: "s1", name: "福來鮮食", type: "便當店", phone: "07-123-4567", active: true },
-  { id: "s2", name: "阿明快餐", type: "便當店", phone: "07-234-5678", active: true },
-  { id: "s3", name: "健康廚房", type: "餐盒店", phone: "07-345-6789", active: true },
-  { id: "s4", name: "星巴克 三多店", type: "咖啡", phone: "07-999-1234", active: true },
-  { id: "s5", name: "五十嵐 中山店", type: "手搖飲", phone: "07-888-5678", active: true },
-  { id: "s6", name: "老周麵館", type: "麵食", phone: "07-456-7890", active: false },
-  { id: "s7", name: "大埕經濟餐盒", type: "便當店", phone: "07-511-2233", active: true },
-  { id: "s8", name: "路易莎 中華店", type: "咖啡", phone: "07-236-4488", active: true },
-  { id: "s9", name: "清心福全 光華店", type: "手搖飲", phone: "07-751-6677", active: true },
-  { id: "s10", name: "多那之烘焙", type: "烘焙", phone: "07-333-9900", active: true },
-  // 大量假資料 —— 讓「店家」分頁看得出效果
-  ...[
-    "福記便當", "大成餐盒", "品香廚房", "樂食便當", "康廚餐盒", "綠洲蔬食",
-    "日初咖啡", "晨光烘焙", "味鮮小館", "家常廚房", "元氣餐盒", "翻轉飲品",
-    "小確幸茶坊", "享點心", "初露咖啡", "御膳便當",
-  ].map((name, i): Supplier => ({
-    id: `s${11 + i}`,
-    name,
-    type: ["便當店", "餐盒店", "咖啡", "手搖飲", "烘焙", "麵食"][i % 6],
-    phone: `07-${String(200 + i * 37).slice(-3)}-${String(1000 + i * 111).slice(-4)}`,
-    active: i % 5 !== 0,
-  })),
-];
-
-export const supplierById = (id?: string) => suppliers.find((s) => s.id === id);
-
 /* ── 品項總表 ────────────────────────────────────── */
 
 export interface CatalogItem {
@@ -213,187 +167,6 @@ export const allTagOptions = () => tagGroups.flatMap((g) => g.options);
 
 /* ── 蓋台廣告：已改用真資料庫，見 lib/models/interstitial.ts ── */
 
-/* ── 模板（分類 → 品項） ─────────────────────────── */
-
-export interface TemplateSection {
-  id: string;
-  name: string;
-  itemIds: string[];
-}
-
-export interface Template {
-  id: string;
-  name: string;
-  kind: TemplateKind;
-  supplierId?: string;
-  active: boolean;
-  sections: TemplateSection[];
-}
-
-export const templates: Template[] = [
-  {
-    id: "t1",
-    name: "標準便當週",
-    kind: "bento",
-    active: true,
-    sections: [
-      { id: "t1s1", name: "星期一", itemIds: ["c1", "c2", "c3", "c4", "c5", "c6", "c7"] },
-      { id: "t1s2", name: "星期二", itemIds: ["c2", "c3", "c4", "c5", "c6", "c7", "c8"] },
-      { id: "t1s3", name: "星期三", itemIds: ["c3", "c4", "c5", "c6", "c7", "c8", "c9"] },
-      { id: "t1s4", name: "星期四", itemIds: ["c4", "c5", "c6", "c7", "c8", "c9", "c1"] },
-      { id: "t1s5", name: "星期五", itemIds: ["c5", "c6", "c7", "c8", "c9", "c1", "c2"] },
-    ],
-  },
-  {
-    id: "t2",
-    name: "星巴克團",
-    kind: "drinks",
-    supplierId: "s4",
-    active: true,
-    sections: [{ id: "t2s1", name: "飲料 / 點心", itemIds: ["d1", "d2", "d3", "k1", "k2"] }],
-  },
-  {
-    id: "t3",
-    name: "手搖下午茶",
-    kind: "tea",
-    supplierId: "s5",
-    active: true,
-    sections: [{ id: "t3s1", name: "飲料", itemIds: ["d4", "d5", "d6"] }],
-  },
-  {
-    id: "t4",
-    name: "輕食週菜單",
-    kind: "bento",
-    active: false,
-    sections: [
-      { id: "t4s1", name: "星期一", itemIds: ["c6", "c7"] },
-      { id: "t4s2", name: "星期三", itemIds: ["c7", "c5"] },
-      { id: "t4s3", name: "星期五", itemIds: ["c6", "c7"] },
-    ],
-  },
-  // 大量假資料 —— 讓「模板」分頁看得出效果
-  ...Array.from({ length: 22 }, (_, i): Template => {
-    const kind = (["bento", "drinks", "tea", "other"] as const)[i % 4];
-    const secNames =
-      kind === "bento"
-        ? ["星期一", "星期二", "星期三", "星期四", "星期五"]
-        : ["飲料", "點心"];
-    const suffix =
-      kind === "bento"
-        ? "便當週"
-        : kind === "drinks"
-          ? "飲品單"
-          : kind === "tea"
-            ? "下午茶"
-            : "特別餐";
-    return {
-      id: `tg${i}`,
-      name: `${["季節", "主廚", "精選", "輕食", "經典", "活力", "樂活", "元氣"][i % 8]}${suffix} ${i + 1}`,
-      kind,
-      supplierId:
-        kind === "drinks" ? "s4" : kind === "tea" ? "s5" : undefined,
-      active: i % 6 !== 0,
-      sections: secNames.map((n, j) => ({
-        id: `tg${i}s${j}`,
-        name: n,
-        itemIds: kind === "bento" ? ["c1", "c3", "c5"] : ["d1", "d2", "k1"],
-      })),
-    };
-  }),
-];
-
-export const templateById = (id: string) => templates.find((t) => t.id === id);
-
-/* ── 訂餐專區（前台頁面） ─────────────────────────────
-   一個專區 = 前台一個頁面（/z/{slug}），套用一到多個模板（多對多）。
-   同一個模板可以被多個專區共用。                              */
-
-export interface OrderZone {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  icon: string;
-  templateIds: string[];
-  active: boolean;
-  sortOrder: number;
-}
-
-export const orderZones: OrderZone[] = [
-  {
-    id: "z1",
-    name: "本週便當",
-    slug: "lunch",
-    description: "每天中午的便當團，套用當週便當菜單。",
-    icon: "🍱",
-    templateIds: ["t1", "t4"],
-    active: true,
-    sortOrder: 1,
-  },
-  {
-    id: "z2",
-    name: "下午茶",
-    slug: "afternoon-tea",
-    description: "手搖飲、咖啡、點心的下午茶團。",
-    icon: "🧋",
-    templateIds: ["t2", "t3"],
-    active: true,
-    sortOrder: 2,
-  },
-  {
-    id: "z3",
-    name: "星巴克揪團",
-    slug: "starbucks",
-    description: "揪一波星巴克，滿額外送。",
-    icon: "☕",
-    templateIds: ["t2"],
-    active: true,
-    sortOrder: 3,
-  },
-  {
-    id: "z4",
-    name: "尾牙飲料（12月限定）",
-    slug: "year-end-drinks",
-    description: "尾牙月限定，活動後下架。",
-    icon: "🎉",
-    templateIds: ["t3"],
-    active: false,
-    sortOrder: 4,
-  },
-  // 大量假資料 —— 讓「訂餐專區」分頁看得出效果
-  ...[
-    "研發部午餐", "設計部揪團", "行政週一便當", "業務部星巴克", "資訊部下午茶",
-    "客服部訂餐", "五樓便當團", "三樓飲料團", "跨部門聚餐", "加班宵夜團",
-    "週五輕食日", "健康餐盒週", "新人歡迎茶會", "專案衝刺補給", "訪客便當",
-    "董事會茶點", "早餐訂購團", "週三素食日", "端午肉粽團", "中秋月餅團",
-    "尾牙前哨團", "季會便當",
-  ].map((name, i): OrderZone => ({
-    id: `zg${i}`,
-    name,
-    slug: `zone-${i + 5}`,
-    description: `${name}的訂購專區。`,
-    icon: ["🍱", "🧋", "☕", "🍜", "🥗", "🍰"][i % 6],
-    templateIds: [["t1"], ["t2"], ["t3"], ["t1", "t4"], ["t2", "t3"]][i % 5],
-    active: i % 7 !== 0,
-    sortOrder: 5 + i,
-  })),
-];
-
-// 一個模板最多只會被 3 個專區使用；超過的部分移除，不留假資料。
-const MAX_ZONES_PER_TEMPLATE = 3;
-const zonesPerTemplateUsage: Record<string, number> = {};
-for (const zone of orderZones) {
-  zone.templateIds = zone.templateIds.filter((tid) => {
-    zonesPerTemplateUsage[tid] = (zonesPerTemplateUsage[tid] ?? 0) + 1;
-    return zonesPerTemplateUsage[tid] <= MAX_ZONES_PER_TEMPLATE;
-  });
-}
-
-export const zoneById = (id: string) => orderZones.find((z) => z.id === id);
-
-export const zonesUsingTemplate = (templateId: string) =>
-  orderZones.filter((z) => z.templateIds.includes(templateId));
-
 /* ── 會員 ──────────────────────────────────────────── */
 
 export type MemberStatus = "active" | "suspended";
@@ -447,12 +220,10 @@ export const permissionCategories: PermissionCategory[] = [
     key: "catalog",
     label: "菜單與訂餐",
     items: [
-      { key: "zones", label: "訂餐專區" },
       { key: "templates", label: "模板" },
       { key: "pages", label: "頁面" },
       { key: "itemClassification", label: "分類與標籤" },
       { key: "items", label: "品項" },
-      { key: "grouporders", label: "團訂" },
     ],
   },
   {
@@ -485,9 +256,11 @@ export const permissionCategories: PermissionCategory[] = [
     key: "system",
     label: "系統",
     items: [
+      { key: "grouporders", label: "團訂狀況" },
       { key: "itemStats", label: "餐點統計" },
       { key: "reports", label: "報表" },
       { key: "audit", label: "稽核" },
+      { key: "feedback", label: "意見列表" },
     ],
   },
 ];
@@ -627,183 +400,6 @@ export interface OrderLine {
   qty: number;
   note: string;
   rice: RiceLevel;
-}
-
-export type GroupOrderStatus = "open" | "closed" | "completed";
-
-export interface GroupOrder {
-  id: string;
-  name: string;
-  templateId: string;
-  unitId: string;
-  host: string;
-  date: string;
-  deadline: string;
-  status: GroupOrderStatus;
-  lines: OrderLine[];
-}
-
-function groupOrderDate(offsetDays: number) {
-  const base = new Date(2026, 8, 16);
-  base.setDate(base.getDate() + offsetDays);
-  return `${base.getFullYear()}/${String(base.getMonth() + 1).padStart(2, "0")}/${String(base.getDate()).padStart(2, "0")}`;
-}
-
-const riceLevelCycle: RiceLevel[] = ["normal", "normal", "half", "none"];
-
-function buildOrderLines(templateId: string, seedIndex: number): OrderLine[] {
-  const tpl = templateById(templateId);
-  const allItemIds = tpl ? tpl.sections.flatMap((s) => s.itemIds) : [];
-  const lineCount = 4 + (seedIndex % 5);
-  return Array.from({ length: lineCount }, (_, j) => {
-    const member = members[(seedIndex * 5 + Math.floor(j / 2)) % members.length];
-    const itemId = allItemIds.length
-      ? allItemIds[(seedIndex + j) % allItemIds.length]
-      : "c1";
-    const item = itemById(itemId);
-    return {
-      memberId: member.id,
-      memberName: member.name,
-      itemId,
-      itemName: item?.name ?? itemId,
-      price: item?.price ?? 0,
-      qty: 1 + ((seedIndex + j) % 2),
-      note: j % 4 === 0 ? "少鹽" : "",
-      rice: riceLevelCycle[(seedIndex + j) % riceLevelCycle.length],
-    };
-  });
-}
-
-const groupOrderSeeds: {
-  name: string;
-  templateId: string;
-  unitId: string;
-  hostIdx: number;
-  dateOffset: number;
-  status: GroupOrderStatus;
-}[] = [
-  { name: "業務一組 週三便當團", templateId: "t1", unitId: "u1", hostIdx: 0, dateOffset: 0, status: "open" },
-  { name: "業務二組 週三便當團", templateId: "t1", unitId: "u2", hostIdx: 1, dateOffset: 0, status: "open" },
-  { name: "前端組 週三便當團", templateId: "t1", unitId: "u3", hostIdx: 2, dateOffset: 0, status: "open" },
-  { name: "總務組 週三便當團", templateId: "t1", unitId: "u5", hostIdx: 3, dateOffset: 0, status: "closed" },
-  { name: "人資組 週三便當團", templateId: "t1", unitId: "u6", hostIdx: 7, dateOffset: 0, status: "completed" },
-  { name: "後端組 星巴克團", templateId: "t2", unitId: "u4", hostIdx: 4, dateOffset: 1, status: "open" },
-  { name: "會計組 手搖下午茶", templateId: "t3", unitId: "u7", hostIdx: 5, dateOffset: 1, status: "completed" },
-  { name: "業務一組 輕食週便當", templateId: "t4", unitId: "u1", hostIdx: 6, dateOffset: 2, status: "open" },
-  { name: "總務組 星巴克團", templateId: "t2", unitId: "u5", hostIdx: 3, dateOffset: 2, status: "completed" },
-  { name: "出納組 星巴克團", templateId: "t2", unitId: "u8", hostIdx: 0, dateOffset: 3, status: "open" },
-  { name: "人資組 星巴克團", templateId: "t2", unitId: "u6", hostIdx: 9, dateOffset: 3, status: "open" },
-  { name: "業務二組 手搖下午茶", templateId: "t3", unitId: "u2", hostIdx: 1, dateOffset: 3, status: "closed" },
-  { name: "後端組 手搖下午茶", templateId: "t3", unitId: "u4", hostIdx: 10, dateOffset: 3, status: "open" },
-  { name: "前端組 輕食週便當", templateId: "t4", unitId: "u3", hostIdx: 2, dateOffset: 4, status: "open" },
-];
-
-export const groupOrders: GroupOrder[] = groupOrderSeeds.map((seed, i) => ({
-  id: `go${i + 1}`,
-  name: seed.name,
-  templateId: seed.templateId,
-  unitId: seed.unitId,
-  host: members[seed.hostIdx % members.length].name,
-  date: groupOrderDate(seed.dateOffset),
-  deadline:
-    seed.status === "open"
-      ? "今天 17:00 截止"
-      : seed.status === "closed"
-        ? "已截止"
-        : "已完成",
-  status: seed.status,
-  lines: buildOrderLines(seed.templateId, i),
-}));
-
-export const groupOrderById = (id: string) =>
-  groupOrders.find((g) => g.id === id);
-
-export const groupOrdersByUnit = (unitId: string) =>
-  groupOrders.filter((g) => g.unitId === unitId);
-
-export const groupOrdersByDepartment = (departmentId: string) => {
-  const unitIds = new Set(unitsInDepartment(departmentId).map((u) => u.id));
-  return groupOrders.filter((g) => unitIds.has(g.unitId));
-};
-
-// 同一模板＋同一天，被多個單位分別開團的「同團」——前台可彙總查看／勾選匯出
-export const dateToSlug = (date: string) => date.replaceAll("/", "-");
-export const slugToDate = (slug: string) => slug.replaceAll("-", "/");
-
-export const groupOrdersByTemplateAndDate = (templateId: string, date: string) =>
-  groupOrders.filter((g) => g.templateId === templateId && g.date === date);
-
-export interface ClusterableTemplate {
-  templateId: string;
-  orders: GroupOrder[];
-}
-
-// 某一天裡有開團的每個模板（不論該模板當天是 1 團還是多團）——彙總頁用來決定當天要顯示哪些 tabs
-export function clusterableTemplatesForDate(date: string): ClusterableTemplate[] {
-  const map = new Map<string, GroupOrder[]>();
-  for (const g of groupOrders) {
-    if (g.date !== date) continue;
-    const arr = map.get(g.templateId) ?? [];
-    arr.push(g);
-    map.set(g.templateId, arr);
-  }
-  return [...map.entries()].map(([templateId, orders]) => ({ templateId, orders }));
-}
-
-export function groupOrderTotals(order: GroupOrder) {
-  return order.lines.reduce(
-    (acc, l) => ({ qty: acc.qty + l.qty, amount: acc.amount + l.price * l.qty }),
-    { qty: 0, amount: 0 },
-  );
-}
-
-export interface DepartmentExportSummary {
-  departmentId: string;
-  departmentName: string;
-  unitCount: number;
-  orderCount: number;
-  totalQty: number;
-  totalAmount: number;
-  byUnit: {
-    unitId: string;
-    unitName: string;
-    orderCount: number;
-    qty: number;
-    amount: number;
-  }[];
-}
-
-export function departmentExportSummary(
-  departmentId: string,
-): DepartmentExportSummary | undefined {
-  const dept = departmentById(departmentId);
-  if (!dept) return undefined;
-  const byUnit = unitsInDepartment(departmentId).map((u) => {
-    const orders = groupOrdersByUnit(u.id);
-    const totals = orders.reduce(
-      (acc, o) => {
-        const t = groupOrderTotals(o);
-        return { qty: acc.qty + t.qty, amount: acc.amount + t.amount };
-      },
-      { qty: 0, amount: 0 },
-    );
-    return {
-      unitId: u.id,
-      unitName: u.name,
-      orderCount: orders.length,
-      qty: totals.qty,
-      amount: totals.amount,
-    };
-  });
-  return {
-    departmentId: dept.id,
-    departmentName: dept.name,
-    unitCount: byUnit.length,
-    orderCount: byUnit.reduce((s, u) => s + u.orderCount, 0),
-    totalQty: byUnit.reduce((s, u) => s + u.qty, 0),
-    totalAmount: byUnit.reduce((s, u) => s + u.amount, 0),
-    byUnit,
-  };
 }
 
 /* ── 會員洞察 ──────────────────────────────────────────
@@ -1211,10 +807,6 @@ export function itemStatsList(): ItemStat[] {
       };
     })
     .sort((a, b) => b.totalQuantity - a.totalQuantity);
-}
-
-export function itemStatById(itemId: string): ItemStat | undefined {
-  return itemStatsList().find((s) => s.itemId === itemId);
 }
 
 export interface ItemCommentEntry {

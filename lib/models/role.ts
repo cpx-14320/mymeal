@@ -43,7 +43,6 @@ const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
   {
     name: "餐飲管理員",
     permissions: {
-      zones: true,
       templates: true,
       pages: true,
       itemClassification: true,
@@ -63,7 +62,6 @@ const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
   {
     name: "超級管理員",
     permissions: {
-      zones: true,
       pages: true,
       items: true,
       itemClassification: true,
@@ -80,6 +78,7 @@ const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
       reports: true,
       audit: true,
       promos: true,
+      feedback: true,
     },
   },
 ];
@@ -129,6 +128,18 @@ export async function listRoles(): Promise<RoleView[]> {
       memberCount: await countMembersByRole(d.name),
     })),
   );
+}
+
+/** 依會員 id 查出他目前套用組別的權限鍵——前台側欄／後台頁面判斷要不要顯示某項功能用。
+ *  查無會員或會員沒有對應組別（名稱兜不上）就當作沒有任何權限。 */
+export async function getMemberPermissions(memberId: string): Promise<RolePermissions> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return {};
+  const { Member } = await import("@/lib/models/member");
+  const member = await Member.findById(memberId).select("role");
+  if (!member?.role) return {};
+  const role = await Role.findOne({ name: member.role }).select("permissions");
+  return role?.permissions ?? {};
 }
 
 export async function findRoleById(id: string): Promise<RoleView | null> {

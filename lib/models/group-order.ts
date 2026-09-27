@@ -284,6 +284,16 @@ export interface CreateGroupOrderInput {
   status?: GroupOrderStatus;
 }
 
+/** 一次開多團（不同單位）用：送出前先整批檢查，回傳這個日期裡「已經存在」的團名子集，
+ *  讓呼叫端可以一次擋下所有會撞名的列，不用先建立一部分才發現後面撞名。 */
+export async function findExistingGroupOrderNames(date: string, names: string[]): Promise<Set<string>> {
+  await connectMongo();
+  const trimmed = [...new Set(names.map((n) => n.trim()).filter(Boolean))];
+  if (trimmed.length === 0) return new Set();
+  const docs = await GroupOrder.find({ date, name: { $in: trimmed } }, { name: 1 });
+  return new Set(docs.map((d) => d.name));
+}
+
 export async function createGroupOrder(input: CreateGroupOrderInput) {
   await connectMongo();
   if (!Types.ObjectId.isValid(input.templateId)) throw new Error("請選擇有效的模板。");
@@ -291,6 +301,13 @@ export async function createGroupOrder(input: CreateGroupOrderInput) {
   if (!Types.ObjectId.isValid(input.hostId)) throw new Error("請選擇有效的團主。");
   if (!input.name.trim()) throw new Error("請填寫團名。");
   if (!input.date.trim()) throw new Error("請選擇取餐日期。");
+
+  // 同一天不能有兩團同名——避免不同單位、不同人各自開團時，剛好取了一樣的名字讓人搞混。
+  // 只擋「同一天」，不同天允許重複用同一個團名（有些人習慣每次都取一樣的名字，只是日期不同）。
+  const duplicate = await GroupOrder.findOne({ date: input.date, name: input.name.trim() });
+  if (duplicate) {
+    throw new Error(`${input.date} 已經有一團叫「${input.name.trim()}」了，請改一個名稱。`);
+  }
 
   let sectionName = "";
   if (input.sectionId && Types.ObjectId.isValid(input.sectionId)) {
@@ -574,10 +591,14 @@ export interface ItemOrderStat {
   totalQty: number; // 這個品項總共被點了幾份（總訂購數量）
 }
 
-/** 給後台「餐點統計」頁用：一次算出所有品項各自的被訂購次數／總份數，資料來源是所有團訂的 lines。 */
+/** 給後台「餐點統計」頁用：一次算出所有品項各自的被訂購次數／總份數，資料來源是所有團訂的 lines。
+ *  只算「已結單」的團（closed／completed）——還開放中（open）的團訂大家隨時可能改份數或整團被取消，
+ *  在結單前不該算進正式的訂購統計；團訂被取消是直接刪除整筆文件，這裡本來就是即時查詢，
+ *  被取消的團訂自然也不會再被算進來，不用額外處理。 */
 export async function getItemOrderStats(): Promise<Record<string, ItemOrderStat>> {
   await connectMongo();
   const rows = await GroupOrder.aggregate<{ _id: Types.ObjectId; orderCount: number; totalQty: number }>([
+    { $match: { status: { $ne: "open" } } },
     { $unwind: "$lines" },
     { $group: { _id: "$lines.itemId", orderCount: { $sum: 1 }, totalQty: { $sum: "$lines.qty" } } },
   ]);

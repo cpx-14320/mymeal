@@ -22,6 +22,7 @@ const ledgerTypeLabel: Record<LedgerType, string> = {
   spend: "訂餐扣款",
   refund: "退款",
   adjustment: "手動調整",
+  topup_reversal: "撤銷儲值",
 };
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);

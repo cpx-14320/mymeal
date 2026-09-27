@@ -30,7 +30,7 @@ export async function createTemplateAction(
 
   let templateId: string;
   try {
-    const result = await createTemplate(input, member?.name);
+    const result = await createTemplate(input, member?.name, memberId ?? undefined);
     templateId = result.id;
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
@@ -48,5 +48,4 @@ export async function setTemplatesActiveAction(ids: string[], active: boolean) {
 export async function deleteTemplatesAction(ids: string[]) {
   await deleteTemplates(ids);
   revalidatePath("/admin/templates");
-  revalidatePath("/admin/zones");
 }

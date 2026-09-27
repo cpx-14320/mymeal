@@ -39,7 +39,7 @@ export async function createPageAction(
 
   let pageId: string;
   try {
-    const page = await createPage(input, member?.name);
+    const page = await createPage(input, member?.name, memberId ?? undefined);
     pageId = page.id;
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };

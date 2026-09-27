@@ -35,6 +35,8 @@ export const ItemReview = models.ItemReview ?? model<ItemReviewDocument>("ItemRe
 export interface ItemReviewView {
   itemId: string;
   itemName: string;
+  emoji: string;
+  imageUrl?: string;
   stars: number;
   text?: string;
   at: Date;
@@ -43,9 +45,11 @@ export interface ItemReviewView {
 interface PopulatedItem {
   _id: Types.ObjectId;
   name: string;
+  emoji: string;
+  imageUrl?: string;
 }
 
-/** 給會員洞察「評分」分頁用：這位會員留下的所有評論／評分（每筆都一定有星等）。 */
+/** 給會員洞察「評分」分頁、前台「我的評論」分頁用：這位會員留下的所有評論／評分（每筆都一定有星等）。 */
 export async function listReviewsByMember(memberId: string): Promise<ItemReviewView[]> {
   await connectMongo();
   if (!Types.ObjectId.isValid(memberId)) return [];
@@ -56,7 +60,15 @@ export async function listReviewsByMember(memberId: string): Promise<ItemReviewV
     .filter((d) => d.itemId)
     .map((d) => {
       const item = d.itemId as unknown as PopulatedItem;
-      return { itemId: String(item._id), itemName: item.name, stars: d.stars, text: d.text, at: d.at };
+      return {
+        itemId: String(item._id),
+        itemName: item.name,
+        emoji: item.emoji,
+        imageUrl: item.imageUrl,
+        stars: d.stars,
+        text: d.text,
+        at: d.at,
+      };
     });
 }
 

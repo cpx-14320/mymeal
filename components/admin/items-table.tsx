@@ -27,14 +27,13 @@ import {
   patchItemAction,
   deleteItemsAction,
 } from "@/app/(app)/admin/items/actions";
+import { ItemsBulkEditModal } from "@/components/admin/items-bulk-edit-modal";
 
 type Filter = "all" | string; // "all" 或 categoryId
 
 /** 表格內 inline 編輯用的下拉／輸入框樣式，跟 /admin/tasks（gamification-manager.tsx）的 cellInput 一致。 */
 const cellSelect =
   "w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 hover:border-line focus:border-brand focus:outline-none";
-
-const UNSET_PAGE = "__unset__";
 
 /** 品項的標籤裡，屬於某個標籤群組的那一個——inline 編輯只給每組「單一目前值」的快速下拉，
  *  多選群組要同時掛多個標籤時，還是要到完整編輯頁（item-form.tsx 的 checkbox 群組）。
@@ -67,6 +66,7 @@ export function ItemsTable({
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const tabs: { key: Filter; label: string }[] = [
     { key: "all", label: "全部" },
@@ -127,15 +127,6 @@ export function ItemsTable({
     router.refresh();
   }
 
-  async function bulkSetPage(value: string) {
-    if (!value) return; // 選到「設定頁面…」提示選項，不動作
-    setBusy(true);
-    await setItemsPageAction([...selected], value === UNSET_PAGE ? "" : value);
-    setSelected(new Set());
-    setBusy(false);
-    router.refresh();
-  }
-
   async function setItemPage(id: string, pageId: string) {
     setBusy(true);
     await setItemsPageAction([id], pageId);
@@ -190,25 +181,14 @@ export function ItemsTable({
         unit="項"
         onCancel={() => setSelected(new Set())}
         extra={
-          <select
-            className="rounded-lg border border-line bg-surface px-2 py-1 text-[13px]"
-            defaultValue=""
+          <button
+            type="button"
             disabled={busy}
-            onChange={(e) => {
-              bulkSetPage(e.target.value);
-              e.target.value = "";
-            }}
+            onClick={() => setBulkEditOpen(true)}
+            className="rounded-lg border border-line px-3 py-1 font-semibold text-ink hover:bg-surface disabled:opacity-50"
           >
-            <option value="" disabled>
-              設定頁面…
-            </option>
-            <option value={UNSET_PAGE}>（取消掛頁面）</option>
-            {pages.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            批次編輯
+          </button>
         }
         actions={[
           { label: "啟用選取", tone: "neutral", onClick: () => bulkSetActive(true), disabled: busy },
@@ -319,7 +299,16 @@ export function ItemsTable({
               <Td>
                 <Badge tone={it.active ? "positive" : "neutral"}>{it.active ? "啟用" : "停用"}</Badge>
               </Td>
-              <Td className="text-muted">{it.createdBy}</Td>
+              <Td className="text-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  {it.createdBy}
+                  {it.createdByLabel && (
+                    <Badge tone={it.createdByLabel === "帳號已刪除" ? "danger" : "warning"}>
+                      {it.createdByLabel}
+                    </Badge>
+                  )}
+                </span>
+              </Td>
               <Td className="text-right">
                 <div className="flex justify-end gap-2">
                   <ButtonLink href={`/admin/items/${it.id}`} variant="secondary" size="sm">
@@ -343,6 +332,20 @@ export function ItemsTable({
       </TableWrap>
 
       <Pagination page={current} pageCount={pageCount} total={rows.length} pageSize={effectivePageSize} onPage={setPage} />
+
+      {bulkEditOpen && (
+        <ItemsBulkEditModal
+          ids={[...selected]}
+          pages={pages}
+          categories={categories}
+          tagGroups={tagGroups}
+          onClose={() => setBulkEditOpen(false)}
+          onApplied={() => {
+            setBulkEditOpen(false);
+            setSelected(new Set());
+          }}
+        />
+      )}
     </div>
   );
 }

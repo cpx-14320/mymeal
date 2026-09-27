@@ -45,6 +45,7 @@ export async function createItemAction(
       },
       member?.name,
       pendingItemId,
+      memberId ?? undefined,
     );
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };

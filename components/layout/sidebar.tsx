@@ -9,16 +9,21 @@ import {
   adminNav,
   resolveHref,
   type PageNavItem,
+  type AdminNavKey,
 } from "./nav";
 import { useLoginModal } from "./login-modal-context";
+import type { RolePermissions } from "@/lib/models/role";
 
 const ADMIN_NAV_COLLAPSE_KEY = "mymeal-admin-nav-collapsed";
 
 interface SidebarProps {
   /** 目前是否已登入。訪客狀態下需登入的項目會導向登入頁並顯示鎖頭。 */
   isAuthed?: boolean;
-  /** 是否為管理者。已登入但非管理者時，「後台管理」等項目會隱藏。 */
-  isAdmin?: boolean;
+  /**
+   * 目前會員套用組別的權限鍵（見 lib/models/role.ts）——有任一項為 true 才算「是管理者」，
+   * 「後台管理」項目跟後台內部側欄各項目都依這個決定要不要顯示。
+   */
+  adminPermissions?: RolePermissions;
   /**
    * 預覽模式：先開放所有頁面，不做權限鎖定、不顯示鎖頭與訪客提示。
    * 之後接上登入系統後改為 false，改用 isAuthed / isAdmin。
@@ -34,7 +39,7 @@ interface SidebarProps {
 
 export function Sidebar({
   isAuthed = false,
-  isAdmin = false,
+  adminPermissions = {},
   previewMode = false,
   onNavigate,
   pages = [],
@@ -43,6 +48,8 @@ export function Sidebar({
   const pathname = usePathname();
   const inAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const { openLogin } = useLoginModal();
+  // 組別隨便勾一項權限，就當作「是管理者」——後台各頁面自己的權限鍵再決定看不看得到細項。
+  const isAdmin = Object.values(adminPermissions).some(Boolean);
 
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     () => new Set(),
@@ -115,11 +122,26 @@ export function Sidebar({
 
   /* ── 後台管理：側欄改顯示後台導覽 ───────────────────── */
   if (inAdmin) {
+    // 完全沒有任何權限就不顯示任何後台項目（含總覽／功能說明）；有權限的話，
+    // 總覽跟功能說明一律顯示（純參考資料，不是可調整資料的功能，不用個別授權），
+    // 其他項目照組別的權限鍵過濾，過濾完整組沒有項目就整組不顯示。
+    const alwaysVisibleKeys = new Set<AdminNavKey>(["overview", "guide"]);
+    const visibleAdminNav = isAdmin
+      ? adminNav
+          .map((group) => ({
+            ...group,
+            items: group.items.filter(
+              (item) => alwaysVisibleKeys.has(item.key) || adminPermissions[item.key],
+            ),
+          }))
+          .filter((group) => group.items.length > 0)
+      : [];
+
     return (
       <div className="flex h-full flex-col">
         <div className="border-b border-line px-3 py-3">
           <Link
-            href="/menu"
+            href="/group-orders"
             onClick={onNavigate}
             className="flex items-center gap-1.5 text-sm text-muted hover:text-ink"
           >
@@ -131,7 +153,7 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 space-y-3 overflow-y-auto p-3">
-          {adminNav.map((group) => {
+          {visibleAdminNav.map((group) => {
             const expanded = !group.label || !collapsedGroups.has(group.key);
 
             return (
@@ -192,11 +214,11 @@ export function Sidebar({
   }
 
   /* ── 前台：主導覽 ──────────────────────────────────── */
-  const items = previewMode
-    ? primaryNav
-    : primaryNav.filter(
-        (item) => !(item.requiresAdmin && isAuthed && !isAdmin),
-      );
+  // 「後台管理」不管 previewMode，只看是不是真的有權限；其他項目維持原本的規則。
+  const items = primaryNav.filter((item) => {
+    if (item.requiresAdmin) return isAdmin;
+    return previewMode || !(item.requiresAuth && !isAuthed);
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -283,12 +305,21 @@ export function Sidebar({
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
           const locked = !previewMode && item.requiresAuth && !isAuthed;
+          // 訪客點需登入的項目：不管 previewMode 與否都攔下來跳彈窗，
+          // 不然導過去頁面本身也會 redirect("/login")，跳到獨立頁面。
+          const guestGated = item.requiresAuth && !isAuthed;
 
           const link = (
             <Link
               key={item.key}
               href={href}
-              onClick={onNavigate}
+              onClick={(e) => {
+                if (guestGated) {
+                  e.preventDefault();
+                  openLogin();
+                }
+                onNavigate?.();
+              }}
               aria-current={active ? "page" : undefined}
               className={`group flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 active ? "bg-brand-soft text-ink" : "text-ink hover:bg-surface-2"

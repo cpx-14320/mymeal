@@ -9,9 +9,11 @@ import { CloseIcon } from "./icons";
 import { GoTopButton } from "./go-top-button";
 import { InterstitialOverlay } from "@/components/interstitial-overlay";
 import { LoginModal } from "./login-modal";
-import { LoginModalContext } from "./login-modal-context";
+import { LoginModalContext, type LoginModalMode } from "./login-modal-context";
 import { logoutAction } from "@/app/login/actions";
 import type { PageNavItem } from "./nav";
+import type { OrgOption, UnitOption } from "@/lib/models/org";
+import type { RolePermissions } from "@/lib/models/role";
 
 export const DEMO_AUTH_KEY = "mymeal-demo-authed";
 
@@ -29,6 +31,9 @@ export function AppShell({
   pages = [],
   walletBalance = 0,
   isSessionAuthed = false,
+  registerDepartments = [],
+  registerUnits = [],
+  adminPermissions = {},
 }: {
   children: ReactNode;
   /** 已上架的頁面，前台側欄用來動態多顯示一個連結（見 sidebar.tsx）；後台新增頁面就會同步出現。 */
@@ -37,12 +42,18 @@ export function AppShell({
   walletBalance?: number;
   /** 是否有真實登入 session，伺服器端（app/(app)/layout.tsx）算好傳進來。 */
   isSessionAuthed?: boolean;
+  /** 登入彈窗切到「申請帳號」時要用的部門/單位清單。 */
+  registerDepartments?: OrgOption[];
+  registerUnits?: UnitOption[];
+  /** 目前會員套用組別的權限鍵——側欄「後台管理」跟後台內部項目要不要顯示，都看這個。 */
+  adminPermissions?: RolePermissions;
 }) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [demoAuthed, setDemoAuthed] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [loginMode, setLoginMode] = useState<LoginModalMode>("login");
   const previewMode = true;
   const authed = isSessionAuthed || (mounted && demoAuthed);
 
@@ -90,7 +101,14 @@ export function AppShell({
   }, [drawerOpen]);
 
   return (
-    <LoginModalContext.Provider value={{ openLogin: () => setLoginOpen(true) }}>
+    <LoginModalContext.Provider
+      value={{
+        openLogin: (mode = "login") => {
+          setLoginMode(mode);
+          setLoginOpen(true);
+        },
+      }}
+    >
       <div className="flex min-h-dvh flex-col bg-page">
         <Header
           onMenuClick={() => setDrawerOpen(true)}
@@ -107,6 +125,7 @@ export function AppShell({
               isAuthed={authed}
               pages={pages}
               walletBalance={walletBalance}
+              adminPermissions={adminPermissions}
             />
           </aside>
 
@@ -141,6 +160,7 @@ export function AppShell({
                     isAuthed={authed}
                     pages={pages}
                     walletBalance={walletBalance}
+                    adminPermissions={adminPermissions}
                     onNavigate={() => setDrawerOpen(false)}
                   />
                 </div>
@@ -161,11 +181,16 @@ export function AppShell({
         {/* 回到頂部按鈕（前台／後台共用） */}
         <GoTopButton />
 
-        <LoginModal
-          open={loginOpen}
-          onClose={() => setLoginOpen(false)}
-          onLoginSuccess={loginDemo}
-        />
+        {loginOpen && (
+          <LoginModal
+            open={loginOpen}
+            onClose={() => setLoginOpen(false)}
+            onLoginSuccess={loginDemo}
+            departments={registerDepartments}
+            units={registerUnits}
+            initialMode={loginMode}
+          />
+        )}
       </div>
     </LoginModalContext.Provider>
   );

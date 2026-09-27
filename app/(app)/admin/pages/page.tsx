@@ -4,7 +4,7 @@ import { listPages } from "@/lib/models/page";
 export const metadata = { title: "頁面設定" };
 
 export default async function AdminPagesPage() {
-  const pages = await listPages();
+  const pages = await listPages({ withCreatorLabels: true });
 
   return <PagesManager pages={pages} />;
 }

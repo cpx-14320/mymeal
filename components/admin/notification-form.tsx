@@ -54,7 +54,7 @@ export function NotificationForm({ notification }: { notification?: Notification
               className={inputClass}
               name="linkUrl"
               defaultValue={notification?.linkUrl}
-              placeholder="/menu 或 https://…"
+              placeholder="/group-orders 或 https://…"
             />
           </Field>
 

@@ -8,7 +8,7 @@ export const metadata = { title: "品項設定" };
 
 export default async function AdminItemsPage() {
   const [items, categories, tagGroups, pages] = await Promise.all([
-    listCatalogItems(),
+    listCatalogItems({ withCreatorLabels: true }),
     listItemCategories(),
     listTagGroups(),
     listPages(),

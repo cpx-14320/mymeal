@@ -5,6 +5,7 @@ import {
   approveTopupRequest,
   rejectTopupRequest,
   deleteTopupRequest,
+  revokeApprovedTopupRequest,
   listTopupRequests,
 } from "@/lib/models/topup-request";
 import { createAuditLog } from "@/lib/models/audit-log";
@@ -51,6 +52,25 @@ export async function rejectTopupAction(id: string, reviewNote?: string): Promis
   await createAuditLog({ actor, action: "退件儲值申請", target: label });
 
   revalidatePath("/admin/topups");
+  revalidatePath("/admin");
+  revalidatePath("/admin/audit");
+  return { success: true };
+}
+
+/** 撤銷誤按核准：沖銷等額餘額、把申請退回待審核，讓管理員可以重新正確處理。 */
+export async function revokeTopupAction(id: string): Promise<TopupActionState> {
+  const actor = await getCurrentActorName();
+  const label = await findRequestLabel(id);
+  try {
+    await revokeApprovedTopupRequest(id, actor);
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
+  }
+
+  await createAuditLog({ actor, action: "撤銷儲值核准", target: label });
+
+  revalidatePath("/admin/topups");
+  revalidatePath("/admin/wallets");
   revalidatePath("/admin");
   revalidatePath("/admin/audit");
   return { success: true };

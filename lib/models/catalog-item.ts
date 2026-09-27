@@ -4,6 +4,7 @@ import { connectMongo } from "@/lib/mongoose";
 // 不依賴這次 request 剛好先經過哪個其他頁面（不然會間歇性 MissingSchemaError）。
 import "@/lib/models/item-category";
 import "@/lib/models/page";
+import { getCreatorLabels, backfillCreatorMemberIds, type CreatorLabel } from "@/lib/models/creator";
 
 /** menu_items collection —— 全站唯一的品項來源，模板／開團都只存 itemId 再回頭查。 */
 export interface CatalogItemDocument {
@@ -17,6 +18,7 @@ export interface CatalogItemDocument {
   imageUrl?: string;
   active: boolean;
   createdBy: string; // 建立者姓名快照；無登入會員時記「系統」
+  createdByMemberId?: Types.ObjectId | null; // 建立者會員 id，用來查目前是否還有這項權限；null 代表補過但對不到人
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +34,7 @@ const catalogItemSchema = new Schema<CatalogItemDocument>(
     imageUrl: { type: String },
     active: { type: Boolean, required: true, default: true },
     createdBy: { type: String, required: true, trim: true, default: "系統" },
+    createdByMemberId: { type: Schema.Types.ObjectId, ref: "Member" },
   },
   { timestamps: true, collection: "menu_items" },
 );
@@ -77,6 +80,9 @@ export interface CatalogItemView {
   imageUrl?: string;
   active: boolean;
   createdBy: string;
+  createdByMemberId?: string;
+  /** 建立者現在的權限狀態——查得到才會有值，例如「已無此權限」「帳號已刪除」；只有清單頁（listCatalogItems）會帶。 */
+  createdByLabel?: CreatorLabel;
 }
 
 interface PopulatedRef {
@@ -95,6 +101,7 @@ function toView(d: {
   imageUrl?: string;
   active: boolean;
   createdBy: string;
+  createdByMemberId?: Types.ObjectId | null;
 }): CatalogItemView {
   const category = d.categoryId as PopulatedRef;
   const page = d.pageId as PopulatedRef | undefined;
@@ -111,15 +118,29 @@ function toView(d: {
     imageUrl: d.imageUrl,
     active: d.active,
     createdBy: d.createdBy,
+    createdByMemberId: d.createdByMemberId ? String(d.createdByMemberId) : undefined,
   };
 }
 
-export async function listCatalogItems(): Promise<CatalogItemView[]> {
+/** withCreatorLabels：只有品項設定清單頁（會顯示「建立者」欄）才需要開——會多查一次會員/角色權限，
+ *  其他呼叫端（前台選單、開團訂餐等）用不到，不用多負擔這個查詢。 */
+export async function listCatalogItems(options?: { withCreatorLabels?: boolean }): Promise<CatalogItemView[]> {
   await connectMongo();
+  if (options?.withCreatorLabels) await backfillCreatorMemberIds(CatalogItem);
   const docs = await CatalogItem.find({})
     .sort({ createdAt: -1 })
     .populate<{ categoryId: PopulatedRef; pageId?: PopulatedRef }>(["categoryId", "pageId"]);
-  return docs.map((d) => toView(d as unknown as Parameters<typeof toView>[0]));
+  const items = docs.map((d) => toView(d as unknown as Parameters<typeof toView>[0]));
+  if (!options?.withCreatorLabels) return items;
+
+  const labels = await getCreatorLabels(
+    items.map((it) => it.createdByMemberId),
+    "items",
+  );
+  return items.map((it) => ({
+    ...it,
+    createdByLabel: it.createdByMemberId ? labels.get(it.createdByMemberId) : undefined,
+  }));
 }
 
 /** 頁面詳情用：這個頁面的所有品項——item.pageId 是必填欄位，比模板的 pageId（選填，混合頁面會留空）可靠。 */
@@ -232,13 +253,22 @@ export function newCatalogItemId(): string {
   return new Types.ObjectId().toString();
 }
 
-export async function createCatalogItem(input: CatalogItemInput, createdBy?: string, id?: string) {
+export async function createCatalogItem(
+  input: CatalogItemInput,
+  createdBy?: string,
+  id?: string,
+  createdByMemberId?: string,
+) {
   await connectMongo();
   if (id && !Types.ObjectId.isValid(id)) throw new Error("無效的品項 id");
   const doc = await CatalogItem.create({
     ...(id ? { _id: new Types.ObjectId(id) } : {}),
     ...buildDoc(input),
     createdBy: createdBy ?? "系統",
+    createdByMemberId:
+      createdByMemberId && Types.ObjectId.isValid(createdByMemberId)
+        ? new Types.ObjectId(createdByMemberId)
+        : undefined,
   });
   return { id: String(doc._id) };
 }
@@ -254,6 +284,7 @@ export async function updateCatalogItem(id: string, input: CatalogItemInput) {
 export async function upsertCatalogItemByName(
   input: CatalogItemInput,
   createdBy?: string,
+  createdByMemberId?: string,
 ): Promise<{ id: string; created: boolean }> {
   await connectMongo();
   const existing = await CatalogItem.findOne({ name: input.name });
@@ -261,7 +292,14 @@ export async function upsertCatalogItemByName(
     await CatalogItem.findByIdAndUpdate(existing._id, buildUpdate(input));
     return { id: String(existing._id), created: false };
   }
-  const doc = await CatalogItem.create({ ...buildDoc(input), createdBy: createdBy ?? "系統" });
+  const doc = await CatalogItem.create({
+    ...buildDoc(input),
+    createdBy: createdBy ?? "系統",
+    createdByMemberId:
+      createdByMemberId && Types.ObjectId.isValid(createdByMemberId)
+        ? new Types.ObjectId(createdByMemberId)
+        : undefined,
+  });
   return { id: String(doc._id), created: true };
 }
 
@@ -292,6 +330,64 @@ export async function patchCatalogItem(
   if (Object.keys(set).length === 0) return;
 
   await CatalogItem.updateOne({ _id: new Types.ObjectId(id) }, { $set: set });
+}
+
+export interface CatalogItemBulkPatch {
+  /** undefined＝不變；空字串＝取消掛頁面。 */
+  pageId?: string;
+  /** undefined＝不變。 */
+  categoryId?: string;
+  /** undefined＝不變。 */
+  price?: number;
+  /** 只放這次真的要改的標籤群組；value 空字串＝清空這組。同一品項若不屬於任何列出的群組的既有標籤，原樣保留。 */
+  tagGroups?: { groupOptions: string[]; value: string }[];
+}
+
+/** 品項設定列表頁的「批次編輯」彈窗用：頁面／分類／價錢是所有選取品項統一套用同一個值，
+ *  標籤群組則是每個品項各自的 tags 陣列裡「屬於這個群組的那一個」被換掉，其餘標籤（含其他群組）不受影響，
+ *  所以標籤這段沒辦法跟其他欄位一樣用單一 updateMany 打完，要先各自查出目前的 tags 再逐筆 bulkWrite。 */
+export async function patchCatalogItemsBulk(ids: string[], patch: CatalogItemBulkPatch): Promise<number> {
+  await connectMongo();
+  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return 0;
+
+  const set: Record<string, unknown> = {};
+  const unset: Record<string, ""> = {};
+  if (patch.categoryId !== undefined) {
+    if (!Types.ObjectId.isValid(patch.categoryId)) throw new Error("無效的分類 id");
+    set.categoryId = new Types.ObjectId(patch.categoryId);
+  }
+  if (patch.pageId !== undefined) {
+    if (patch.pageId) {
+      if (!Types.ObjectId.isValid(patch.pageId)) throw new Error("無效的頁面 id");
+      set.pageId = new Types.ObjectId(patch.pageId);
+    } else {
+      unset.pageId = "";
+    }
+  }
+  if (patch.price !== undefined) set.price = patch.price;
+
+  if (Object.keys(set).length > 0 || Object.keys(unset).length > 0) {
+    const update: Record<string, unknown> = {};
+    if (Object.keys(set).length > 0) update.$set = set;
+    if (Object.keys(unset).length > 0) update.$unset = unset;
+    await CatalogItem.updateMany({ _id: { $in: objIds } }, update);
+  }
+
+  if (patch.tagGroups && patch.tagGroups.length > 0) {
+    const docs = await CatalogItem.find({ _id: { $in: objIds } }).select("tags");
+    const ops = docs.map((d) => {
+      let tags: string[] = d.tags;
+      for (const { groupOptions, value } of patch.tagGroups!) {
+        const rest = tags.filter((t: string) => !groupOptions.includes(t));
+        tags = value ? [...rest, value] : rest;
+      }
+      return { updateOne: { filter: { _id: d._id }, update: { $set: { tags } } } };
+    });
+    if (ops.length > 0) await CatalogItem.bulkWrite(ops);
+  }
+
+  return objIds.length;
 }
 
 /** 批次上傳圖片用：只更新 imageUrl，不動其他欄位（圖片本身已經上傳到 Blob，這裡只是把網址存回去）。 */
@@ -326,6 +422,14 @@ export async function deleteCatalogItems(ids: string[]): Promise<number> {
     { "sections.itemIds": { $in: objIds } },
     { $pull: { "sections.$[].itemIds": { $in: objIds } } },
   );
+
+  // 收藏／評論指向被刪的品項就沒有意義了，一併清掉，不留孤兒紀錄。
+  const { Favorite } = await import("@/lib/models/favorite");
+  const { ItemReview } = await import("@/lib/models/item-review");
+  await Promise.all([
+    Favorite.deleteMany({ itemId: { $in: objIds } }),
+    ItemReview.deleteMany({ itemId: { $in: objIds } }),
+  ]);
 
   const result = await CatalogItem.deleteMany({ _id: { $in: objIds } });
   return result.deletedCount;

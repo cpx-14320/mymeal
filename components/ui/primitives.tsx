@@ -357,7 +357,10 @@ export function PillTabs<T extends string>({
   onChange: (key: T) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div
+      className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+        sm:flex-wrap sm:overflow-visible"
+    >
       {tabs.map((t) => {
         const active = t.key === value;
         return (
@@ -366,7 +369,7 @@ export function PillTabs<T extends string>({
             type="button"
             onClick={() => onChange(t.key)}
             aria-pressed={active}
-            className={`rounded-full px-3 py-1.5 text-[13px] transition-colors ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] transition-colors ${
               active
                 ? "bg-brand text-brand-fg"
                 : "border border-line bg-surface text-muted hover:text-ink"

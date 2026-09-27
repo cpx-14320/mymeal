@@ -2,8 +2,11 @@
 
 import { createContext, useContext } from "react";
 
+export type LoginModalMode = "login" | "register";
+
 interface LoginModalContextValue {
-  openLogin: () => void;
+  /** 預設跳登入；傳 "register" 直接跳到申請帳號那面。 */
+  openLogin: (mode?: LoginModalMode) => void;
 }
 
 export const LoginModalContext = createContext<LoginModalContextValue | null>(null);

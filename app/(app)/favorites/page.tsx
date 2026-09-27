@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { PageContainer, PageHeader } from "@/components/ui/primitives";
-import { ItemGrid } from "@/components/item-grid";
+import { FavoritesTabs } from "@/components/favorites-tabs";
 import { listItemCategories } from "@/lib/models/item-category";
 import { listCatalogItems } from "@/lib/models/catalog-item";
-import { getItemStatsByItems } from "@/lib/models/item-review";
+import { getItemStatsByItems, listReviewsByMember } from "@/lib/models/item-review";
 import { listFavoritesByMember } from "@/lib/models/favorite";
 import { getSessionMemberId } from "@/lib/session";
 
@@ -14,10 +14,11 @@ export default async function FavoritesPage() {
   const memberId = await getSessionMemberId();
   if (!memberId) redirect("/login");
 
-  const [categories, allItems, favorites] = await Promise.all([
+  const [categories, allItems, favorites, reviews] = await Promise.all([
     listItemCategories(),
     listCatalogItems(),
     listFavoritesByMember(memberId),
+    listReviewsByMember(memberId),
   ]);
   const items = allItems.filter((it) => it.active);
   const stats = await getItemStatsByItems(items.map((it) => it.id));
@@ -30,13 +31,12 @@ export default async function FavoritesPage() {
         description="收藏喜歡的品項，看看其他人怎麼評論。"
       />
 
-      <ItemGrid
-        scope="favorites"
-        initialFavoriteIds={favoriteItemIds}
+      <FavoritesTabs
         items={items}
         stats={stats}
         categories={categories}
-        defaultPageSize={25}
+        favoriteItemIds={favoriteItemIds}
+        reviews={reviews}
       />
     </PageContainer>
   );

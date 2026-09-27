@@ -4,7 +4,7 @@ import { listTemplates } from "@/lib/models/template";
 export const metadata = { title: "模板設定" };
 
 export default async function AdminTemplatesPage() {
-  const templates = await listTemplates();
+  const templates = await listTemplates({ withCreatorLabels: true });
 
   return <TemplatesList templates={templates} />;
 }

@@ -21,6 +21,7 @@ import {
   approveTopupAction,
   rejectTopupAction,
   deleteTopupAction,
+  revokeTopupAction,
   bulkApproveTopupsAction,
   bulkRejectTopupsAction,
   bulkDeleteTopupsAction,
@@ -105,6 +106,11 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   // 待審核的就顯示，實際送出時只挑待審核的那幾筆處理，已處理的不會被誤動。
   const selectedPendingIds = requests.filter((r) => selected.has(r.id) && r.status === "pending").map((r) => r.id);
   const canBulkReview = selectedPendingIds.length > 0;
+  // 已核准的申請要先撤銷核准才能刪除（見 deleteTopupRequest），批次刪除跳過這些，避免整批因為
+  // 混到已核准的就報錯——選取範圍裡有幾筆是這種情況，用按鈕文字提醒管理員。
+  const selectedDeletableIds = requests
+    .filter((r) => selected.has(r.id) && r.status !== "approved")
+    .map((r) => r.id);
 
   async function approve(id: string) {
     setBusyId(id);
@@ -133,6 +139,15 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
     router.refresh();
   }
 
+  async function revoke(id: string) {
+    setBusyId(id);
+    setError(undefined);
+    const result = await revokeTopupAction(id);
+    setBusyId(null);
+    if (result.error) setError(result.error);
+    router.refresh();
+  }
+
   async function bulkApprove() {
     setBulkBusy(true);
     setError(undefined);
@@ -156,7 +171,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   async function bulkDelete() {
     setBulkBusy(true);
     setError(undefined);
-    const result = await bulkDeleteTopupsAction([...selected]);
+    const result = await bulkDeleteTopupsAction(selectedDeletableIds);
     if (result.error) setError(result.error);
     setSelected(new Set());
     setBulkBusy(false);
@@ -190,7 +205,12 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
                 },
               ]
             : []),
-          { label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: bulkBusy },
+          {
+            label: `刪除選取${selectedDeletableIds.length < selected.size ? `（${selectedDeletableIds.length} 筆，已核准的需先撤銷核准）` : ""}`,
+            tone: "danger",
+            onClick: bulkDelete,
+            disabled: bulkBusy || selectedDeletableIds.length === 0,
+          },
         ]}
       />
 
@@ -252,14 +272,26 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
                         </Button>
                       </>
                     )}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={busyId === req.id}
-                      onClick={() => remove(req.id)}
-                    >
-                      刪除
-                    </Button>
+                    {req.status === "approved" && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={busyId === req.id}
+                        onClick={() => revoke(req.id)}
+                      >
+                        撤銷核准
+                      </Button>
+                    )}
+                    {req.status !== "approved" && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={busyId === req.id}
+                        onClick={() => remove(req.id)}
+                      >
+                        刪除
+                      </Button>
+                    )}
                   </div>
                 </Td>
               </tr>

@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { navIcons } from "@/components/layout/icons";
-import { REGISTER_HREF } from "@/components/layout/nav";
 import { LoginButton } from "@/components/layout/login-button";
 
 /** 首頁菜單預覽（範例資料，登入後改接真實每週菜單） */
@@ -57,12 +55,12 @@ export default function HomePage() {
           截止後系統彙整清單給餐廳，餐費直接從個人錢包扣款。
         </p>
         <div className="mt-7 flex flex-wrap items-center gap-3">
-          <Link
-            href={REGISTER_HREF}
+          <LoginButton
+            mode="register"
             className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-brand-fg hover:opacity-90"
           >
             申請帳號
-          </Link>
+          </LoginButton>
           <LoginButton className="rounded-lg border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">
             登入
           </LoginButton>
@@ -154,12 +152,12 @@ export default function HomePage() {
             用公司 Email 申請帳號，開通後就能開團、點餐與儲值。
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Link
-              href={REGISTER_HREF}
+            <LoginButton
+              mode="register"
               className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-brand-fg hover:opacity-90"
             >
               申請帳號
-            </Link>
+            </LoginButton>
             <LoginButton className="rounded-lg border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">
               我已經有帳號
             </LoginButton>

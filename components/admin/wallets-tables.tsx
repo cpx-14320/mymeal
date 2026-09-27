@@ -23,6 +23,7 @@ const ledgerTypeLabel: Record<LedgerType, string> = {
   spend: "訂餐扣款",
   refund: "退款",
   adjustment: "手動調整",
+  topup_reversal: "撤銷儲值",
 };
 
 /** 「調整餘額／調整」共用的內嵌表單：填金額（可正可負）+ 必填備註，送出後整頁 refresh。 */

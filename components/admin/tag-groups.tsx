@@ -15,7 +15,16 @@ import {
   deleteTagGroupAction,
   reorderTagGroupsAction,
   reorderTagOptionsAction,
+  checkTagOptionsUsageAction,
 } from "@/app/(app)/admin/items/tags/actions";
+
+/** 把「選項字串 → 還用到它的其他群組名稱」的查詢結果，組成一句確認訊息；沒有風險回傳 undefined。 */
+function usageWarningText(usage: Record<string, string[]>): string | undefined {
+  const entries = Object.entries(usage);
+  if (entries.length === 0) return undefined;
+  const lines = entries.map(([opt, groups]) => `「${opt}」（也用在：${groups.join("、")}）`);
+  return `這個動作會影響到品項的標籤資料，以下選項在其他群組也有用到，會一併受影響：${lines.join("、")}。確定要繼續嗎？`;
+}
 
 /** 拖曳排序用的小把手，樣式跟 NameListCard 的「⠿」一致——群組卡片、選項列共用同一顆。 */
 function DragHandle({ label, ...dragProps }: { label: string } & ComponentProps<"span">) {
@@ -47,6 +56,7 @@ function TagGroupCard({ group, dragHandle }: { group: TagGroupView; dragHandle?:
   const [editOptionValue, setEditOptionValue] = useState("");
   const [dragOption, setDragOption] = useState<string | null>(null);
   const [optionError, setOptionError] = useState<string | undefined>();
+  const [crossGroupWarning, setCrossGroupWarning] = useState<string | undefined>();
 
   useEffect(() => {
     setLocalGroup(group);
@@ -112,7 +122,11 @@ function TagGroupCard({ group, dragHandle }: { group: TagGroupView; dragHandle?:
     setDraft("");
   }
 
-  function removeOption(option: string) {
+  async function removeOption(option: string) {
+    const usage = await checkTagOptionsUsageAction(group.id, [option]);
+    const warning = usageWarningText(usage);
+    if (warning && !confirm(warning)) return;
+
     setLocalGroup((g) => ({ ...g, options: g.options.filter((o) => o !== option) }));
     startTransition(async () => {
       await removeTagOptionAction(group.id, option);
@@ -125,16 +139,34 @@ function TagGroupCard({ group, dragHandle }: { group: TagGroupView; dragHandle?:
     setEditOptionValue(option);
   }
 
-  function commitEditOption() {
+  async function commitEditOption() {
     const value = editOptionValue.trim();
     const target = editingOption;
     setEditingOption(null);
     if (!target || !value || value === target) return;
+
+    const usage = await checkTagOptionsUsageAction(group.id, [target]);
+    const warning = usageWarningText(usage);
+    if (warning && !confirm(warning)) return;
+
     setLocalGroup((g) => ({ ...g, options: g.options.map((o) => (o === target ? value : o)) }));
     startTransition(async () => {
       await renameTagOptionAction(group.id, target, value);
       router.refresh();
     });
+  }
+
+  async function openDeleteConfirm() {
+    const usage = await checkTagOptionsUsageAction(group.id, localGroup.options);
+    const entries = Object.entries(usage);
+    setCrossGroupWarning(
+      entries.length > 0
+        ? `另外，以下選項在其他群組也有用到，會一併受影響：${entries
+            .map(([opt, groups]) => `「${opt}」（也用在：${groups.join("、")}）`)
+            .join("、")}。`
+        : undefined,
+    );
+    setConfirming(true);
   }
 
   async function handleDelete() {
@@ -194,7 +226,7 @@ function TagGroupCard({ group, dragHandle }: { group: TagGroupView; dragHandle?:
               <button
                 type="button"
                 disabled={deleting}
-                onClick={() => setConfirming(true)}
+                onClick={openDeleteConfirm}
                 className="shrink-0 text-[13px] font-medium text-danger hover:underline disabled:opacity-50"
               >
                 {deleting ? "刪除中…" : "刪除"}
@@ -300,7 +332,8 @@ function TagGroupCard({ group, dragHandle }: { group: TagGroupView; dragHandle?:
         <ModalHeader title="確認刪除標籤群組" onClose={() => setConfirming(false)} />
         <div className="space-y-4 p-4">
           <p className="text-[13px] lg:text-[14px] text-ink">
-            刪除「{localGroup.name}」會一併刪除底下所有選項，已套用在品項上的標籤不會自動移除。確定要刪除嗎？
+            刪除「{localGroup.name}」會一併刪除底下所有選項，已經套用這些標籤的品項也會一併移除這些標籤。
+            {crossGroupWarning && <> {crossGroupWarning}</>} 確定要刪除嗎？
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setConfirming(false)}>

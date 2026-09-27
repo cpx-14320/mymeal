@@ -48,7 +48,7 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
                 className={inputClass}
                 name="linkUrl"
                 defaultValue={promo?.linkUrl}
-                placeholder="/menu 或 https://…"
+                placeholder="/group-orders 或 https://…"
               />
             </Field>
 
