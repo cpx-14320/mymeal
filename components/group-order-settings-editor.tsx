@@ -16,8 +16,8 @@ interface GroupOrderSettingsEditorProps {
   units: UnitOption[];
 }
 
-/** 團主專用：修正開團時設錯的套用模板／分類／單位／團名——不影響大家已經點好的餐點，
- *  因為每一行點餐記錄的是自己的品項/價格快照，跟模板/分類/單位無關。 */
+/** 團主專用：修正開團時設錯的套用模板／區塊／單位／團名——不影響大家已經點好的餐點，
+ *  因為每一行點餐記錄的是自己的品項/價格快照，跟模板/區塊/單位無關。 */
 export function GroupOrderSettingsEditor({
   groupOrderId,
   current,
@@ -78,7 +78,7 @@ export function GroupOrderSettingsEditor({
         <Modal open onClose={() => setOpen(false)} ariaLabel="編輯團訂設定" className="max-w-lg">
           <ModalHeader
             title="編輯團訂設定"
-            subtitle="調整套用模板／分類／單位／團名，不會影響大家目前已經點好的餐點。"
+            subtitle="調整套用模板／區塊／單位／團名，不會影響大家目前已經點好的餐點。"
             onClose={() => setOpen(false)}
           />
           <div className="space-y-4 overflow-y-auto p-4">
@@ -99,14 +99,14 @@ export function GroupOrderSettingsEditor({
                 >
                   {templates.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.name}（{t.categoryName}）
+                      {t.categoryName ? `${t.name}（${t.categoryName}）` : t.name}
                     </option>
                   ))}
                 </select>
               </Field>
-              <Field label="分類">
+              <Field label="區塊">
                 <select className={inputClass} value={sectionId} onChange={(e) => setSectionId(e.target.value)}>
-                  <option value="">（不限分類，整個模板都能點）</option>
+                  <option value="">（不限區塊，整個模板都能點）</option>
                   {selectedTemplate?.sections.map((sec) => (
                     <option key={sec.id} value={sec.id}>
                       {sec.name}

@@ -32,8 +32,8 @@ export interface GroupOrderDocument {
   _id: Types.ObjectId;
   name: string;
   templateId: Types.ObjectId; // ref Template
-  sectionId?: Types.ObjectId; // 模板裡選定的分類（例如「星期一」）；未選則整個模板都能點，舊資料也是這樣
-  sectionName?: string; // snapshot，模板分類之後改名不影響這裡
+  sectionId?: Types.ObjectId; // 模板裡選定的區塊（例如「星期一」）；未選則整個模板都能點，舊資料也是這樣
+  sectionName?: string; // snapshot，模板區塊之後改名不影響這裡
   unitId: Types.ObjectId; // ref Unit
   hostId: Types.ObjectId; // ref Member
   date: string; // "YYYY/MM/DD"
@@ -359,7 +359,7 @@ export interface UpdateGroupOrderSettingsInput {
 }
 
 /**
- * 團主修正「開團時設錯模板／分類／單位／團名」用。改這些欄位不會動到已經點好的品項——
+ * 團主修正「開團時設錯模板／區塊／單位／團名」用。改這些欄位不會動到已經點好的品項——
  * lines 只存各自的品項 id、名稱與價格快照，不記 section/unit，見檔案開頭的說明。
  */
 export async function updateGroupOrderSettings(id: string, input: UpdateGroupOrderSettingsInput) {

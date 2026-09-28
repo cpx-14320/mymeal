@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Brand } from "./brand";
 import { MenuIcon, BellIcon, UserCircleIcon } from "./icons";
 import { ThemeToggle } from "./theme-toggle";
@@ -180,8 +181,7 @@ export function Header({ onMenuClick, mounted, authed, onLogout, avatarUrl }: He
                   className="grid size-9 place-items-center overflow-hidden rounded-full text-brand hover:bg-surface-2"
                 >
                   {avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={avatarUrl} alt="" className="size-full object-cover" />
+                    <Image src={avatarUrl} alt="" width={36} height={36} className="size-full object-cover" />
                   ) : (
                     <UserCircleIcon className="h-7 w-7" />
                   )}

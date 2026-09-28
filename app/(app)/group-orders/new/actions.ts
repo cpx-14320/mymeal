@@ -10,7 +10,7 @@ export interface OpenGroupOrderState {
   rowErrors?: (string | undefined)[];
 }
 
-/** 一次開多團（同一天、同模板/分類，各自不同單位＋團名）。
+/** 一次開多團（同一天、同模板/區塊，各自不同單位＋團名）。
  *  送出前先整批檢查團名（自己批次內重複＋跟資料庫現有的撞名），全部沒問題才真的建立，
  *  避免建到一半才發現某一列撞名，變成一部分開好了、一部分沒開，使用者搞不清楚狀況。 */
 export async function openGroupOrdersAction(

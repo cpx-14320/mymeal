@@ -182,7 +182,6 @@ export const adminNav: AdminNavGroup[] = [
 
 /** 頁尾次要連結 */
 export const footerNav: { label: string; href: string }[] = [
-  { label: "關於 MyMeal", href: "/about" },
   { label: "使用說明", href: "/help" },
   { label: "常見問題", href: "/faq" },
   { label: "意見回饋", href: "/feedback" },

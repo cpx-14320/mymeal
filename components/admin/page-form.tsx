@@ -117,7 +117,7 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
               />
             </Field>
 
-            <Field label="套用模板" hint="指定的話這個頁面改顯示模板內容（依分類分組），取代頁面自己標註的品項；不套用就維持原本顯示頁面標註的品項。">
+            <Field label="套用模板" hint="指定的話這個頁面改顯示模板內容（依區塊分組），取代頁面自己標註的品項；不套用就維持原本顯示頁面標註的品項。">
               {(() => {
                 // 頁面存的 templateId 如果指向一個已經被刪除的模板，選項清單裡完全找不到它，
                 // 瀏覽器會誤顯示成清單第一個選項（不套用）——如果管理者沒發現、直接存檔，
@@ -139,7 +139,7 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
                     )}
                     {templates.map((t) => (
                       <option key={t.id} value={t.id}>
-                        {t.name}（{t.sections.length} 分類）
+                        {t.name}（{t.sections.length} 區塊）
                       </option>
                     ))}
                   </select>

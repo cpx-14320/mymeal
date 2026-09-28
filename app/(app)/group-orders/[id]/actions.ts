@@ -134,7 +134,7 @@ export interface UpdateGroupOrderSettingsState {
   success?: boolean;
 }
 
-/** 團主修正開團時設錯的模板／分類／單位／團名用；不影響大家已經點好的品項
+/** 團主修正開團時設錯的模板／區塊／單位／團名用；不影響大家已經點好的品項
  *  （見 lib/models/group-order 的 updateGroupOrderSettings 說明）。 */
 export async function updateGroupOrderSettingsAction(
   groupOrderId: string,

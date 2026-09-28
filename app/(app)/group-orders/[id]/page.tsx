@@ -68,7 +68,7 @@ export default async function GroupOrderDetailPage({
 
   const dishMap = new Map<string, OrderableDish>();
   if (tpl) {
-    // 有選分類（例如「星期一」）就只能點那個分類的品項；舊資料沒有分類時維持整個模板都能點。
+    // 有選區塊（例如「星期一」）就只能點那個區塊的品項；舊資料沒有區塊時維持整個模板都能點。
     const sections = group.sectionId
       ? tpl.sections.filter((sec) => sec.id === group.sectionId)
       : tpl.sections;

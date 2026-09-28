@@ -8,7 +8,6 @@ import {
   deleteTemplateSection,
   addItemToSection,
   removeItemFromSection,
-  setTemplatesActive,
 } from "@/lib/models/template";
 
 function refresh(id: string) {
@@ -27,23 +26,21 @@ export async function updateTemplateBasicAction(
   formData: FormData,
 ): Promise<TemplateBasicState> {
   const name = String(formData.get("name") ?? "").trim();
-  const categoryId = String(formData.get("categoryId") ?? "").trim();
-  const pageId = String(formData.get("pageId") ?? "").trim();
-  if (!name || !categoryId) return { error: "請輸入模板名稱並選擇分類。" };
+  if (!name) return { error: "請輸入模板名稱。" };
 
-  await updateTemplateBasic(id, { name, categoryId, pageId: pageId || undefined });
+  await updateTemplateBasic(id, { name });
   refresh(id);
   return { success: true };
 }
 
 export async function addTemplateSectionAction(templateId: string, name: string) {
-  if (!name.trim()) throw new Error("請輸入分類名稱。");
+  if (!name.trim()) throw new Error("請輸入區塊名稱。");
   await addTemplateSection(templateId, name.trim());
   refresh(templateId);
 }
 
 export async function renameTemplateSectionAction(templateId: string, sectionId: string, name: string) {
-  if (!name.trim()) throw new Error("請輸入分類名稱。");
+  if (!name.trim()) throw new Error("請輸入區塊名稱。");
   await renameTemplateSection(templateId, sectionId, name.trim());
   refresh(templateId);
 }
@@ -61,9 +58,4 @@ export async function addItemToSectionAction(templateId: string, sectionId: stri
 export async function removeItemFromSectionAction(templateId: string, sectionId: string, itemId: string) {
   await removeItemFromSection(templateId, sectionId, itemId);
   refresh(templateId);
-}
-
-export async function setTemplateActiveAction(id: string, active: boolean) {
-  await setTemplatesActive([id], active);
-  refresh(id);
 }

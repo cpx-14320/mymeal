@@ -1,7 +1,7 @@
 import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
 
-/** menu_categories collection —— 品項分類（便當／餐盒…），跟「標籤」與「模板分類（星期幾）」不同。 */
+/** menu_categories collection —— 品項分類（便當／餐盒…），跟「標籤」與「模板區塊（星期幾）」不同。 */
 export interface ItemCategoryDocument {
   _id: Types.ObjectId;
   name: string;

@@ -14,6 +14,7 @@ import {
   ListToolbar,
   BulkActionBar,
   DismissibleNote,
+  ItemThumbnail,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -155,7 +156,15 @@ export function PromosList({ promos }: { promos: InterstitialView[] }) {
                 </Td>
                 <Td className="text-muted">{freqLabel[a.frequency]}</Td>
                 <Td className="text-muted">{a.dismissSeconds > 0 ? `${a.dismissSeconds} 秒` : "不自動關"}</Td>
-                <Td className="text-muted">{a.imageUrl ? "已設定" : "尚未設定"}</Td>
+                <Td>
+                  <ItemThumbnail
+                    imageUrl={a.imageUrl}
+                    emoji="🖼️"
+                    alt={a.name}
+                    size={40}
+                    className="size-10 shrink-0 rounded object-cover"
+                  />
+                </Td>
                 <Td>
                   <Badge tone={st.tone}>{st.label}</Badge>
                 </Td>

@@ -1,6 +1,6 @@
 import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
-import "@/lib/models/catalog-item"; // 確保 populate("pageId"/"sections.itemIds") 前 Page／CatalogItem model 一定已註冊
+import "@/lib/models/catalog-item"; // 確保 populate("sections.itemIds"/其 pageId) 前 CatalogItem／Page model 一定已註冊
 import "@/lib/models/item-category"; // 確保 populate("categoryId") 前 ItemCategory model 一定已註冊
 import { getCreatorLabels, backfillCreatorMemberIds, type CreatorLabel } from "@/lib/models/creator";
 
@@ -11,12 +11,13 @@ export interface TemplateSection {
 }
 
 /** menu_templates collection —— 一週菜單／一組飲料清單；sections 內嵌，順序有意義、不需要獨立查詢。
- *  categoryId 跟品項的「分類」共用同一份「類別設定」資料（見 item-category.ts）。 */
+ *  categoryId 跟品項的「分類」共用同一份「類別設定」資料（見 item-category.ts），是模板整體掛的類別
+ *  （例如便當／飲料），開團訂餐頁用來做分類篩選籤；跟 sections（模板內部的區塊，例如週一～週五，UI 上
+ *  一律稱「區塊」）是兩回事，避免都叫「分類」造成混淆。選填——沒選就不會出現在開團訂餐頁的分類籤裡。 */
 export interface TemplateDocument {
   _id: Types.ObjectId;
   name: string;
-  categoryId: Types.ObjectId; // ref ItemCategory
-  pageId?: Types.ObjectId; // ref Page
+  categoryId?: Types.ObjectId; // ref ItemCategory
   sections: TemplateSection[];
   active: boolean;
   createdBy: string; // 建立者姓名快照；無登入會員時記「系統」
@@ -33,8 +34,7 @@ const templateSectionSchema = new Schema<TemplateSection>({
 const templateSchema = new Schema<TemplateDocument>(
   {
     name: { type: String, required: true, trim: true },
-    categoryId: { type: Schema.Types.ObjectId, ref: "ItemCategory", required: true },
-    pageId: { type: Schema.Types.ObjectId, ref: "Page" },
+    categoryId: { type: Schema.Types.ObjectId, ref: "ItemCategory" },
     sections: { type: [templateSectionSchema], required: true, default: [] },
     active: { type: Boolean, required: true, default: true },
     createdBy: { type: String, required: true, trim: true, default: "系統" },
@@ -47,8 +47,7 @@ export const Template = models.Template ?? model<TemplateDocument>("Template", t
 
 export interface TemplateBasicInput {
   name: string;
-  categoryId: string;
-  pageId?: string;
+  categoryId?: string;
 }
 
 interface PopulatedRef {
@@ -59,10 +58,8 @@ interface PopulatedRef {
 export interface TemplateListItem {
   id: string;
   name: string;
-  categoryId: string;
+  categoryId?: string;
   categoryName: string;
-  pageId?: string;
-  pageName?: string;
   active: boolean;
   sections: { id: string; name: string; itemCount: number }[];
   createdBy: string;
@@ -78,17 +75,14 @@ export async function listTemplates(options?: { withCreatorLabels?: boolean }): 
   if (options?.withCreatorLabels) await backfillCreatorMemberIds(Template);
   const docs = await Template.find({})
     .sort({ createdAt: -1 })
-    .populate<{ pageId?: PopulatedRef; categoryId: PopulatedRef }>(["pageId", "categoryId"]);
+    .populate<{ categoryId?: PopulatedRef }>("categoryId");
   const templates = docs.map((d) => {
-    const page = d.pageId as unknown as PopulatedRef | undefined;
-    const category = d.categoryId as unknown as PopulatedRef;
+    const category = d.categoryId as unknown as PopulatedRef | undefined;
     return {
       id: String(d._id),
       name: d.name,
-      categoryId: String(category?._id ?? d.categoryId),
+      categoryId: category?._id ? String(category._id) : undefined,
       categoryName: category?.name ?? "",
-      pageId: page?._id ? String(page._id) : undefined,
-      pageName: page?.name,
       active: d.active,
       sections: d.sections.map((s: TemplateSection) => ({
         id: String(s._id),
@@ -121,10 +115,8 @@ export interface TemplateSectionDetail {
 export interface TemplateDetail {
   id: string;
   name: string;
-  categoryId: string;
+  categoryId?: string;
   categoryName: string;
-  pageId?: string;
-  pageName?: string;
   active: boolean;
   sections: TemplateSectionDetail[];
 }
@@ -132,22 +124,18 @@ export interface TemplateDetail {
 type PopulatedTemplateDoc = {
   _id: Types.ObjectId;
   name: string;
-  categoryId: PopulatedRef;
+  categoryId?: PopulatedRef;
   active: boolean;
-  pageId?: PopulatedRef;
   sections: { _id: Types.ObjectId; name: string; itemIds: unknown }[];
 };
 
 function toTemplateDetail(doc: PopulatedTemplateDoc): TemplateDetail {
-  const page = doc.pageId as unknown as PopulatedRef | undefined;
-  const category = doc.categoryId as unknown as PopulatedRef;
+  const category = doc.categoryId as unknown as PopulatedRef | undefined;
   return {
     id: String(doc._id),
     name: doc.name,
-    categoryId: String(category?._id ?? doc.categoryId),
+    categoryId: category?._id ? String(category._id) : undefined,
     categoryName: category?.name ?? "",
-    pageId: page?._id ? String(page._id) : undefined,
-    pageName: page?.name,
     active: doc.active,
     sections: doc.sections.map((s) => ({
       id: String(s._id),
@@ -168,7 +156,7 @@ export async function findTemplateById(id: string): Promise<TemplateDetail | nul
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) return null;
   const doc = await Template.findById(id)
-    .populate<{ pageId?: PopulatedRef; categoryId: PopulatedRef }>(["pageId", "categoryId"])
+    .populate<{ categoryId?: PopulatedRef }>("categoryId")
     .populate({
       path: "sections.itemIds",
       populate: { path: "pageId" },
@@ -177,12 +165,12 @@ export async function findTemplateById(id: string): Promise<TemplateDetail | nul
   return toTemplateDetail(doc as unknown as PopulatedTemplateDoc);
 }
 
-/** 開團頁用：所有上架中的模板，含完整分類/品項明細（給選模板後直接預覽當週菜單）。 */
+/** 開團頁用：所有上架中的模板，含完整區塊/品項明細（給選模板後直接預覽當週菜單）。 */
 export async function listActiveTemplateDetails(): Promise<TemplateDetail[]> {
   await connectMongo();
   const docs = await Template.find({ active: true })
     .sort({ createdAt: -1 })
-    .populate<{ pageId?: PopulatedRef; categoryId: PopulatedRef }>(["pageId", "categoryId"])
+    .populate<{ categoryId?: PopulatedRef }>("categoryId")
     .populate({
       path: "sections.itemIds",
       populate: { path: "pageId" },
@@ -190,12 +178,9 @@ export async function listActiveTemplateDetails(): Promise<TemplateDetail[]> {
   return docs.map((d) => toTemplateDetail(d as unknown as PopulatedTemplateDoc));
 }
 
-function assertPageId(pageId?: string) {
-  if (pageId && !Types.ObjectId.isValid(pageId)) throw new Error("請選擇有效的頁面。");
-  return pageId ? new Types.ObjectId(pageId) : undefined;
-}
-
-function assertCategoryId(categoryId: string) {
+/** 空字串／未選代表不分類，回傳 undefined；有帶值才驗證格式，格式不對才擋下。 */
+function assertCategoryId(categoryId?: string) {
+  if (!categoryId) return undefined;
   if (!Types.ObjectId.isValid(categoryId)) throw new Error("請選擇有效的分類。");
   return new Types.ObjectId(categoryId);
 }
@@ -209,7 +194,6 @@ export async function createTemplate(
   const doc = await Template.create({
     name: input.name,
     categoryId: assertCategoryId(input.categoryId),
-    pageId: assertPageId(input.pageId),
     sections: [],
     active: true,
     createdBy: createdBy ?? "系統",
@@ -224,9 +208,21 @@ export async function createTemplate(
 export async function updateTemplateBasic(id: string, input: TemplateBasicInput) {
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) throw new Error("無效的模板 id");
+
+  const $set: Record<string, unknown> = { name: input.name };
+  const $unset: Record<string, unknown> = {};
+  // 呼叫端有帶 categoryId 這個 key（不管是不是空字串）才動分類欄位；完全沒帶就維持原值不動——
+  // 目前唯一會呼叫這支的地方（編輯頁「基本資料」表單）已經不讓使用者改分類了，
+  // 不能因此把既有的分類值也一起清空。
+  if ("categoryId" in input) {
+    const categoryId = assertCategoryId(input.categoryId);
+    if (categoryId) $set.categoryId = categoryId;
+    else $unset.categoryId = "";
+  }
+
   return Template.findByIdAndUpdate(
     id,
-    { $set: { name: input.name, categoryId: assertCategoryId(input.categoryId), pageId: assertPageId(input.pageId) } },
+    Object.keys($unset).length ? { $set, $unset } : { $set },
     { returnDocument: "after" },
   );
 }
@@ -270,7 +266,7 @@ export async function renameTemplateSection(templateId: string, sectionId: strin
     { $set: { "sections.$.name": name } },
     { returnDocument: "after" },
   );
-  if (!doc) throw new Error("找不到這個分類，可能已被刪除。");
+  if (!doc) throw new Error("找不到這個區塊，可能已被刪除。");
   return doc;
 }
 
@@ -302,7 +298,7 @@ export async function addItemToSection(templateId: string, sectionId: string, it
     { $addToSet: { "sections.$.itemIds": new Types.ObjectId(itemId) } },
     { returnDocument: "after" },
   );
-  if (!doc) throw new Error("找不到這個分類，可能已被刪除。");
+  if (!doc) throw new Error("找不到這個區塊，可能已被刪除。");
   return doc;
 }
 
@@ -320,6 +316,6 @@ export async function removeItemFromSection(templateId: string, sectionId: strin
     { $pull: { "sections.$.itemIds": new Types.ObjectId(itemId) } },
     { returnDocument: "after" },
   );
-  if (!doc) throw new Error("找不到這個分類，可能已被刪除。");
+  if (!doc) throw new Error("找不到這個區塊，可能已被刪除。");
   return doc;
 }

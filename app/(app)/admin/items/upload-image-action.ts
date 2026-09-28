@@ -1,8 +1,8 @@
 "use server";
 
-import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { MAX_UPLOAD_IMAGE_BYTES, MAX_UPLOAD_IMAGE_LABEL } from "@/lib/upload-limits";
+import { uploadKeyedImage } from "@/lib/blob-upload";
 import { listCatalogItems, setCatalogItemImage } from "@/lib/models/catalog-item";
 
 export interface UploadImageState {
@@ -12,12 +12,13 @@ export interface UploadImageState {
 
 /** 圖片上傳到 Vercel Blob，固定放在 mymeal/items_images/ 資料夾下，公開存取（access: "public"）
  *  這樣回傳的 blob.url 才能直接存進 imageUrl、讓前台/後台畫面直接讀取。
- *  這支是 ImageField（品項圖片、廣告圖片共用）背後的上傳邏輯：
- *  有帶合法的 itemId（品項表單才有，新增模式是進頁面就先產生好的 pendingItemId）就用它命名，
+ *  這支是 ImageField 預設的上傳邏輯（品項用這支；廣告圖片改用 admin/promos/upload-image-action.ts
+ *  的 uploadPromoImageAction，透過 ImageField 的 uploadAction 屬性換掉，folder/命名各自獨立）：
+ *  有帶合法的 itemId（新增模式是進頁面就先產生好的 pendingItemId）就用它命名，
  *  跟網址列看到的品項 id 一致，方便在 Vercel 的 Blob 檔案總管對應回是哪個品項，
- *  同一個品項重新上傳圖片也會直接覆蓋舊檔（allowOverwrite），不留孤兒檔案
- *  （副檔名改變的情況除外，例如原本 .jpg 換成 .png 上傳）；沒有 itemId（例如廣告圖片）
- *  就照舊用隨機檔名，一樣不會互相覆蓋。 */
+ *  同一個品項重新上傳圖片也會直接覆蓋舊檔；換一張副檔名不同的圖也不會留下孤兒檔案
+ *  （見 lib/blob-upload.ts 的 uploadKeyedImage，會先清掉副檔名不同的舊檔）；
+ *  沒有合法 itemId 就照舊用隨機檔名，一樣不會互相覆蓋。 */
 export async function uploadItemImageAction(formData: FormData): Promise<UploadImageState> {
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
@@ -31,12 +32,16 @@ export async function uploadItemImageAction(formData: FormData): Promise<UploadI
   }
   const itemId = String(formData.get("itemId") ?? "");
   const useItemId = /^[a-f0-9]{24}$/i.test(itemId);
+  const previousUrl = String(formData.get("previousUrl") ?? "").trim() || undefined;
 
   try {
-    const ext = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : "";
-    const filename = `mymeal/items_images/${useItemId ? itemId : crypto.randomUUID()}${ext}`;
-    const blob = await put(filename, file, { access: "public", allowOverwrite: useItemId });
-    return { url: blob.url };
+    const url = await uploadKeyedImage({
+      folder: "mymeal/items_images",
+      key: useItemId ? itemId : crypto.randomUUID(),
+      file,
+      previousUrl: useItemId ? previousUrl : undefined,
+    });
+    return { url };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "上傳失敗，請稍後再試。" };
   }
@@ -63,15 +68,14 @@ export async function batchUploadItemImagesAction(formData: FormData): Promise<B
   if (files.length === 0) return { uploaded, unmatched, errors };
 
   const items = await listCatalogItems();
-  const idByName = new Map(items.map((it) => [it.name, it.id]));
+  const itemByName = new Map(items.map((it) => [it.name, it]));
 
   for (const file of files) {
     const dot = file.name.lastIndexOf(".");
     const base = (dot > 0 ? file.name.slice(0, dot) : file.name).trim();
-    const ext = dot > 0 ? file.name.slice(dot) : "";
 
-    const itemId = idByName.get(base);
-    if (!itemId) {
+    const item = itemByName.get(base);
+    if (!item) {
       unmatched.push(file.name);
       continue;
     }
@@ -85,9 +89,13 @@ export async function batchUploadItemImagesAction(formData: FormData): Promise<B
     }
 
     try {
-      const filename = `mymeal/items_images/${itemId}${ext}`;
-      const blob = await put(filename, file, { access: "public", allowOverwrite: true });
-      await setCatalogItemImage(itemId, blob.url);
+      const url = await uploadKeyedImage({
+        folder: "mymeal/items_images",
+        key: item.id,
+        file,
+        previousUrl: item.imageUrl,
+      });
+      await setCatalogItemImage(item.id, url);
       uploaded.push(base);
     } catch (err) {
       errors.push(`${file.name}：${err instanceof Error ? err.message : "上傳失敗"}`);

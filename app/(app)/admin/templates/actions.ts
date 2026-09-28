@@ -1,44 +1,7 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import {
-  createTemplate,
-  setTemplatesActive,
-  deleteTemplates,
-  type TemplateBasicInput,
-} from "@/lib/models/template";
-import { getSessionMemberId } from "@/lib/session";
-import { findMemberById } from "@/lib/models/member";
-
-export interface CreateTemplateState {
-  error?: string;
-}
-
-export async function createTemplateAction(
-  _prevState: CreateTemplateState,
-  formData: FormData,
-): Promise<CreateTemplateState> {
-  const name = String(formData.get("name") ?? "").trim();
-  const categoryId = String(formData.get("categoryId") ?? "").trim();
-  const pageId = String(formData.get("pageId") ?? "").trim();
-  if (!name || !categoryId) return { error: "請輸入模板名稱並選擇分類。" };
-
-  const input: TemplateBasicInput = { name, categoryId, pageId: pageId || undefined };
-  const memberId = await getSessionMemberId();
-  const member = memberId ? await findMemberById(memberId) : null;
-
-  let templateId: string;
-  try {
-    const result = await createTemplate(input, member?.name, memberId ?? undefined);
-    templateId = result.id;
-  } catch (err: unknown) {
-    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
-  }
-
-  revalidatePath("/admin/templates");
-  redirect(`/admin/templates/${templateId}?created=1`);
-}
+import { setTemplatesActive, deleteTemplates } from "@/lib/models/template";
 
 export async function setTemplatesActiveAction(ids: string[], active: boolean) {
   await setTemplatesActive(ids, active);

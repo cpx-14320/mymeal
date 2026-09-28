@@ -189,12 +189,12 @@ export function GroupOrderNewForm({
                 >
                   {templates.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.name}（{t.categoryName}）
+                      {t.categoryName ? `${t.name}（${t.categoryName}）` : t.name}
                     </option>
                   ))}
                 </select>
               </Field>
-              <Field label="分類">
+              <Field label="區塊">
                 <select
                   className={inputClass}
                   name="sectionId"
@@ -208,7 +208,7 @@ export function GroupOrderNewForm({
                       </option>
                     ))
                   ) : (
-                    <option value="">（這個模板還沒有分類）</option>
+                    <option value="">（這個模板還沒有區塊）</option>
                   )}
                 </select>
               </Field>
@@ -295,7 +295,7 @@ export function GroupOrderNewForm({
               <p className="font-medium">菜單預覽</p>
 
               {!selectedSection || selectedSection.items.length === 0 ? (
-                <p className="text-sm text-muted">這個分類還沒有品項。</p>
+                <p className="text-sm text-muted">這個區塊還沒有品項。</p>
               ) : (
                 <ul className="divide-y divide-line rounded-lg border border-line">
                   {selectedSection.items.map((it) => (

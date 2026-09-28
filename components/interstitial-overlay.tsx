@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { PROMO_PAGE_OPTIONS } from "@/lib/promo-pages";
 import type { InterstitialView } from "@/lib/models/interstitial";
@@ -128,12 +129,26 @@ export function InterstitialOverlay() {
             onClick={() => setOpen(false)}
             className="block"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ad.imageUrl} alt={ad.name} className="block w-full" />
+            <Image
+              src={ad.imageUrl}
+              alt={ad.name}
+              width={600}
+              height={400}
+              sizes="(max-width: 600px) 100vw, 600px"
+              style={{ width: "100%", height: "auto" }}
+              className="block"
+            />
           </a>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={ad.imageUrl} alt={ad.name} className="block w-full" />
+          <Image
+            src={ad.imageUrl}
+            alt={ad.name}
+            width={600}
+            height={400}
+            sizes="(max-width: 600px) 100vw, 600px"
+            style={{ width: "100%", height: "auto" }}
+            className="block"
+          />
         )}
 
         <div className="flex items-center justify-between px-4 py-2 text-xs text-muted">

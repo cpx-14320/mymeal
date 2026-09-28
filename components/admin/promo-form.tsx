@@ -4,13 +4,16 @@ import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, Field, inputClass, Note, Button, ButtonLink } from "@/components/ui/primitives";
 import { ImageField } from "@/components/admin/image-field";
+import { uploadPromoImageAction } from "@/app/(app)/admin/promos/upload-image-action";
 import { PROMO_PAGE_OPTIONS } from "@/lib/promo-pages";
 import type { InterstitialView } from "@/lib/models/interstitial";
 import { createPromoAction, type CreatePromoState } from "@/app/(app)/admin/promos/new/actions";
 import { updatePromoAction, type UpdatePromoState } from "@/app/(app)/admin/promos/[id]/actions";
 
-/** 新增 / 編輯蓋台廣告共用的表單。傳 promo 就是編輯模式（欄位帶入現值）。 */
-export function PromoForm({ promo }: { promo?: InterstitialView }) {
+/** 新增 / 編輯蓋台廣告共用的表單。傳 promo 就是編輯模式（欄位帶入現值）。
+ *  pendingPromoId：新增模式下，進頁面就先產生好的廣告 id（見 new/page.tsx），
+ *  讓圖片選檔當下上傳就能用「未來這則廣告的 id」命名，不用等存檔後才知道 id。 */
+export function PromoForm({ promo, pendingPromoId }: { promo?: InterstitialView; pendingPromoId?: string }) {
   const router = useRouter();
   const isEdit = !!promo;
   const action = isEdit ? updatePromoAction.bind(null, promo.id) : createPromoAction;
@@ -18,6 +21,7 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
     action,
     {},
   );
+  const promoId = promo?.id ?? pendingPromoId!;
 
   useEffect(() => {
     if (isEdit && state.success) router.refresh();
@@ -27,6 +31,7 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
     <form action={formAction}>
       <Card>
         <CardBody className="space-y-5">
+          {!isEdit && <input type="hidden" name="pendingPromoId" value={pendingPromoId} />}
           <Field label="活動名稱" hint="只在後台顯示，方便辨識">
             <input
               className={inputClass}
@@ -39,7 +44,13 @@ export function PromoForm({ promo }: { promo?: InterstitialView }) {
 
           <div>
             <span className="mb-1.5 block text-sm font-medium">廣告圖片</span>
-            <ImageField label="廣告圖片" defaultPath={promo?.imageUrl} fallbackEmoji="🖼️" />
+            <ImageField
+              label="廣告圖片"
+              itemId={promoId}
+              uploadAction={uploadPromoImageAction}
+              defaultPath={promo?.imageUrl}
+              fallbackEmoji="🖼️"
+            />
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">

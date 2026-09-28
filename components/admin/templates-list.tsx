@@ -165,8 +165,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
               <input type="checkbox" checked={pageAllSelected} onChange={togglePageAll} aria-label="選取本頁全部" />
             </Th>
             <Th>模板</Th>
-            <Th>類型</Th>
-            <Th>分類數</Th>
+            <Th>區塊數</Th>
             <Th>品項數</Th>
             <Th>狀態</Th>
             <Th>建立者</Th>
@@ -191,9 +190,6 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
                   <Link href={`/admin/templates/${t.id}`} className="hover:text-brand">
                     {t.name}
                   </Link>
-                </Td>
-                <Td>
-                  <Badge tone="brand">{t.categoryName}</Badge>
                 </Td>
                 <Td className="tabular-nums text-muted">{t.sections.length}</Td>
                 <Td className="tabular-nums text-muted">{itemCount}</Td>
@@ -226,7 +222,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
           })}
           {rows.length === 0 && (
             <tr>
-              <Td className="text-center text-muted" colSpan={9}>
+              <Td className="text-center text-muted" colSpan={8}>
                 {templates.length === 0 ? "目前沒有資料" : "這個範圍內沒有模板。"}
               </Td>
             </tr>

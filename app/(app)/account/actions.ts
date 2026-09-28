@@ -1,9 +1,9 @@
 "use server";
 
-import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { MAX_UPLOAD_IMAGE_BYTES, MAX_UPLOAD_IMAGE_LABEL } from "@/lib/upload-limits";
-import { setMemberAvatar } from "@/lib/models/member";
+import { uploadKeyedImage } from "@/lib/blob-upload";
+import { getMemberAvatarUrl, setMemberAvatar } from "@/lib/models/member";
 import { getSessionMemberId } from "@/lib/session";
 
 export interface UploadAvatarState {
@@ -13,9 +13,10 @@ export interface UploadAvatarState {
 
 /**
  * 會員自行上傳大頭貼：固定放在 mymeal/profile_picture/ 資料夾下，公開存取，
- * 檔名一律用自己的會員 id 命名（allowOverwrite）——不管挑選的檔案原始檔名是什麼，
- * 同一人重新上傳一律覆蓋舊檔，不會累積出好幾張大頭貼。跟品項圖片上傳是同一套機制，
- * 只是路徑資料夾跟命名來源（會員 id vs. 品項 id）不同，見 admin/items/upload-image-action.ts。
+ * 檔名一律用自己的會員 id 命名——不管挑選的檔案原始檔名是什麼，同一人重新上傳一律覆蓋舊檔；
+ * 換一張副檔名不同的圖也不會留下孤兒檔案（見 lib/blob-upload.ts 的 uploadKeyedImage，
+ * 會先清掉副檔名不同的舊檔）。跟品項圖片上傳是同一套機制，只是路徑資料夾跟命名來源
+ * （會員 id vs. 品項 id）不同，見 admin/items/upload-image-action.ts。
  */
 export async function uploadAvatarAction(formData: FormData): Promise<UploadAvatarState> {
   const memberId = await getSessionMemberId();
@@ -33,12 +34,16 @@ export async function uploadAvatarAction(formData: FormData): Promise<UploadAvat
   }
 
   try {
-    const ext = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : "";
-    const filename = `mymeal/profile_picture/${memberId}${ext}`;
-    const blob = await put(filename, file, { access: "public", allowOverwrite: true });
-    await setMemberAvatar(memberId, blob.url);
+    const previousUrl = await getMemberAvatarUrl(memberId);
+    const url = await uploadKeyedImage({
+      folder: "mymeal/profile_picture",
+      key: memberId,
+      file,
+      previousUrl,
+    });
+    await setMemberAvatar(memberId, url);
     revalidatePath("/account");
-    return { url: blob.url };
+    return { url };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "上傳失敗，請稍後再試。" };
   }

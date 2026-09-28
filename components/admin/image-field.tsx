@@ -2,16 +2,18 @@
 
 import { useRef, useState, useTransition, type ChangeEvent } from "react";
 import { inputClass } from "@/components/ui/primitives";
-import { uploadItemImageAction } from "@/app/(app)/admin/items/upload-image-action";
+import { uploadItemImageAction, type UploadImageState } from "@/app/(app)/admin/items/upload-image-action";
 import { MAX_UPLOAD_IMAGE_BYTES, MAX_UPLOAD_IMAGE_LABEL } from "@/lib/upload-limits";
 
 /**
- * 品項圖片欄位：可手動輸入圖片路徑 / 網址，或從本機選擇檔案直接上傳到 Vercel Blob
- * （mymeal/items_images/ 資料夾，公開存取）。選檔後先顯示本機預覽，上傳成功再把
- * 回傳的公開網址寫進 imageUrl 文字欄位（表單實際送出的就是這個欄位）。
- * itemId：有傳的話檔名就用這個 id 命名（品項用法是新增模式下進頁面就先產生好的
- * pendingItemId），跟網址列看到的 id 一致，好對應、也不會跟其他資料的圖片撞名；
- * 沒傳（例如廣告圖片沒有這種「先產生好 id」的流程）就照舊用隨機檔名。
+ * 共用圖片欄位：可手動輸入圖片路徑 / 網址，或從本機選擇檔案直接上傳到 Vercel Blob。
+ * 選檔後先顯示本機預覽，上傳成功再把回傳的公開網址寫進 imageUrl 文字欄位
+ * （表單實際送出的就是這個欄位）。
+ * uploadAction：實際負責上傳的 server action，預設是品項圖片那支（存到
+ * mymeal/items_images/）；其他資料類型（例如廣告圖片，見 admin/promos/upload-image-action.ts）
+ * 要換成自己的資料夾/命名邏輯時，傳這個屬性換掉即可，元件本身不綁死是哪種資料。
+ * itemId：有傳的話檔名就用這個 id 命名（新增模式下是進頁面就先產生好的 pendingId），
+ * 跟網址列看到的 id 一致，好對應、也不會跟其他資料的圖片撞名；沒傳就照舊用隨機檔名。
  * onUploadingChange：讓外層表單知道圖片還在上傳中——上傳是選檔當下就自己觸發的
  * 獨立 action（跟外層表單「儲存」是分開送出的兩件事），如果沒有這個通知，使用者
  * 選完圖片馬上按儲存，很可能上傳網址還沒回來、imageUrl 欄位還是舊值，表單卻已經送出，
@@ -24,6 +26,7 @@ export function ImageField({
   fallbackEmoji,
   placeholder = "/uploads/items/xxx.jpg 或完整網址",
   onUploadingChange,
+  uploadAction = uploadItemImageAction,
 }: {
   itemId?: string;
   label?: string;
@@ -31,6 +34,7 @@ export function ImageField({
   fallbackEmoji?: string;
   placeholder?: string;
   onUploadingChange?: (uploading: boolean) => void;
+  uploadAction?: (formData: FormData) => Promise<UploadImageState>;
 }) {
   const [path, setPath] = useState(defaultPath ?? "");
   const [filePreview, setFilePreview] = useState<string | null>(null);
@@ -64,10 +68,13 @@ export function ImageField({
     const formData = new FormData();
     formData.append("file", f);
     if (itemId) formData.append("itemId", itemId);
+    // 換一張副檔名不同的圖重新上傳時，伺服器端要知道「原本那張」的網址，才能判斷舊檔要不要
+    // 一併清掉（同副檔名靠 allowOverwrite 就夠了，見 lib/blob-upload.ts 的說明）。
+    if (path.trim()) formData.append("previousUrl", path.trim());
     onUploadingChange?.(true);
     startUpload(async () => {
       try {
-        const result = await uploadItemImageAction(formData);
+        const result = await uploadAction(formData);
         if (result.error) {
           setUploadError(result.error);
           return;

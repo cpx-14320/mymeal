@@ -1,23 +1,10 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Section,
-  Button,
-  ButtonLink,
-  Badge,
-  Card,
-  CardBody,
-  Field,
-  inputClass,
-  ItemLabel,
-} from "@/components/ui/primitives";
-import { Modal, ModalHeader } from "@/components/ui/modal";
+import { Section, Button, Card, CardBody, Field, inputClass, ItemLabel } from "@/components/ui/primitives";
 import type { TemplateDetail } from "@/lib/models/template";
-import type { PageView } from "@/lib/models/page";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
-import type { ItemCategoryOption } from "@/lib/models/item-category";
 import {
   updateTemplateBasicAction,
   addTemplateSectionAction,
@@ -25,7 +12,6 @@ import {
   deleteTemplateSectionAction,
   addItemToSectionAction,
   removeItemFromSectionAction,
-  setTemplateActiveAction,
   type TemplateBasicState,
 } from "@/app/(app)/admin/templates/[id]/actions";
 import { CreatedBanner } from "@/components/admin/created-banner";
@@ -34,18 +20,12 @@ const initialBasicState: TemplateBasicState = {};
 
 export function TemplateEditor({
   template,
-  pages,
   items,
-  categories,
 }: {
   template: TemplateDetail;
-  pages: PageView[];
   items: CatalogItemView[];
-  categories: ItemCategoryOption[];
 }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
-  const [editingBasic, setEditingBasic] = useState(false);
   const [addingSection, setAddingSection] = useState(false);
   const [newSectionName, setNewSectionName] = useState("");
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
@@ -58,17 +38,7 @@ export function TemplateEditor({
 
   if (basicState !== lastBasicState) {
     setLastBasicState(basicState);
-    if (basicState.success) {
-      setEditingBasic(false);
-      router.refresh();
-    }
-  }
-
-  function toggleActive() {
-    startTransition(async () => {
-      await setTemplateActiveAction(template.id, !template.active);
-      router.refresh();
-    });
+    if (basicState.success) router.refresh();
   }
 
   async function submitNewSection() {
@@ -106,33 +76,22 @@ export function TemplateEditor({
     <div className="space-y-8">
       <CreatedBanner message="模板已建立成功，可以繼續編輯以下內容。" />
 
-      <Section
-        title={template.name}
-        actions={
-          <div className="flex gap-2">
-            <ButtonLink href="/admin/templates" variant="ghost">
-              返回列表
-            </ButtonLink>
-            <Button variant="secondary" onClick={() => setEditingBasic(true)}>
-              編輯基本資料
-            </Button>
+      <Section title="基本資料">
+        <form action={basicFormAction} className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1">
+            <Field label="模板名稱">
+              <input className={inputClass} name="name" defaultValue={template.name} required />
+            </Field>
           </div>
-        }
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="brand">{template.categoryName}</Badge>
-          <Badge tone={template.active ? "positive" : "neutral"}>{template.active ? "啟用" : "停用"}</Badge>
-          {template.pageName && <Badge>{template.pageName}</Badge>}
-          <Button variant="secondary" size="sm" onClick={toggleActive}>
-            {template.active ? "停用" : "啟用"}
-          </Button>
-        </div>
+          <Button disabled={basicPending}>{basicPending ? "儲存中…" : "儲存"}</Button>
+        </form>
+        {basicState.error && <p className="text-[13px] lg:text-[14px] text-danger">{basicState.error}</p>}
       </Section>
 
       <Section
-        title="分類"
+        title="區塊"
         actions={
-          addingSection ? null : <Button onClick={() => setAddingSection(true)}>＋ 新增分類</Button>
+          addingSection ? null : <Button onClick={() => setAddingSection(true)}>＋ 新增區塊</Button>
         }
       >
         {addingSection && (
@@ -141,7 +100,7 @@ export function TemplateEditor({
               className={`${inputClass} min-w-0`}
               value={newSectionName}
               onChange={(e) => setNewSectionName(e.target.value)}
-              placeholder="分類名稱，例：星期一"
+              placeholder="區塊名稱，例：星期一"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -195,7 +154,7 @@ export function TemplateEditor({
                     改名
                   </Button>
                   <Button variant="danger" size="sm" onClick={() => deleteSection(sec.id)}>
-                    刪除分類
+                    刪除區塊
                   </Button>
                 </div>
               </div>
@@ -237,40 +196,6 @@ export function TemplateEditor({
           </Card>
         ))}
       </div>
-
-      <Modal open={editingBasic} onClose={() => setEditingBasic(false)} ariaLabel="編輯基本資料">
-        <ModalHeader title="編輯基本資料" onClose={() => setEditingBasic(false)} />
-        <form action={basicFormAction}>
-          <div className="space-y-4 p-4">
-            <Field label="模板名稱">
-              <input className={inputClass} name="name" defaultValue={template.name} required />
-            </Field>
-            <Field label="分類">
-              <select className={inputClass} name="categoryId" defaultValue={template.categoryId} required>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="頁面" hint="選填，多個頁面混合就留空">
-              <select className={inputClass} name="pageId" defaultValue={template.pageId ?? ""}>
-                <option value="">選擇頁面</option>
-                {pages.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            {basicState.error && <p className="text-[13px] lg:text-[14px] text-danger">{basicState.error}</p>}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button disabled={basicPending}>{basicPending ? "儲存中…" : "儲存"}</Button>
-            </div>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }

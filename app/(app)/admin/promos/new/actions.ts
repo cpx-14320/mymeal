@@ -33,9 +33,10 @@ export async function createPromoAction(
 ): Promise<CreatePromoState> {
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
+  const pendingPromoId = String(formData.get("pendingPromoId") ?? "").trim() || undefined;
 
   try {
-    await createInterstitial(input);
+    await createInterstitial(input, pendingPromoId);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }

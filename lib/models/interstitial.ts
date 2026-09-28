@@ -124,9 +124,19 @@ export async function findInterstitialById(id: string): Promise<InterstitialView
   return doc ? toView(doc) : null;
 }
 
-export async function createInterstitial(input: InterstitialInput) {
+/** 新增廣告頁一進來就先產生這個，讓圖片上傳（選檔當下就會傳到 Vercel Blob，早於廣告真正
+ *  存檔）跟最終建立的廣告用同一個 id 命名，不用等存檔後才知道 id，見 upload-image-action.ts。 */
+export function newInterstitialId(): string {
+  return new Types.ObjectId().toString();
+}
+
+export async function createInterstitial(input: InterstitialInput, id?: string) {
   await connectMongo();
-  const doc = await Interstitial.create(input);
+  if (id && !Types.ObjectId.isValid(id)) throw new Error("無效的廣告 id");
+  const doc = await Interstitial.create({
+    ...(id ? { _id: new Types.ObjectId(id) } : {}),
+    ...input,
+  });
   return { id: String(doc._id) };
 }
 

@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { uploadAvatarAction } from "@/app/(app)/account/actions";
 import { MAX_UPLOAD_IMAGE_BYTES, MAX_UPLOAD_IMAGE_LABEL } from "@/lib/upload-limits";
 
@@ -23,7 +24,9 @@ export function AccountAvatarUploader({
   const [error, setError] = useState<string | undefined>();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const src = preview ?? avatarUrl;
+  // preview 是選檔當下用 URL.createObjectURL 產生的本機 blob: 網址，只在這個分頁存在、
+  // 上傳完成前的暫時預覽用，next/image 的優化伺服器抓不到，所以這種情況維持用原生 <img>；
+  // 上傳完成後換成 avatarUrl（真正存在 Vercel Blob 的公開網址）才走 next/image。
 
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -60,9 +63,11 @@ export function AccountAvatarUploader({
         className="group relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-soft text-2xl disabled:opacity-60"
         aria-label="上傳大頭貼"
       >
-        {src ? (
+        {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt="大頭貼" className="size-full object-cover" />
+          <img src={preview} alt="大頭貼" className="size-full object-cover" />
+        ) : avatarUrl ? (
+          <Image src={avatarUrl} alt="大頭貼" width={64} height={64} className="size-full object-cover" />
         ) : (
           "🙂"
         )}
