@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Button,
   Badge,
@@ -55,7 +56,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
       <TableWrap>
         <thead>
           <tr>
-            <Th>寄件者</Th>
+            <Th>姓名</Th>
             <Th>時間</Th>
             <Th>內容</Th>
             <Th className="text-right">操作</Th>
@@ -64,7 +65,15 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
         <tbody>
           {rows.map((f) => (
             <tr key={f.id}>
-              <Td>{f.senderName}</Td>
+              <Td>
+                {f.memberId ? (
+                  <Link href={`/admin/insights/${f.memberId}`} className="hover:text-brand">
+                    {f.senderName}
+                  </Link>
+                ) : (
+                  f.senderName
+                )}
+              </Td>
               <Td className="text-muted tabular-nums">{formatTaiwanDateTime(f.createdAt)}</Td>
               <Td className="max-w-md">
                 <div className="mb-1">

@@ -831,6 +831,7 @@ export interface MemberOrderLine {
   itemName: string;
   qty: number;
   price: number;
+  rice: RiceLevel; // 同一品項選不同飯量會是獨立的行，「我的訂單」要靠這個欄位標示出差異，不然看起來像重複
   date: string; // 團訂的取餐日期 "YYYY/MM/DD"
   status: GroupOrderStatus; // 直接沿用團訂狀態——這個 app 沒有另外的逐筆訂單審核流程
 }
@@ -858,6 +859,7 @@ export async function listMemberOrderLines(memberId: string): Promise<MemberOrde
         itemName: l.itemName,
         qty: l.qty,
         price: l.price,
+        rice: l.rice,
         date: d.date,
         status: d.status,
       });

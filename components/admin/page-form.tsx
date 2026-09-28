@@ -7,7 +7,6 @@ import type { PageView } from "@/lib/models/page";
 import type { TemplateListItem } from "@/lib/models/template";
 import { createPageAction, type CreatePageState } from "@/app/(app)/admin/pages/new/actions";
 import { updatePageAction, type UpdatePageState } from "@/app/(app)/admin/pages/[id]/actions";
-import { CreatedBanner } from "@/components/admin/created-banner";
 
 /** 圖示 SVG 挑選預設──沒接觸過這個欄位的管理員常常不知道去哪裡找 SVG 貼；
  *  給幾個跟餐飲頁面情境相關的現成圖示可以直接點選，樣式跟側欄導覽圖示（icons.tsx）同一套
@@ -75,8 +74,6 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
     <form action={formAction}>
       <Card>
         <CardBody className="space-y-5">
-          <CreatedBanner message="頁面已建立成功，可以繼續編輯以下內容。" />
-
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="頁面名稱">
               <input className={inputClass} name="name" defaultValue={page?.name} required />

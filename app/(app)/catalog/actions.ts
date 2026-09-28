@@ -5,6 +5,7 @@ import {
   getItemStatsByItems,
   getMemberReviewForItem,
   upsertReview,
+  deleteReview,
   type ItemReviewEntry,
   type ItemStat,
   type MyReview,
@@ -37,4 +38,22 @@ export async function submitItemReviewAction(
     getItemStatsByItems([itemId]),
   ]);
   return { entries, stat: stats[itemId] };
+}
+
+/** 真的刪除我對這個品項的評分／評論（跟送出空白內容不同，見 deleteReview 的說明）。 */
+export async function deleteItemReviewAction(
+  itemId: string,
+): Promise<{ error?: string; entries?: ItemReviewEntry[]; stat?: ItemStat }> {
+  const memberId = await getSessionMemberId();
+  if (!memberId) return { error: "請先登入" };
+
+  await deleteReview(memberId, itemId);
+  const [entries, stats] = await Promise.all([
+    listReviewsForItem(itemId),
+    getItemStatsByItems([itemId]),
+  ]);
+  // 刪掉之後這個品項可能完全沒有評論了，這種情況 getItemStatsByItems 查不到任何一筆、
+  // 不會回傳這個 itemId 的統計——這裡補一個歸零的預設值，不然呼叫端會誤以為刪除失敗、
+  // 沿用刪除前的舊統計繼續顯示。
+  return { entries, stat: stats[itemId] ?? { avgRating: null, commentCount: 0 } };
 }

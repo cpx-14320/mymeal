@@ -663,7 +663,7 @@ export const taskTypeLabel: Record<TaskType, string> = {
   topup: "儲值",
   order: "訂餐",
   favorite: "收藏",
-  comment: "留言",
+  comment: "評論",
   rating: "評分",
 };
 

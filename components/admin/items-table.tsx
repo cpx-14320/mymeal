@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Badge,
   Button,
@@ -15,7 +16,7 @@ import {
   inputClass,
   paginate,
   DEFAULT_PAGE_SIZE,
-  ItemLabel,
+  ItemThumbnail,
 } from "@/components/ui/primitives";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemCategoryOption } from "@/lib/models/item-category";
@@ -244,7 +245,18 @@ export function ItemsTable({
                 />
               </Td>
               <Td>
-                <ItemLabel imageUrl={it.imageUrl} emoji={it.emoji} name={it.name} />
+                <span className="inline-flex items-center gap-2 align-middle">
+                  <ItemThumbnail
+                    imageUrl={it.imageUrl}
+                    emoji={it.emoji}
+                    alt={it.name}
+                    size={40}
+                    className="size-10 shrink-0 rounded object-cover"
+                  />
+                  <Link href={`/admin/items/${it.id}`} className="hover:text-brand">
+                    {it.name}
+                  </Link>
+                </span>
               </Td>
               <Td className="text-muted">
                 <select

@@ -12,6 +12,7 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
+  DismissibleNote,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -47,6 +48,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   const [error, setError] = useState<string | undefined>();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   const pending = requests.filter((r) => r.status === "pending");
   const approved = requests.filter((r) => r.status === "approved");
@@ -136,6 +138,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
     const result = await deleteTopupAction(id);
     setBusyId(null);
     if (result.error) setError(result.error);
+    else setDeletedCount(1);
     router.refresh();
   }
 
@@ -169,10 +172,12 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   }
 
   async function bulkDelete() {
+    const count = selectedDeletableIds.length;
     setBulkBusy(true);
     setError(undefined);
     const result = await bulkDeleteTopupsAction(selectedDeletableIds);
     if (result.error) setError(result.error);
+    else setDeletedCount(count);
     setSelected(new Set());
     setBulkBusy(false);
     router.refresh();
@@ -181,6 +186,12 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   return (
     <Section>
       <ListToolbar tabs={{ tabs, value: tab, onChange: changeTab }} pageSize={pageSize} onPageSizeChange={changeSize} />
+
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 筆儲值申請。</p>
+        </DismissibleNote>
+      )}
 
       {error && <p className="text-[13px] lg:text-[14px] text-danger">{error}</p>}
 

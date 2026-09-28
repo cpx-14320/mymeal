@@ -159,7 +159,7 @@ export function GroupOrderClusterView({
           <thead>
             <tr>
               <Th>單位</Th>
-              <Th>同事</Th>
+              <Th>團員</Th>
               <Th>餐點</Th>
               <Th>飯量</Th>
               <Th>數量</Th>

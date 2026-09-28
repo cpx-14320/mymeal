@@ -24,14 +24,12 @@ export async function createRoleAction(
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "請填寫組別名稱。" };
 
-  let roleId: string;
   try {
-    const result = await createRole({ name, permissions: parsePermissions(formData) });
-    roleId = result.id;
+    await createRole({ name, permissions: parsePermissions(formData) });
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
   revalidatePath("/admin/roles");
-  redirect(`/admin/roles/${roleId}?created=1`);
+  redirect("/admin/roles?created=1");
 }

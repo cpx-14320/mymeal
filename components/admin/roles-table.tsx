@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Badge, ButtonLink, TableWrap, Th, Td, BulkActionBar, DismissibleNote } from "@/components/ui/primitives";
 import type { RoleView } from "@/lib/models/role";
 import { deleteRolesAction } from "@/app/(app)/admin/roles/actions";
+import { CreatedBanner } from "@/components/admin/created-banner";
 
 export function RolesTable({ roles }: { roles: RoleView[] }) {
   const router = useRouter();
@@ -41,6 +43,8 @@ export function RolesTable({ roles }: { roles: RoleView[] }) {
 
   return (
     <div className="space-y-4">
+      <CreatedBanner message="新增組別成功。" />
+
       <BulkActionBar
         count={selected.size}
         unit="個組別"
@@ -85,7 +89,11 @@ export function RolesTable({ roles }: { roles: RoleView[] }) {
                     aria-label={`選取 ${r.name}`}
                   />
                 </Td>
-                <Td>{r.name}</Td>
+                <Td>
+                  <Link href={`/admin/roles/${r.id}`} className="hover:text-brand">
+                    {r.name}
+                  </Link>
+                </Td>
                 <Td>
                   <Badge>{r.permCount} 項權限</Badge>
                 </Td>

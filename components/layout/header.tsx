@@ -170,12 +170,7 @@ export function Header({ onMenuClick, mounted, authed, onLogout, avatarUrl }: He
                 )}
               </div>
 
-              <div
-                className="relative"
-                ref={userMenuRef}
-                onMouseEnter={() => setUserMenuOpen(true)}
-                onMouseLeave={() => setUserMenuOpen(false)}
-              >
+              <div className="relative" ref={userMenuRef}>
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen((v) => !v)}
@@ -193,31 +188,26 @@ export function Header({ onMenuClick, mounted, authed, onLogout, avatarUrl }: He
                 </button>
 
                 {userMenuOpen && (
-                  // 外層從按鈕底部直接無縫接上（top-full，沒有 margin），用 padding 撐出視覺間距——
-                  // 這段 padding 仍算在這個 div 的可 hover 範圍內，滑鼠從按鈕移到選單途中才不會
-                  // 經過一段沒有任何元素接住的空隙，導致 mouseleave 提早觸發、選單消失。
-                  <div className="absolute right-0 top-full w-40 pt-2">
-                    <div
-                      role="menu"
-                      className="overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-xl"
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full mt-2 w-40 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-xl"
+                  >
+                    <Link
+                      href="/account"
+                      role="menuitem"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-3 py-2 text-sm hover:bg-surface-2"
                     >
-                      <Link
-                        href="/account"
-                        role="menuitem"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="block px-3 py-2 text-sm hover:bg-surface-2"
-                      >
-                        會員資料
-                      </Link>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={handleLogout}
-                        className="block w-full px-3 py-2 text-left text-sm text-danger hover:bg-surface-2"
-                      >
-                        登出
-                      </button>
-                    </div>
+                      會員資料
+                    </Link>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      className="block w-full px-3 py-2 text-left text-sm text-danger hover:bg-surface-2"
+                    >
+                      登出
+                    </button>
                   </div>
                 )}
               </div>

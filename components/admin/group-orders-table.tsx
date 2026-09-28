@@ -124,7 +124,8 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
               <input type="checkbox" checked={pageAllSelected} onChange={togglePageAll} aria-label="選取本頁全部" />
             </Th>
             <Th>團名</Th>
-            <Th>部門 / 單位</Th>
+            <Th>部門</Th>
+            <Th>單位</Th>
             <Th>套用模板</Th>
             <Th>團主</Th>
             <Th>日期</Th>
@@ -136,7 +137,7 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
         <tbody>
           {pageRows.length === 0 ? (
             <tr>
-              <Td colSpan={9} className="text-center text-muted">
+              <Td colSpan={10} className="text-center text-muted">
                 還沒有任何團訂。
               </Td>
             </tr>
@@ -156,12 +157,8 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
                     {r.name}
                   </Link>
                 </Td>
-                <Td>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge tone="brand">{r.departmentName || "—"}</Badge>
-                    <span className="text-muted">{r.unitName}</span>
-                  </div>
-                </Td>
+                <Td className="text-muted">{r.departmentName || "—"}</Td>
+                <Td className="text-muted">{r.unitName}</Td>
                 <Td className="text-muted">{r.templateName}</Td>
                 <Td className="text-muted">{r.hostName}</Td>
                 <Td className="tabular-nums">{r.date}</Td>

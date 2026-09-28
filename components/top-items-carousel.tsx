@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ItemThumbnail } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
+import { ItemReviewModal } from "@/components/item-review-modal";
 import type { CatalogItemView } from "@/lib/models/catalog-item";
 import type { ItemStat } from "@/lib/models/item-review";
 
@@ -26,6 +27,10 @@ export function TopItemsCarousel({
   // 手機版一列只顯示 2 欄、桌面版 4 欄——每組（slide）要剛好塞滿一列，
   // 不然手機版會變成 2 欄 x 2 列，「下一組」按鈕還沒按就已經看到第二列的品項了。
   const [itemsPerSlide, setItemsPerSlide] = useState(4);
+  // 點「N 則評論」開的是共用的 ItemReviewModal（跟品項卡片、我的收藏頁同一個彈窗），
+  // liveStats 記錄送出評論後回傳的最新統計，讓這裡的排行/計數不用整頁重新整理就能同步。
+  const [reviewItem, setReviewItem] = useState<{ id: string; name: string } | null>(null);
+  const [liveStats, setLiveStats] = useState<Record<string, ItemStat>>({});
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 640px)");
@@ -35,8 +40,10 @@ export function TopItemsCarousel({
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  const statFor = (item: CatalogItemView) => liveStats[item.id] ?? stats[item.id] ?? EMPTY_STAT;
+
   const ranked = [...items]
-    .map((item) => ({ item, stat: stats[item.id] ?? EMPTY_STAT }))
+    .map((item) => ({ item, stat: statFor(item) }))
     .sort(
       (a, b) =>
         b.stat.commentCount - a.stat.commentCount || (b.stat.avgRating ?? 0) - (a.stat.avgRating ?? 0),
@@ -72,22 +79,30 @@ export function TopItemsCarousel({
               {slide.map(({ item, stat }) => (
                 <div
                   key={item.id}
-                  className="flex flex-col items-center gap-1.5 rounded-lg bg-brand-soft p-4 text-center"
+                  className="flex items-center justify-center gap-3 rounded-lg bg-brand-soft p-3 sm:justify-start"
                 >
                   <ItemThumbnail
                     imageUrl={item.imageUrl}
                     emoji={item.emoji}
                     alt=""
                     size={64}
-                    className="size-16 rounded-lg object-cover"
+                    className="size-16 shrink-0 rounded-lg object-cover"
                     emojiClassName="text-4xl"
                   />
-                  <span className="text-sm font-medium">{item.name}</span>
-                  <div className="flex items-center gap-2 text-xs text-muted">
-                    <span className="text-warning">
-                      ★ {stat.avgRating !== null ? stat.avgRating.toFixed(1) : "—"}
-                    </span>
-                    <span>💬 {stat.commentCount}</span>
+                  <div className="min-w-0 sm:flex-1">
+                    <p className="truncate text-sm font-medium">{item.name}</p>
+                    <div className="mt-1 flex flex-col items-start gap-0.5 text-xs text-muted sm:flex-row sm:items-center sm:gap-2">
+                      <span className="text-warning">
+                        ★ {stat.avgRating !== null ? stat.avgRating.toFixed(1) : "—"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setReviewItem({ id: item.id, name: item.name })}
+                        className="cursor-pointer hover:text-ink hover:underline"
+                      >
+                        {stat.commentCount} 則評論
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -152,12 +167,29 @@ export function TopItemsCarousel({
               />
               <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.name}</span>
               <span className="shrink-0 text-sm tabular-nums text-muted">
-                ★ {stat.avgRating !== null ? stat.avgRating.toFixed(1) : "—"}・💬 {stat.commentCount}
+                ★ {stat.avgRating !== null ? stat.avgRating.toFixed(1) : "—"}・
+                <button
+                  type="button"
+                  onClick={() => setReviewItem({ id: item.id, name: item.name })}
+                  className="cursor-pointer hover:text-ink hover:underline"
+                >
+                  {stat.commentCount} 則評論
+                </button>
               </span>
             </li>
           ))}
         </ul>
       </Modal>
+
+      <ItemReviewModal
+        itemId={reviewItem?.id ?? ""}
+        itemName={reviewItem?.name ?? ""}
+        open={reviewItem !== null}
+        onClose={() => setReviewItem(null)}
+        onSubmitted={(nextStat) => {
+          if (nextStat && reviewItem) setLiveStats((prev) => ({ ...prev, [reviewItem.id]: nextStat }));
+        }}
+      />
     </div>
   );
 }

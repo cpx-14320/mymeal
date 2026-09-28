@@ -21,7 +21,7 @@ export const taskTypeLabel: Record<TaskType, string> = {
   topup: "儲值",
   order: "訂餐",
   favorite: "收藏",
-  comment: "留言",
+  comment: "評論",
   rating: "評分",
 };
 const TASK_TYPES: TaskType[] = ["topup", "order", "favorite", "comment", "rating"];
@@ -85,7 +85,7 @@ const DEFAULT_TASKS = [
   { name: "每週訂餐", type: "order" as TaskType, period: "weekly" as TaskPeriod, targetCount: 4, rewardPoints: 20, active: true },
   { name: "每週儲值", type: "topup" as TaskType, period: "weekly" as TaskPeriod, targetCount: 1, rewardPoints: 10, active: true },
   { name: "每月評分", type: "rating" as TaskType, period: "monthly" as TaskPeriod, targetCount: 5, rewardPoints: 15, active: true },
-  { name: "每月留言", type: "comment" as TaskType, period: "monthly" as TaskPeriod, targetCount: 3, rewardPoints: 10, active: false },
+  { name: "每月評論", type: "comment" as TaskType, period: "monthly" as TaskPeriod, targetCount: 3, rewardPoints: 10, active: false },
   { name: "訂餐達人", type: "order" as TaskType, period: "achievement" as TaskPeriod, targetCount: 20, rewardPoints: 50, active: true },
 ];
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   TableWrap,
   Th,
@@ -44,8 +45,8 @@ export function ItemCommentsTable({
       <TableWrap>
         <thead>
           <tr>
-            <Th>會員</Th>
-            <Th>留言</Th>
+            <Th>姓名</Th>
+            <Th>評論</Th>
             <Th>評分</Th>
             <Th className="text-right">時間</Th>
           </tr>
@@ -53,7 +54,11 @@ export function ItemCommentsTable({
         <tbody>
           {rows.map((c, i) => (
             <tr key={i}>
-              <Td>{c.memberName}</Td>
+              <Td>
+                <Link href={`/admin/insights/${c.memberId}`} className="hover:text-brand">
+                  {c.memberName}
+                </Link>
+              </Td>
               <Td className="text-muted">{c.text}</Td>
               <Td className="text-warning">{stars(c.stars)}</Td>
               <Td className="text-right text-muted">{formatTaiwanDateTime(c.at)}</Td>

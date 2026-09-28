@@ -47,6 +47,7 @@ export interface FeedbackView {
   type: FeedbackType;
   content: string;
   senderName: string;
+  memberId?: string; // 有登入才有；訪客送出的沒有這欄，後台不會顯示連結
   createdAt: Date;
 }
 
@@ -71,6 +72,7 @@ export async function listFeedback(): Promise<FeedbackView[]> {
     type: d.type,
     content: d.content,
     senderName: d.senderName,
+    memberId: d.memberId ? String(d.memberId) : undefined,
     createdAt: d.createdAt,
   }));
 }

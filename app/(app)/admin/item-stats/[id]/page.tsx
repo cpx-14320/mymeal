@@ -48,7 +48,7 @@ export default async function ItemStatDetailPage({
         </div>
       </Section>
 
-      <Section title="評論留言" description="所有會員對這個品項留下的評論。">
+      <Section title="評論" description="所有會員對這個品項留下的評論。">
         <ItemCommentsTable comments={comments} />
       </Section>
     </div>

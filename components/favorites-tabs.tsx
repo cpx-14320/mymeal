@@ -80,7 +80,7 @@ export function FavoritesTabs({
                 <tr>
                   <Th>品項</Th>
                   <Th>星等</Th>
-                  <Th>留言</Th>
+                  <Th>評論</Th>
                   <Th>時間</Th>
                   <Th className="text-right">操作</Th>
                 </tr>

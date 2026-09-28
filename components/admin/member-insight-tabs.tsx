@@ -74,7 +74,7 @@ export function MemberInsightTabs({
     { key: "orders", label: "訂餐紀錄", count: breakdown.length },
     { key: "topups", label: "儲值紀錄", count: ledger.length },
     { key: "favorites", label: "收藏的品項", count: favorites.length },
-    { key: "comments", label: "評論留言", count: comments.length },
+    { key: "comments", label: "評論", count: comments.length },
     { key: "ratings", label: "評分", count: ratings.length },
   ];
 
@@ -232,7 +232,7 @@ export function MemberInsightTabs({
               <thead>
                 <tr>
                   <Th>品項</Th>
-                  <Th>留言</Th>
+                  <Th>評論</Th>
                   <Th>評分</Th>
                   <Th>時間</Th>
                 </tr>

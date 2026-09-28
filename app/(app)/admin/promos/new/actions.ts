@@ -34,14 +34,12 @@ export async function createPromoAction(
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
 
-  let promoId: string;
   try {
-    const result = await createInterstitial(input);
-    promoId = result.id;
+    await createInterstitial(input);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
   revalidatePath("/admin/promos");
-  redirect(`/admin/promos/${promoId}?created=1`);
+  redirect("/admin/promos?created=1");
 }

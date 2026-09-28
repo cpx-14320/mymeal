@@ -155,6 +155,7 @@ export async function getItemStatsByItems(itemIds: string[]): Promise<Record<str
 }
 
 export interface ItemReviewEntry {
+  memberId: string;
   memberName: string;
   stars: number;
   text?: string;
@@ -177,7 +178,7 @@ export async function listReviewsForItem(itemId: string): Promise<ItemReviewEntr
     .filter((d) => d.memberId)
     .map((d) => {
       const member = d.memberId as unknown as PopulatedMember;
-      return { memberName: member.name, stars: d.stars, text: d.text, at: d.at };
+      return { memberId: String(member._id), memberName: member.name, stars: d.stars, text: d.text, at: d.at };
     });
 }
 
@@ -192,6 +193,17 @@ export async function getMemberReviewForItem(memberId: string, itemId: string): 
   if (!Types.ObjectId.isValid(memberId) || !Types.ObjectId.isValid(itemId)) return null;
   const doc = await ItemReview.findOne({ memberId, itemId });
   return doc ? { stars: doc.stars, text: doc.text } : null;
+}
+
+/** 會員自己「完全刪除」對這個品項的評分／評論——整筆紀錄直接刪掉，不是像清空文字那樣
+ *  只拿掉留言：清空文字只會讓「評論數」看起來減少，評分紀錄本身還在，任務進度／成就不會跟著變動；
+ *  這裡才是真的移除那筆紀錄，評論數、平均星等、每月評分任務進度都會一起正確減少。 */
+export async function deleteReview(memberId: string, itemId: string): Promise<void> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId) || !Types.ObjectId.isValid(itemId)) {
+    throw new Error("無效的會員或品項 id");
+  }
+  await ItemReview.deleteOne({ memberId, itemId });
 }
 
 /** 新增或更新這位會員對這個品項的評分／評論——同一人對同一品項只留一筆，重複送出視為修改既有那筆。 */

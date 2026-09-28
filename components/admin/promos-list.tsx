@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/primitives";
 import type { InterstitialView, InterstitialStatus } from "@/lib/models/interstitial";
 import { setPromosEnabledAction, deletePromosAction } from "@/app/(app)/admin/promos/actions";
+import { CreatedBanner } from "@/components/admin/created-banner";
 
 const statusMeta: Record<InterstitialStatus, { label: string; tone: "positive" | "warning" | "neutral" }> = {
   showing: { label: "顯示中", tone: "positive" },
@@ -91,6 +92,14 @@ export function PromosList({ promos }: { promos: InterstitialView[] }) {
 
   return (
     <div className="space-y-4">
+      <CreatedBanner message="新增廣告成功。" />
+
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+          <p>已刪除 {deletedCount} 則廣告。</p>
+        </DismissibleNote>
+      )}
+
       <ListToolbar
         pageSize={pageSize}
         onPageSizeChange={(n) => {
@@ -98,12 +107,6 @@ export function PromosList({ promos }: { promos: InterstitialView[] }) {
           setPage(1);
         }}
       />
-
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
-          <p>已刪除 {deletedCount} 則廣告。</p>
-        </DismissibleNote>
-      )}
 
       <BulkActionBar
         count={selected.size}

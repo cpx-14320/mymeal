@@ -7,6 +7,7 @@ import { OrdersHistory } from "@/components/orders-history";
 import { listMemberOrderLines, type MemberOrderLine } from "@/lib/models/group-order";
 import { getSessionMemberId } from "@/lib/session";
 import { todayTaiwanDateString } from "@/lib/date";
+import { riceLevelLabel } from "@/lib/mock";
 
 export const metadata: Metadata = { title: "我的訂單" };
 
@@ -15,7 +16,8 @@ function toOrder(l: MemberOrderLine): Order {
     id: l.lineId,
     date: l.date,
     restaurant: l.templateName,
-    dish: `${l.itemName} ×${l.qty}`,
+    // 同一品項選不同飯量會是各自獨立的一行，不帶上飯量的話兩行文字會一模一樣、看起來像重複。
+    dish: `${l.itemName}（${riceLevelLabel[l.rice]}）×${l.qty}`,
     price: l.price * l.qty,
     team: { name: l.groupOrderName, id: l.groupOrderId },
     // 待確認＝團還開放中；已截止＝團不再開放中，但日期還沒過（見下面的分類）。

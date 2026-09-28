@@ -7,7 +7,6 @@ import { permissionCategories } from "@/lib/mock";
 import type { RoleView } from "@/lib/models/role";
 import { createRoleAction, type CreateRoleState } from "@/app/(app)/admin/roles/new/actions";
 import { updateRoleAction, type UpdateRoleState } from "@/app/(app)/admin/roles/[id]/actions";
-import { CreatedBanner } from "@/components/admin/created-banner";
 
 /** 新增 / 編輯組別共用的表單。傳 role 就是編輯模式（欄位帶入現值）。 */
 export function RoleForm({ role }: { role?: RoleView }) {
@@ -27,8 +26,6 @@ export function RoleForm({ role }: { role?: RoleView }) {
     <form action={formAction}>
       <Card>
         <CardBody className="space-y-5">
-          <CreatedBanner message="組別已建立成功，可以繼續編輯以下內容。" />
-
           <Field label="組別名稱">
             <input
               className={inputClass}

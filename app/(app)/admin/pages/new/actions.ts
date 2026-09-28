@@ -37,14 +37,12 @@ export async function createPageAction(
   const memberId = await getSessionMemberId();
   const member = memberId ? await findMemberById(memberId) : null;
 
-  let pageId: string;
   try {
-    const page = await createPage(input, member?.name, memberId ?? undefined);
-    pageId = page.id;
+    await createPage(input, member?.name, memberId ?? undefined);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
   revalidatePath("/admin/pages");
-  redirect(`/admin/pages/${pageId}?created=1`);
+  redirect("/admin/pages?created=1");
 }

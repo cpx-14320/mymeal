@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/primitives";
 import { Modal, ModalHeader } from "@/components/ui/modal";
 import { useLoginModal } from "@/components/layout/login-modal-context";
 import type { ItemStat, ItemReviewEntry, MyReview } from "@/lib/models/item-review";
-import { getItemReviewsAction, submitItemReviewAction } from "@/app/(app)/catalog/actions";
+import {
+  getItemReviewsAction,
+  submitItemReviewAction,
+  deleteItemReviewAction,
+} from "@/app/(app)/catalog/actions";
 
 function stars(n: number) {
   return "★".repeat(n) + "☆".repeat(5 - n);
@@ -62,12 +66,15 @@ export function ItemReviewModal({
   const [draftText, setDraftText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setLoadingComments(true);
     setSubmitError(null);
+    setConfirmingDelete(false);
     getItemReviewsAction(itemId).then(({ entries, myReview: mine, isLoggedIn: loggedIn }) => {
       if (cancelled) return;
       setComments(entries);
@@ -97,6 +104,23 @@ export function ItemReviewModal({
     }
     setComments(result.entries ?? []);
     setMyReview({ stars: draftStars, text: draftText.trim() || undefined });
+    onSubmitted?.(result.stat);
+  }
+
+  async function deleteMyReview() {
+    setDeleting(true);
+    setSubmitError(null);
+    const result = await deleteItemReviewAction(itemId);
+    setDeleting(false);
+    if (result.error) {
+      setSubmitError(result.error);
+      return;
+    }
+    setComments(result.entries ?? []);
+    setMyReview(null);
+    setDraftStars(0);
+    setDraftText("");
+    setConfirmingDelete(false);
     onSubmitted?.(result.stat);
   }
 
@@ -139,15 +163,47 @@ export function ItemReviewModal({
               />
               <div className="flex items-center justify-between gap-2">
                 {submitError && <p className="text-xs text-danger">{submitError}</p>}
-                <Button
-                  type="button"
-                  size="sm"
-                  className="ml-auto"
-                  onClick={submitReview}
-                  disabled={submitting}
-                >
-                  {submitting ? "送出中…" : myReview ? "更新評論" : "送出評論"}
-                </Button>
+                <div className="ml-auto flex items-center gap-2">
+                  {myReview &&
+                    (confirmingDelete ? (
+                      <>
+                        <span className="text-xs text-danger">確定刪除？</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={deleting}
+                          onClick={() => setConfirmingDelete(false)}
+                        >
+                          返回
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          disabled={deleting}
+                          onClick={deleteMyReview}
+                        >
+                          {deleting ? "刪除中…" : "確認刪除"}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        disabled={submitting}
+                        onClick={() => setConfirmingDelete(true)}
+                      >
+                        刪除評論
+                      </Button>
+                    ))}
+                  {!confirmingDelete && (
+                    <Button type="button" size="sm" onClick={submitReview} disabled={submitting}>
+                      {submitting ? "送出中…" : myReview ? "更新評論" : "送出評論"}
+                    </Button>
+                  )}
+                </div>
               </div>
             </>
           ) : (

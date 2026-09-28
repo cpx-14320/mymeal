@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Section,
   Badge,
@@ -21,6 +22,7 @@ import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { formatTaiwanDateTime } from "@/lib/date";
 import type { PageView } from "@/lib/models/page";
 import { setPagesActiveAction, deletePagesAction } from "@/app/(app)/admin/pages/actions";
+import { CreatedBanner } from "@/components/admin/created-banner";
 
 export function PagesManager({ pages }: { pages: PageView[] }) {
   const router = useRouter();
@@ -82,6 +84,14 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
         <ButtonLink href="/admin/pages/new" size="sm">新增頁面</ButtonLink>
       </AdminHeaderActions>
 
+      <CreatedBanner message="新增頁面成功。" />
+
+      {deletedMessage !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedMessage(null)}>
+          <p>已刪除 {deletedMessage} 個頁面。</p>
+        </DismissibleNote>
+      )}
+
       <ListToolbar
         pageSize={pageSize}
         onPageSizeChange={(n) => {
@@ -89,12 +99,6 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
           setPage(1);
         }}
       />
-
-      {deletedMessage !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedMessage(null)}>
-          <p>已刪除 {deletedMessage} 個頁面。</p>
-        </DismissibleNote>
-      )}
 
       <BulkActionBar
         count={selected.size}
@@ -134,7 +138,11 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
                   aria-label={`選取 ${s.name}`}
                 />
               </Td>
-              <Td>{s.name}</Td>
+              <Td>
+                <Link href={`/admin/pages/${s.id}`} className="hover:text-brand">
+                  {s.name}
+                </Link>
+              </Td>
               <Td className="text-muted">{s.slug}</Td>
               <Td className="tabular-nums text-muted">{s.sortOrder}</Td>
               <Td>
