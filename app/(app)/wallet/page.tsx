@@ -27,12 +27,14 @@ export default async function WalletPage() {
 
   const now = new Date();
   const isThisMonth = (d: Date) => d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  // 儲值有被撤銷核准（topup_reversal，見 wallet.ts 的說明）、消費有被退款（refund）都要一起算進來，
+  // 不然「本月儲值／本月消費」只看原始那筆，撤銷或退款之後金額看起來完全沒變，跟餘額對不起來。
   const monthlyTopup = ledger
-    .filter((l) => l.type === "topup" && isThisMonth(l.at))
+    .filter((l) => (l.type === "topup" || l.type === "topup_reversal") && isThisMonth(l.at))
     .reduce((sum, l) => sum + l.amount, 0);
-  const monthlySpend = ledger
-    .filter((l) => l.type === "spend" && isThisMonth(l.at))
-    .reduce((sum, l) => sum + Math.abs(l.amount), 0);
+  const monthlySpend = -ledger
+    .filter((l) => (l.type === "spend" || l.type === "refund") && isThisMonth(l.at))
+    .reduce((sum, l) => sum + l.amount, 0);
 
   return (
     <PageContainer>

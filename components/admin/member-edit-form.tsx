@@ -80,7 +80,7 @@ export function MemberEditForm({ member, departments, units, roleNames }: Member
             <Field label="帳號(公司email)">
               <input
                 className={inputClass}
-                type="email"
+                type="text"
                 name="email"
                 defaultValue={member.email}
                 required

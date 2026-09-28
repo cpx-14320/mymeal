@@ -96,7 +96,7 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
               />
             </Field>
 
-            <Field label="圖示 emoji">
+            <Field label="圖示Emoji">
               <input
                 className={inputClass}
                 name="icon"
@@ -131,7 +131,7 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
                     name="templateId"
                     defaultValue={page?.templateId ?? ""}
                   >
-                    <option value="">不套用（顯示頁面自己標註的品項）</option>
+                    <option value="">不套用</option>
                     {templateMissing && (
                       <option value={page!.templateId} disabled>
                         （查無模板，原模板已被刪除，請重新選擇）

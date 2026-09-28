@@ -57,7 +57,11 @@ export function AccountTaskTabs({
                   <span className="tabular-nums">
                     {progress} / {task.targetCount}
                   </span>
-                  <span>完成 +{task.rewardPoints} exp</span>
+                  <span className={progress >= task.targetCount ? "text-positive" : undefined}>
+                    {progress >= task.targetCount
+                      ? `已完成．+${task.rewardPoints} exp 已入帳`
+                      : `達標可得 +${task.rewardPoints} exp`}
+                  </span>
                 </div>
               </CardBody>
             </Card>

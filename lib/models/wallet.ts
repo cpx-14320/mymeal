@@ -170,7 +170,11 @@ export async function listMemberBalances(): Promise<WalletBalanceRow[]> {
     if (t._id.type === "topup" || t._id.type === "topup_reversal") {
       topupByMember.set(key, (topupByMember.get(key) ?? 0) + t.sum);
     }
-    if (t._id.type === "spend") spendByMember.set(key, (spendByMember.get(key) ?? 0) + Math.abs(t.sum));
+    // refund 是團訂重新開放／取消時把已扣款的行退回去，「累計消費」要扣掉才是實際淨消費，
+    // 不然退款後這裡看起來還是跟沒退款前一樣，跟餘額對不起來。
+    if (t._id.type === "spend" || t._id.type === "refund") {
+      spendByMember.set(key, (spendByMember.get(key) ?? 0) - t.sum);
+    }
   }
 
   return members.map((m) => ({

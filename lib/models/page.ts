@@ -153,7 +153,7 @@ export async function createPage(input: PageInput, createdBy?: string, createdBy
   const existingName = await Page.findOne({ name: input.name });
   if (existingName) throw new Error("這個頁面名稱已經被使用了。");
   const existingSlug = await Page.findOne({ slug: input.slug });
-  if (existingSlug) throw new Error("這個網址代稱已經被使用了。");
+  if (existingSlug) throw new Error("這個網址已經被使用了。");
   const doc = await Page.create({
     name: input.name,
     description: input.description ?? "",
@@ -181,7 +181,7 @@ export async function updatePage(id: string, input: PageInput) {
   const existingName = await Page.findOne({ name: input.name, _id: { $ne: id } });
   if (existingName) throw new Error("這個頁面名稱已經被使用了。");
   const existingSlug = await Page.findOne({ slug: input.slug, _id: { $ne: id } });
-  if (existingSlug) throw new Error("這個網址代稱已經被使用了。");
+  if (existingSlug) throw new Error("這個網址已經被使用了。");
   const templateId = assertTemplateId(input.templateId);
   const doc = await Page.findByIdAndUpdate(
     id,

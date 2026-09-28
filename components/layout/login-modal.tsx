@@ -101,7 +101,6 @@ export function LoginModal({
                 className={inputClass}
                 type="password"
                 name="password"
-                placeholder="••••••••"
                 required
               />
             </Field>

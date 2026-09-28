@@ -4,16 +4,18 @@ import { listMembers } from "@/lib/models/member";
 import { countFavoritesByMembers } from "@/lib/models/favorite";
 import { countReviewsByMembers } from "@/lib/models/item-review";
 import { listMemberBalances } from "@/lib/models/wallet";
+import { getOrderStatsByMembers } from "@/lib/models/group-order";
 
 export const metadata = { title: "會員洞察" };
 
 export default async function MemberInsightsPage() {
   const members = await listMembers();
   const memberIds = members.map((m) => m.id);
-  const [favoriteCounts, reviewCounts, walletBalances] = await Promise.all([
+  const [favoriteCounts, reviewCounts, walletBalances, orderStats] = await Promise.all([
     countFavoritesByMembers(memberIds),
     countReviewsByMembers(memberIds),
     listMemberBalances(),
+    getOrderStatsByMembers(memberIds),
   ]);
   const balances = Object.fromEntries(walletBalances.map((b) => [b.memberId, b.balance]));
 
@@ -25,6 +27,7 @@ export default async function MemberInsightsPage() {
         ratingCounts={reviewCounts.ratings}
         commentCounts={reviewCounts.comments}
         balances={balances}
+        orderStats={orderStats}
       />
     </Section>
   );

@@ -9,11 +9,17 @@ import {
   Badge,
   Progress,
 } from "@/components/ui/primitives";
-import { memberLevelInfo } from "@/lib/mock";
+import { memberExp, memberLevelInfo } from "@/lib/mock";
 import { AccountTaskTabs } from "@/components/account-task-tabs";
 import { AccountAvatarUploader } from "@/components/account-avatar-uploader";
 import { listDailyTasks, listExpRules, listMemberLevels } from "@/lib/models/gamification";
-import { getMemberLifetimeCounts, achievementProgress, periodTaskProgress } from "@/lib/models/achievements";
+import {
+  getMemberLifetimeCounts,
+  achievementProgress,
+  periodTaskProgress,
+  checkAndGrantTaskCompletions,
+} from "@/lib/models/achievements";
+import { getMemberTaskCompletionBonusExp } from "@/lib/models/task-completion";
 import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
 
@@ -24,12 +30,17 @@ export default async function AccountPage() {
   if (!memberId) redirect("/login");
 
   const dailyTasks = await listDailyTasks();
-  const [member, expRules, memberLevels, lifetimeCounts, periodicTasks] = await Promise.all([
+  // 進頁面就先檢查一輪「有沒有任務剛好達標、還沒發過這個週期/成就的完成獎勵」，有的話補發一筆，
+  // 一定要在下面算 exp 之前做，不然這次剛達標的獎勵不會被算進當下顯示的總 exp 裡。
+  await checkAndGrantTaskCompletions(memberId, dailyTasks);
+
+  const [member, expRules, memberLevels, lifetimeCounts, periodicTasks, bonusExp] = await Promise.all([
     findMemberById(memberId),
     listExpRules(),
     listMemberLevels(),
     getMemberLifetimeCounts(memberId),
     periodTaskProgress(memberId, dailyTasks),
+    getMemberTaskCompletionBonusExp(memberId),
   ]);
   if (!member) redirect("/login");
 
@@ -42,10 +53,12 @@ export default async function AccountPage() {
     ["專屬碼", member.memberCode],
   ];
 
-  // exp／等級是累積型指標，用 lifetimeCounts（帳號註冊至今的真實累積次數）換算沒有問題；
+  // 總 exp = 行為 exp（依帳號終身累計次數 × 經驗值規則，即時計算，會隨行為被取消/撤銷增減）
+  //        + 任務完成獎勵 exp（達標當下發一次、永久保留，見 checkAndGrantTaskCompletions 的說明）。
   // daily/weekly/monthly 任務進度則是「這個週期內」做了幾次，見 periodTaskProgress（查各集合
   // 自己的時間欄位，例如訂單行的 createdAt、儲值/收藏/評分留言各自的時間），不是用取餘數模擬出來的。
-  const { exp, level, levelIndex, next, expToNext } = memberLevelInfo(lifetimeCounts, expRules, memberLevels);
+  const totalExp = memberExp(lifetimeCounts, expRules) + bonusExp;
+  const { exp, level, levelIndex, next, expToNext } = memberLevelInfo(totalExp, memberLevels);
   const achievements = achievementProgress(dailyTasks, lifetimeCounts);
   const tasks = [...periodicTasks, ...achievements];
   return (

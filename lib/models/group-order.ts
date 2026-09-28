@@ -790,6 +790,30 @@ export async function getMemberOrderBreakdown(memberId: string): Promise<MemberO
     });
 }
 
+export interface MemberOrderStats {
+  orderCount: number;
+  totalQuantity: number;
+}
+
+/** 會員洞察列表頁用：一次查多個會員的訂單行數／份數總和，跟 countFavoritesByMembers／
+ *  countReviewsByMembers 同一套批次查法，不用一個個會員各查一次資料庫。 */
+export async function getOrderStatsByMembers(memberIds: string[]): Promise<Record<string, MemberOrderStats>> {
+  await connectMongo();
+  const objIds = memberIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+  if (objIds.length === 0) return {};
+
+  const rows = await GroupOrder.aggregate<{ _id: Types.ObjectId; orderCount: number; totalQuantity: number }>([
+    { $match: { "lines.memberId": { $in: objIds } } },
+    { $unwind: "$lines" },
+    { $match: { "lines.memberId": { $in: objIds } } },
+    { $group: { _id: "$lines.memberId", orderCount: { $sum: 1 }, totalQuantity: { $sum: "$lines.qty" } } },
+  ]);
+
+  return Object.fromEntries(
+    rows.map((r) => [String(r._id), { orderCount: r.orderCount, totalQuantity: r.totalQuantity }]),
+  );
+}
+
 /** 這位會員累積訂餐次數（成就系統用）：帳號註冊至今，所有團訂裡屬於他的訂單行數總和。 */
 export async function getMemberOrderCount(memberId: string): Promise<number> {
   await connectMongo();

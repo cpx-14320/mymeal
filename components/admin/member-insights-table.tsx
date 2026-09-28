@@ -12,6 +12,7 @@ import {
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { MemberListItem } from "@/lib/models/member";
+import type { MemberOrderStats } from "@/lib/models/group-order";
 
 export function MemberInsightsTable({
   members,
@@ -19,12 +20,14 @@ export function MemberInsightsTable({
   ratingCounts,
   commentCounts,
   balances,
+  orderStats,
 }: {
   members: MemberListItem[];
   favoriteCounts: Record<string, number>;
   ratingCounts: Record<string, number>;
   commentCounts: Record<string, number>;
   balances: Record<string, number>;
+  orderStats: Record<string, MemberOrderStats>;
 }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -67,8 +70,8 @@ export function MemberInsightsTable({
               <tr key={m.id}>
                 <Td>{m.name}</Td>
                 <Td className="text-muted">{m.account}</Td>
-                <Td className="tabular-nums">0</Td>
-                <Td className="tabular-nums">0</Td>
+                <Td className="tabular-nums">{orderStats[m.id]?.orderCount ?? 0}</Td>
+                <Td className="tabular-nums">{orderStats[m.id]?.totalQuantity ?? 0}</Td>
                 <Td className="tabular-nums">{favoriteCounts[m.id] ?? 0}</Td>
                 <Td className="tabular-nums">{commentCounts[m.id] ?? 0}</Td>
                 <Td className="tabular-nums">{ratingCounts[m.id] ?? 0}</Td>

@@ -687,7 +687,9 @@ export interface LevelConfig {
   minExp: number;
 }
 
-/** 會員總 exp：依 expRules 把該會員各類動作次數（真實累積次數）換算成經驗值加總（不套用上限，只看總量）。 */
+/** 行為 exp：依 expRules 把該會員各類動作次數（真實累積次數）換算成經驗值加總（不套用上限，只看總量）。
+ *  這是總 exp 的其中一部分，另一部分是任務完成獎勵，見 lib/models/task-completion.ts 的
+ *  getMemberTaskCompletionBonusExp——兩者相加才是會員實際總 exp，呼叫端（帳號頁）負責加總。 */
 export function memberExp(counts: Record<TaskType, number>, expRules: ExpRuleConfig[]): number {
   return expRules.reduce((sum, rule) => sum + (counts[rule.type] ?? 0) * rule.expPerAction, 0);
 }
@@ -701,13 +703,8 @@ export interface MemberLevelInfo {
   progressInLevel: number; // 0~1，在目前這一級裡的進度
 }
 
-/** 依 exp 換算目前等級、距下一級還差多少 exp。 */
-export function memberLevelInfo(
-  counts: Record<TaskType, number>,
-  expRules: ExpRuleConfig[],
-  levels: LevelConfig[],
-): MemberLevelInfo {
-  const exp = memberExp(counts, expRules);
+/** 依總 exp（行為 exp + 任務完成獎勵 exp，呼叫端算好傳進來）換算目前等級、距下一級還差多少 exp。 */
+export function memberLevelInfo(exp: number, levels: LevelConfig[]): MemberLevelInfo {
   const sorted = [...levels].sort((a, b) => a.minExp - b.minExp);
   let levelIndex = 0;
   for (let i = 0; i < sorted.length; i++) {
