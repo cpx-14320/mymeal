@@ -35,8 +35,6 @@ export function GroupOrderForm({
   dishes,
   recommendedDishIds = [],
   existingLines,
-  memberId,
-  memberName,
   walletBalance,
 }: {
   groupOrderId: string;
@@ -44,8 +42,6 @@ export function GroupOrderForm({
   /** 依這位會員過去點餐次數排出的推薦品項 id（已篩過，一定是這個團的模板裡有的品項）。 */
   recommendedDishIds?: string[];
   existingLines: ExistingLine[];
-  memberId: string;
-  memberName: string;
   walletBalance: number;
 }) {
   const router = useRouter();
@@ -96,7 +92,7 @@ export function GroupOrderForm({
         bankCode: paymentMethod === "銀行轉帳" ? bankCode : "",
       }));
 
-    const result = await submitGroupOrderLinesAction(groupOrderId, memberId, memberName, lines);
+    const result = await submitGroupOrderLinesAction(groupOrderId, lines);
     setPending(false);
     if (result.error) {
       setError(result.error);

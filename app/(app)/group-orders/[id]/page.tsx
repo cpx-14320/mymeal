@@ -148,8 +148,6 @@ export default async function GroupOrderDetailPage({
               dishes={dishes}
               recommendedDishIds={recommendedDishIds}
               existingLines={existingLines}
-              memberId={memberId}
-              memberName={viewer.name}
               walletBalance={walletBalance}
             />
           )}

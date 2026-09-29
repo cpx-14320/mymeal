@@ -14,6 +14,7 @@ import {
 } from "@/lib/models/group-order";
 import { getSessionMemberId, getCurrentActorName } from "@/lib/session";
 import { createAuditLog } from "@/lib/models/audit-log";
+import { findMemberById } from "@/lib/models/member";
 
 export interface SubmitOrderLineInput {
   itemId: string;
@@ -31,14 +32,19 @@ export interface SubmitOrderState {
   success?: boolean;
 }
 
+/** 送出「自己」在這團要點的餐——身分一律從 session 判斷，不採信前端傳來的 memberId／
+ *  memberName，避免有人竄改參數去改到別人的訂單。品項的實際售價也是在 replaceMemberLines
+ *  裡從模板重新查，不採信前端送來的 price，防止竄改金額。 */
 export async function submitGroupOrderLinesAction(
   groupOrderId: string,
-  memberId: string,
-  memberName: string,
   lines: SubmitOrderLineInput[],
 ): Promise<SubmitOrderState> {
+  const memberId = await getSessionMemberId();
+  if (!memberId) return { error: "請先登入。" };
+  const member = await findMemberById(memberId);
+  if (!member) return { error: "請先登入。" };
   try {
-    await replaceMemberLines(groupOrderId, memberId, memberName, lines);
+    await replaceMemberLines(groupOrderId, memberId, member.name, lines);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }

@@ -4,9 +4,8 @@ import { connectMongo } from "@/lib/mongoose";
 /**
  * group_orders collection —— 開團訂餐：一個 Template 可以同時被多個單位各自開團（同一天也可以）。
  * unitId/hostId 關聯真的 Unit / Member（見 org.ts / member.ts），不是另外存一份部門單位假資料。
- * lines 內嵌逐人品項，name/price 是下單當下的 snapshot（模板/品項之後改了不影響歷史訂單）。
- * 前台實際送出訂單的流程還沒接（見 replaceMemberLines，函式先備著），這裡先讓後台
- * 「團訂管理」「依部門匯出」能對著真資料運作，管理員可用「代開團」建立真的團。
+ * lines 內嵌逐人品項，name/price 是下單當下的 snapshot（模板/品項之後改了不影響歷史訂單），
+ * 由 replaceMemberLines 從模板重新查出來寫入，不是前端直接傳什麼存什麼。
  */
 export type GroupOrderStatus = "open" | "closed";
 export type RiceLevel = "normal" | "half" | "none";
@@ -505,7 +504,10 @@ export async function deleteGroupOrders(ids: string[]): Promise<number> {
   return result.deletedCount;
 }
 
-/** 某位會員在這團的點餐內容整批取代（沒有就新增、換掉品項清單就是刪舊建新）——前台確認餐點時用。 */
+/** 某位會員在這團的點餐內容整批取代（沒有就新增、換掉品項清單就是刪舊建新）——前台確認餐點時用。
+ *  呼叫端（見 group-orders/[id]/actions.ts 的 submitGroupOrderLinesAction）已經用 session 驗證過
+ *  memberId/memberName 是誰在操作；這裡另外把每一行的 itemName/price 都改成從這個團對應的模板
+ *  重新查出來，不採信傳進來的值，防止竄改金額或塞進不屬於這個團的品項。 */
 export async function replaceMemberLines(
   groupOrderId: string,
   memberId: string,
@@ -527,17 +529,31 @@ export async function replaceMemberLines(
   }
   const doc = await GroupOrder.findById(groupOrderId);
   if (!doc) throw new Error("找不到這個團，可能已被刪除。");
+  if (doc.status !== "open") throw new Error("這個團已經截止，無法送出訂單。");
+
+  const { findTemplateById } = await import("@/lib/models/template");
+  const tpl = await findTemplateById(String(doc.templateId));
+  if (!tpl) throw new Error("找不到這個團對應的模板，可能已被刪除。");
+  const sections = doc.sectionId
+    ? tpl.sections.filter((sec) => sec.id === String(doc.sectionId))
+    : tpl.sections;
+  const catalog = new Map<string, { name: string; price: number }>();
+  for (const sec of sections) {
+    for (const it of sec.items) catalog.set(it.id, { name: it.name, price: it.price });
+  }
 
   const memberObjId = new Types.ObjectId(memberId);
   doc.lines = doc.lines.filter((l: OrderLineSubdoc) => !l.memberId.equals(memberObjId));
   for (const l of lines) {
     if (l.qty <= 0) continue;
+    const item = catalog.get(l.itemId);
+    if (!item) continue; // 不是這個團可以點的品項 id，忽略——防止塞進不存在或不屬於這個團的品項。
     doc.lines.push({
       memberId: memberObjId,
       memberName,
       itemId: new Types.ObjectId(l.itemId),
-      itemName: l.itemName,
-      price: l.price,
+      itemName: item.name,
+      price: item.price,
       qty: l.qty,
       note: l.note ?? "",
       rice: l.rice,
