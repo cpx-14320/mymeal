@@ -251,6 +251,7 @@ export const permissionCategories: PermissionCategory[] = [
       { key: "gamification", label: "任務與經驗" },
       { key: "promos", label: "廣宣版位" },
       { key: "feedback", label: "意見列表" },
+      { key: "homePreview", label: "首頁菜單預覽" },
     ],
   },
   {

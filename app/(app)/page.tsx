@@ -1,12 +1,25 @@
 import { navIcons } from "@/components/layout/icons";
 import { LoginButton } from "@/components/layout/login-button";
+import { ItemThumbnailFill } from "@/components/ui/primitives";
+import { getHomePreviewTemplateId } from "@/lib/models/site-settings";
+import { findTemplateById } from "@/lib/models/template";
 
-/** 首頁菜單預覽（範例資料，登入後改接真實每週菜單） */
-const previewDishes = [
-  { name: "招牌雞腿便當", restaurant: "福來鮮食", price: 95, emoji: "🍗" },
-  { name: "蔥爆牛肉便當", restaurant: "阿明快餐", price: 100, emoji: "🥩" },
-  { name: "香煎鯖魚便當", restaurant: "福來鮮食", price: 90, emoji: "🐟" },
-  { name: "三色蔬食便當", restaurant: "素心園", price: 80, emoji: "🥗" },
+interface PreviewDish {
+  key: string;
+  name: string;
+  subtitle: string;
+  price: number;
+  emoji: string;
+  imageUrl?: string;
+}
+
+/** 首頁菜單預覽的預設範例假資料——後台「首頁菜單預覽」（/admin/home-preview）沒指定模板時
+ *  才會用到這組，讓區塊不會空著。 */
+const fallbackDishes: PreviewDish[] = [
+  { key: "1", name: "招牌雞腿便當", subtitle: "福來鮮食", price: 95, emoji: "🍗" },
+  { key: "2", name: "蔥爆牛肉便當", subtitle: "阿明快餐", price: 100, emoji: "🥩" },
+  { key: "3", name: "香煎鯖魚便當", subtitle: "福來鮮食", price: 90, emoji: "🐟" },
+  { key: "4", name: "三色蔬食便當", subtitle: "素心園", price: 80, emoji: "🥗" },
 ];
 
 const steps = [
@@ -39,7 +52,25 @@ const features = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const templateId = await getHomePreviewTemplateId();
+  const template = templateId ? await findTemplateById(templateId) : null;
+  const templateDishes: PreviewDish[] = template
+    ? template.sections
+        .flatMap((s) => s.items)
+        .slice(0, 4)
+        .map((it) => ({
+          key: it.id,
+          name: it.name,
+          subtitle: it.pageName ?? "",
+          price: it.price,
+          emoji: it.emoji,
+          imageUrl: it.imageUrl,
+        }))
+    : [];
+  // 模板選了但還沒加任何品項時，先退回範例假資料，避免區塊直接空著。
+  const previewDishes = templateDishes.length > 0 ? templateDishes : fallbackDishes;
+
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6">
       {/* Hero */}
@@ -82,18 +113,19 @@ export default function HomePage() {
         <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {previewDishes.map((dish) => (
             <li
-              key={dish.name}
+              key={dish.key}
               className="overflow-hidden rounded-xl border border-line bg-surface"
             >
-              <div
-                aria-hidden="true"
-                className="grid h-28 place-items-center bg-brand-soft text-4xl"
-              >
-                {dish.emoji}
-              </div>
+              <ItemThumbnailFill
+                imageUrl={dish.imageUrl}
+                emoji={dish.emoji}
+                alt={dish.name}
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                containerClassName="relative grid h-28 place-items-center overflow-hidden bg-brand-soft text-4xl"
+              />
               <div className="p-4">
                 <p className="font-medium">{dish.name}</p>
-                <p className="mt-0.5 text-xs text-muted">{dish.restaurant}</p>
+                <p className="mt-0.5 text-xs text-muted">{dish.subtitle}</p>
                 <p className="mt-2 text-sm font-semibold text-brand">
                   NT$ {dish.price}
                 </p>

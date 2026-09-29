@@ -102,6 +102,7 @@ export type AdminNavKey =
   | "audit"
   | "promos"
   | "feedback"
+  | "homePreview"
   | "guide";
 
 export interface AdminNavItem {
@@ -166,6 +167,7 @@ export const adminNav: AdminNavGroup[] = [
       { key: "gamification", label: "任務與經驗", href: "/admin/tasks" },
       { key: "promos", label: "廣宣版位", href: "/admin/promos" },
       { key: "feedback", label: "意見列表", href: "/admin/feedback" },
+      { key: "homePreview", label: "首頁菜單預覽", href: "/admin/home-preview" },
     ],
   },
   {

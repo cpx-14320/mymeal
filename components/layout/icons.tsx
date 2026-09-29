@@ -217,6 +217,13 @@ export const adminNavIcons: Record<
       <path d="M7 9h10M7 13h6" />
     </Base>
   ),
+  homePreview: (props) => (
+    <Base {...props}>
+      <path d="M4 10.5 12 4l8 6.5" />
+      <path d="M6 9v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9" />
+      <path d="M9 20v-6h6v6" />
+    </Base>
+  ),
   guide: (props) => (
     <Base {...props}>
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
