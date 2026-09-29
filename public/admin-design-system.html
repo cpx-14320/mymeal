@@ -1,4 +1,4 @@
-<title>後台設計規範與稽核</title>
+<title>前後台設計規範與稽核</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -121,18 +121,20 @@
 
 <div class="mx-auto max-w-[1180px] px-5 py-12 sm:px-8">
 
-  <p class="tag">MYMEAL · 後台管理</p>
-  <h1 class="mt-4 text-[28px] font-black tracking-tight text-balance sm:text-[34px]">後台設計規範與稽核</h1>
+  <p class="tag">MYMEAL · 前台＋後台</p>
+  <h1 class="mt-4 text-[28px] font-black tracking-tight text-balance sm:text-[34px]">前後台設計規範與稽核</h1>
   <p class="mt-3 max-w-[70ch] text-[15px] leading-7" style="color:var(--doc-muted)">
-    這頁分兩塊：<b>Part A</b> 是設計規範——顏色、字級、間距、按鈕等等實際在用的樣式，全部用真的
-    Tailwind class＋<code class="doc-mono">app/globals.css</code> 的 CSS 變數即時渲染出來，不是純文字說明，
-    以後要調整任何後台頁面就照這份當標準。<b>Part B</b> 是逐頁稽核——目前 34 個後台頁面／清單元件裡，
-    哪些正確共用了 <code class="doc-mono">components/ui/primitives.tsx</code> 的元件，哪些是自己另外刻了一份、
-    跟共用版本長得不完全一樣，附檔名＋行號方便直接找到程式碼。
+    這頁分兩塊：<b>Part A</b> 是設計規範——顏色、字級、間距、欄位尺寸、按鈕等等實際在用的樣式，全部用真的
+    Tailwind class＋<code class="doc-mono">app/globals.css</code> 的 CSS 變數即時渲染出來，字級／間距兩節是
+    <b>全站（前台＋後台）逐一 grep 出來的窮舉統計</b>，不是挑幾個代表值，之後要調整任何頁面就照這份當標準。
+    <b>Part B</b> 是逐頁稽核，前台、後台都涵蓋——哪些頁面正確共用了
+    <code class="doc-mono">components/ui/primitives.tsx</code> 的元件，哪些是自己另外刻了一份、跟共用版本長得
+    不完全一樣，附檔名＋行號方便直接找到程式碼；另外特別抓出「分頁器（Pagination）左右對齊不一致」這個問題
+    實際發生在哪裡。
   </p>
   <p class="mt-3 max-w-[70ch] text-[13px] leading-6" style="color:var(--doc-muted)">
     前台／後台的版面骨架跟共用元件庫總覽另外整理在
-    <code class="doc-mono">layout-anatomy.html</code>（這份不重複放，只放連結）；這頁專門講「後台頁面之間」
+    <code class="doc-mono">layout-anatomy.html</code>（這份不重複放，只放連結）；這頁專門講「頁面之間」
     彼此有沒有共用一致，以及一份給後續調整用的樣式標準。
   </p>
 
@@ -216,48 +218,107 @@
 
   <!-- A2 字級 -->
   <section class="mt-10">
-    <div class="flex items-baseline gap-2"><span class="tag">A2</span><h3 class="text-lg font-bold tracking-tight">字級 Scale</h3></div>
-    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">後台實際在用的字級（依使用頻率排列，粗體是最主要的兩個）。</p>
+    <div class="flex items-baseline gap-2"><span class="tag">A2</span><h3 class="text-lg font-bold tracking-tight">字級 Scale（全站窮舉）</h3></div>
+    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">對 <span class="filepath">app/</span> 跟 <span class="filepath">components/</span> 全部 .tsx 檔案 grep 每一種字級 class 的實際出現次數（前台＋後台都算），由多到少排列。少於 3 次的是罕見值，附上每一個出現點的 file:line。</p>
     <div class="specimen mt-4 space-y-3">
-      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-xs</span><span class="text-xs">12px — 表格輔助文字、Badge、PageSizeSelect（最常見的輔助字級）</span></div>
-      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-[13px]</span><span class="text-[13px] font-semibold">13px — 全站表格內文標準字級（Th／Td／Note 的預設值，最主要的內文字級）</span></div>
-      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">lg:text-[14px]</span><span class="text-[13px] lg:text-[14px]">13→14px — 表格內文在較寬螢幕放大一級（跟 text-[13px] 幾乎都是成對出現）</span></div>
-      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-sm</span><span class="text-sm font-semibold">14px — 表單欄位 input／Field label／按鈕 size=md</span></div>
-      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-lg</span><span class="text-lg font-bold tracking-tight">18px — Section 標題（&lt;Section title&gt; 預設樣式）</span></div>
-      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-xl</span><span class="text-xl font-bold tracking-tight tabular-nums">20px — Stat 數值（&lt;Stat&gt; 預設 valueClassName）</span></div>
-      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-2xl</span><span class="text-2xl font-bold tracking-tight">24px — 頁面主標題（&lt;PageHeader&gt; 的 &lt;h1&gt;）</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-28 shrink-0">text-sm　127</span><span class="text-sm font-semibold">14px — 全站最大宗：表單欄位 input／Field label／按鈕 size=md／前台大部分內文</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-28 shrink-0">text-[13px]　86</span><span class="text-[13px] font-semibold">13px — 全站表格內文標準字級（Th／Td／Note 的預設值）</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-28 shrink-0">text-xs　71</span><span class="text-xs">12px — 表格輔助文字、Badge、PageSizeSelect、hint 說明文字</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-28 shrink-0">lg:text-[14px]　65</span><span class="text-[13px] lg:text-[14px]">13→14px（寬螢幕放大一級）— 幾乎都跟 text-[13px] 成對出現，同一組 class</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-28 shrink-0">text-lg　15</span><span class="text-lg font-bold tracking-tight">18px — Section 標題（&lt;Section title&gt; 預設樣式）</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-28 shrink-0">text-xl　9</span><span class="text-xl font-bold tracking-tight tabular-nums">20px — Stat 數值（&lt;Stat&gt; 預設 valueClassName）／後台頁首標題</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-28 shrink-0">text-2xl　8</span><span class="text-2xl font-bold tracking-tight">24px — 頁面主標題（&lt;PageHeader&gt; 的 &lt;h1&gt;／登入註冊頁大標）</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-28 shrink-0">text-base　5</span><span class="text-base">16px — 極少數，Logo 文字（layout/brand.tsx:18）等零星用法</span></div>
+      <div class="flex items-baseline gap-4"><span class="bad-tag w-28 shrink-0 justify-center">text-3xl　1</span><span class="text-3xl font-black">30px — 僅此一處：app/(app)/page.tsx:97（首頁 Hero 大標），全站唯一的最大字級</span></div>
+      <div class="flex items-baseline gap-4"><span class="bad-tag w-28 shrink-0 justify-center">text-[11px]　1</span><span class="text-[11px]">11px — 僅此一處：components/account-avatar-uploader.tsx:74，比 text-xs 還小、全站獨一無二的字級，沒有其他地方比照</span></div>
     </div>
+    <p class="mt-3 text-[12px]" style="color:var(--doc-muted)">結論：字級本身其實相當集中（5 個字級就佔了全站 9 成以上），真正零散、只出現 1 次、找不到第二個比照對象的只有上面標紅的兩處——不是普遍問題，但那兩處如果不是刻意設計，建議改用最接近的既有字級（text-2xl／text-xs）。</p>
   </section>
 
   <!-- A3 間距 -->
   <section class="mt-10">
-    <div class="flex items-baseline gap-2"><span class="tag">A3</span><h3 class="text-lg font-bold tracking-tight">間距 Scale</h3></div>
-    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">垂直節奏（space-y-*）依「內容類型」分兩種標準用法——不是隨頁面各自決定。</p>
-    <div class="specimen mt-4 grid gap-5 sm:grid-cols-2">
+    <div class="flex items-baseline gap-2"><span class="tag">A3</span><h3 class="text-lg font-bold tracking-tight">間距 Scale（全站窮舉）</h3></div>
+    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">同樣是對全站 grep 的實際出現次數，分「垂直節奏 space-y-*」跟「水平間距 gap-*」兩組。</p>
+
+    <p class="mt-4 text-[12.5px] font-semibold" style="color:var(--doc-accent)">垂直節奏 space-y-*（區塊／欄位上下間距）</p>
+    <div class="specimen mt-2 grid gap-4 sm:grid-cols-2">
       <div>
-        <p class="text-[12.5px] font-semibold">space-y-8 ＝ 32px　－　同一頁「多個 Section 之間」</p>
-        <div class="mt-2 h-6 w-full rounded" style="background:var(--brand)"></div>
-        <div class="mt-2 h-6 w-full rounded" style="background:var(--brand)"></div>
-        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">例：/admin/wallets、/admin/roles、後台首頁儀表板</p>
-      </div>
-      <div>
-        <p class="text-[12.5px] font-semibold">space-y-5 ＝ 20px　－　表單卡片內欄位之間（9 個表單共用）</p>
-        <div class="mt-2 h-4 w-full rounded" style="background:var(--accent)"></div>
-        <div class="mt-2 h-4 w-full rounded" style="background:var(--accent)"></div>
-        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">item-form／member-create-form／promo-form／role-form…</p>
-      </div>
-      <div>
-        <p class="text-[12.5px] font-semibold">space-y-4 ＝ 16px　－　清單編輯卡片內列之間（3 個檔案共用）</p>
+        <p class="text-[12.5px] font-semibold">space-y-4 ＝ 16px　<span class="text-[11px] font-normal" style="color:var(--doc-muted)">47 次，全站最常見</span></p>
         <div class="mt-2 h-4 w-full rounded" style="background:var(--warning)"></div>
         <div class="mt-2 h-4 w-full rounded" style="background:var(--warning)"></div>
-        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">name-list-card／tag-groups／org-unit-section</p>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">Section 預設值、清單編輯卡片（name-list-card／tag-groups／org-unit-section）等</p>
       </div>
       <div>
-        <p class="text-[12.5px] font-semibold">space-y-3 ＝ 12px　－　<span class="bad-tag">僅 1 處</span> 例外</p>
-        <div class="mt-2 h-3 w-full rounded" style="background:var(--bad)"></div>
-        <div class="mt-2 h-3 w-full rounded" style="background:var(--bad)"></div>
-        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">template-editor.tsx:122，見 Part B 稽核細節</p>
+        <p class="text-[12.5px] font-semibold">space-y-3 ＝ 12px　<span class="text-[11px] font-normal" style="color:var(--doc-muted)">27 次</span></p>
+        <div class="mt-2 h-3 w-full rounded" style="background:var(--accent)"></div>
+        <div class="mt-2 h-3 w-full rounded" style="background:var(--accent)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">前台卡片內部區塊（多處），普遍存在，非孤例——但表單 CardBody 這個特定情境只有 template-editor.tsx 一處用它，見 Part B「B-3」</p>
       </div>
+      <div>
+        <p class="text-[12.5px] font-semibold">space-y-8 ＝ 32px　<span class="text-[11px] font-normal" style="color:var(--doc-muted)">16 次</span></p>
+        <div class="mt-2 h-6 w-full rounded" style="background:var(--brand)"></div>
+        <div class="mt-2 h-6 w-full rounded" style="background:var(--brand)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">同一頁「多個 Section 之間」——/admin/wallets、/admin/roles、後台首頁儀表板</p>
+      </div>
+      <div>
+        <p class="text-[12.5px] font-semibold">space-y-5 ＝ 20px　<span class="text-[11px] font-normal" style="color:var(--doc-muted)">13 次</span></p>
+        <div class="mt-2 h-4 w-full rounded" style="background:var(--positive)"></div>
+        <div class="mt-2 h-4 w-full rounded" style="background:var(--positive)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">表單卡片內欄位之間——item-form／member-create-form／promo-form／role-form 等 9 個表單共用</p>
+      </div>
+      <div>
+        <p class="text-[12.5px] font-semibold">space-y-2 ＝ 8px　<span class="text-[11px] font-normal" style="color:var(--doc-muted)">14 次</span></p>
+        <div class="mt-2 h-2 w-full rounded" style="background:var(--muted)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">緊湊的行內清單（例如 DismissibleNote 內文多行時）</p>
+      </div>
+      <div>
+        <p class="text-[12.5px] font-semibold">space-y-1 ＝ 4px　<span class="text-[11px] font-normal" style="color:var(--doc-muted)">4 次</span>　／　space-y-6 ＝ 24px　<span class="text-[11px] font-normal" style="color:var(--doc-muted)">4 次</span></p>
+        <div class="mt-2 h-1 w-full rounded" style="background:var(--muted)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">零星用法，數量太少無法判斷是不是刻意的，暫不列為問題</p>
+      </div>
+      <div>
+        <p class="text-[12.5px] font-semibold"><span class="bad-tag">罕見</span> space-y-1.5 ＝ 6px　<span class="text-[11px] font-normal" style="color:var(--doc-muted)">僅 2 次</span></p>
+        <div class="mt-2 h-1.5 w-full rounded" style="background:var(--bad)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">group-order-cluster-view.tsx:303、group-order-form.tsx:188（都是前台，彼此無關的兩處）</p>
+      </div>
+    </div>
+
+    <p class="mt-6 text-[12.5px] font-semibold" style="color:var(--doc-accent)">水平間距 gap-*（同一列內元素之間）</p>
+    <div class="specimen mt-2 flex flex-wrap gap-x-8 gap-y-3 text-[12.5px]">
+      <span><b>gap-2</b> 8px　<span style="color:var(--doc-muted)">99 次（最大宗，按鈕列／篩選列標準間距）</span></span>
+      <span><b>gap-3</b> 12px　<span style="color:var(--doc-muted)">42 次</span></span>
+      <span><b>gap-4</b> 16px　<span style="color:var(--doc-muted)">32 次</span></span>
+      <span><b>gap-1</b> 4px　<span style="color:var(--doc-muted)">22 次</span></span>
+      <span><b>gap-1.5</b> 6px　<span style="color:var(--doc-muted)">19 次（圖示＋文字這類緊貼組合）</span></span>
+      <span><b>gap-5</b> 20px　<span style="color:var(--doc-muted)">7 次</span></span>
+      <span><b>gap-6</b> 24px　<span style="color:var(--doc-muted)">4 次</span></span>
+    </div>
+    <p class="mt-2 text-[12px]" style="color:var(--doc-muted)">gap-* 沒有找到出現次數個位數以下、找不到同伴的孤例——這組尺度本身是一致的，問題不在這裡。</p>
+  </section>
+
+  <!-- A3.5 欄位尺寸 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">A3.5</span><h3 class="text-lg font-bold tracking-tight">表單欄位／下拉選單尺寸</h3></div>
+    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">大型文字輸入框（<code class="doc-mono">inputClass</code>）全站一致，沒有例外；問題出在「小型篩選下拉選單」——這個尺寸沒有共用元件，每個頁面各自複製了一份 class 字串，結果 padding 不一致。</p>
+    <div class="specimen mt-4 space-y-5">
+      <div>
+        <p class="text-[12.5px] font-semibold">大型輸入框（Field 內的 input／select／textarea）</p>
+        <input class="mt-2 w-64 rounded-lg border px-3 py-2 text-sm outline-none" style="border-color:var(--line);background:var(--surface);color:var(--ink)" placeholder="px-3 py-2 text-sm" />
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">來自 <code class="doc-mono">inputClass</code>（primitives.tsx:690-691）——grep 全站找不到另一份手刻的大型輸入框樣式，這組完全共用。</p>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <p class="good-tag">✓ px-2 py-1.5 text-xs　2 處</p>
+          <select class="mt-2 w-40 rounded-lg border px-2 py-1.5 text-xs outline-none" style="border-color:var(--line);background:var(--surface);color:var(--ink)"><option>每頁顯示 25</option></select>
+          <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">共用元件 <code class="doc-mono">&lt;PageSizeSelect&gt;</code>（primitives.tsx:428）本身；group-orders-list.tsx:105（單位篩選，恰好手刻對了同樣的 padding）</p>
+        </div>
+        <div>
+          <p class="bad-tag">⚠ px-2 py-1 text-xs　7 處（少 0.5 個 py 單位）</p>
+          <select class="mt-2 w-40 rounded-lg border px-2 py-1 text-xs outline-none" style="border-color:var(--line);background:var(--surface);color:var(--ink)"><option>2026 年</option></select>
+          <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">wallet-tabs.tsx:115,131／orders-history.tsx:49,65／templates-list.tsx:138,154／group-orders-list.tsx:123 —— 全部是各頁自己手刻的「篩選下拉」，垂直內距比共用的 PageSizeSelect 略窄一截，並排看得出高度差一點點</p>
+        </div>
+      </div>
+      <p class="text-[12px]" style="color:var(--doc-muted)">特別注意 <span class="filepath">group-orders-list.tsx</span>：同一列工具列裡，單位篩選（:105，py-1.5）跟每頁天數篩選（:123，py-1）兩個下拉選單本身高度就不一樣，並排在一起最明顯。建議把這個「小型篩選下拉」也抽成共用元件（例如 <code class="doc-mono">FilterSelect</code>），固定用 PageSizeSelect 現有的 px-2 py-1.5 text-xs，7 個手刻的地方直接替換。</p>
     </div>
   </section>
 
@@ -380,12 +441,66 @@
   <!-- ═══════════════════════════════════════════ PART B ═══════════════════════════════════════════ -->
   <div class="mt-16 flex items-baseline gap-2">
     <span class="tag">PART B</span>
-    <h2 class="text-2xl font-extrabold tracking-tight">共用 vs 非共用稽核</h2>
+    <h2 class="text-2xl font-extrabold tracking-tight">共用 vs 非共用稽核（前台＋後台）</h2>
   </div>
-  <p class="mt-2 max-w-[64ch] text-sm" style="color:var(--doc-muted)">依後台側欄分組（<span class="filepath">components/layout/nav.ts</span> 的 adminNav）逐頁列出：✓ 正確共用了哪些元件、⚠ 哪裡自己另外刻了一份。下面先放這次稽核抓到、值得優先處理的落差，再放完整分頁清單。</p>
+  <p class="mt-2 max-w-[64ch] text-sm" style="color:var(--doc-muted)">先處理「分頁器左右對齊不一致」這個橫跨前後台的問題（B-0），再分別列出後台、前台各自的落差，最後放完整分頁清單。</p>
+
+  <!-- B0 分頁器對齊 -->
+  <section class="mt-8">
+    <div class="flex items-center gap-2"><span class="tag">B-0 · 全站</span><h3 class="text-base font-bold">分頁器（Pagination）對齊稽核 —— 前台＋後台共 20 處</h3></div>
+    <p class="mt-2 text-[13px]" style="color:var(--doc-muted)">
+      結論先講：全站每一個真正的「頁碼分頁器」——15 個後台清單＋5 個前台清單（favorites-tabs／group-orders-list／wallet-tabs ×2／item-grid／orders-history）——
+      全部直接呼叫共用的 <code class="doc-mono">&lt;Pagination&gt;</code>，沒有任何一處另外包一層 div 去改變對齊方式。
+      逐一檢查每個呼叫點前後的程式碼，20 處都是「緊接在 &lt;/TableWrap&gt; 或卡片牆之後、中間沒有多餘 wrapper」，
+      版面是<b>左邊文字說明、右邊頁碼按鈕</b>這個唯一樣式，前後台完全一致。
+    </p>
+    <div class="specimen mt-3">
+      <p class="text-[12px] font-semibold" style="color:var(--doc-muted)">全站唯一的分頁器樣式（20/20 處一致）</p>
+      <div class="mt-2 flex flex-wrap items-center justify-between gap-3 pt-1">
+        <p class="text-xs tabular-nums" style="color:var(--muted)">第 1–2 筆，共 2 筆</p>
+        <div class="flex items-center gap-1">
+          <button class="rounded-lg border px-2.5 py-1.5 text-sm" style="border-color:var(--line);color:var(--muted)">‹</button>
+          <button class="min-w-8 rounded-lg px-2.5 py-1.5 text-sm tabular-nums" style="background:var(--brand);color:var(--brand-fg)">1</button>
+          <button class="rounded-lg border px-2.5 py-1.5 text-sm" style="border-color:var(--line);color:var(--muted)">›</button>
+        </div>
+      </div>
+    </div>
+    <p class="mt-3 text-[13px]" style="color:var(--doc-muted)">
+      所以「有的頁面分頁在左、有的在右」這個觀察，實際發生的地方<b>不是頁碼分頁器本身</b>，而是<b>分頁器上方的工具列（篩選／每頁顯示）</b>——這一層才是真正各頁自己決定要靠左還是靠右的地方：
+    </p>
+    <div class="specimen mt-3 grid gap-4 sm:grid-cols-3">
+      <div>
+        <p class="good-tag">✓ 多數頁面（14 個清單）</p>
+        <div class="mt-2 flex min-h-9 items-center justify-between gap-2 rounded-lg border p-2" style="border-color:var(--doc-line)">
+          <span class="rounded-full px-2 py-1 text-[11px]" style="background:var(--brand-soft);color:var(--brand)">篩選</span>
+          <span class="rounded-lg border px-2 py-1 text-[11px]" style="border-color:var(--line);color:var(--muted)">每頁顯示 ▾</span>
+        </div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">ListToolbar：篩選靠左、每頁顯示固定靠右</p>
+      </div>
+      <div>
+        <p class="bad-tag">⚠ 後台／admin/templates</p>
+        <div class="mt-2 flex min-h-9 items-center justify-end gap-2 rounded-lg border p-2" style="border-color:var(--doc-line)">
+          <span class="rounded-lg border px-2 py-1 text-[11px]" style="border-color:var(--line);color:var(--muted)">每頁顯示 ▾</span>
+          <span class="rounded-lg border px-2 py-1 text-[11px]" style="border-color:var(--line);color:var(--muted)">年份 ▾</span>
+        </div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">templates-list.tsx:124，全部塞右邊，見 B-1</p>
+      </div>
+      <div>
+        <p class="good-tag">✓ 前台／group-orders</p>
+        <div class="mt-2 flex min-h-9 items-center justify-between gap-2 rounded-lg border p-2" style="border-color:var(--doc-line)">
+          <span class="rounded-full px-2 py-1 text-[11px]" style="background:var(--brand-soft);color:var(--brand)">頁籤篩選</span>
+          <span class="rounded-lg border px-2 py-1 text-[11px]" style="border-color:var(--line);color:var(--muted)">單位／天數 ▾</span>
+        </div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">group-orders-list.tsx:89 —— 方向對，但兩個下拉選單本身高度不一致，見 A3.5</p>
+      </div>
+    </div>
+    <p class="mt-2 text-[12px]" style="color:var(--doc-muted)">換句話說：<b>頁碼分頁器完全沒問題</b>；真正該修的是唯一一處「整排靠右」的 templates-list.tsx（B-1），以及小型篩選下拉的 padding 不一致（A3.5）。</p>
+  </section>
+
+  <p class="mt-10 text-sm font-bold" style="color:var(--doc-accent)">－－ 後台 －－</p>
 
   <!-- B1 -->
-  <section class="mt-8">
+  <section class="mt-4">
     <div class="flex items-center gap-2"><span class="bad-tag">落差 B-1</span><h3 class="text-base font-bold">清單工具列位置不一致（「有的置左有的置右」的實際原因）</h3></div>
     <p class="mt-2 text-[13px]" style="color:var(--doc-muted)">14 個清單元件都用 <code class="doc-mono">&lt;ListToolbar&gt;</code>（篩選靠左、每頁顯示固定靠右）。唯一例外是 <span class="filepath">components/admin/templates-list.tsx:124</span>，直接接 <code class="doc-mono">&lt;PageSizeSelect&gt;</code>，把年份／月份篩選也一起塞進 <code class="doc-mono">justify-end</code>，變成全部靠右——這就是你看到「有的置左有的置右」的地方。</p>
     <div class="specimen mt-3 grid gap-4 sm:grid-cols-2">
@@ -443,9 +558,29 @@
   </section>
 
   <!-- B4 -->
-  <section class="mt-8 mb-4">
+  <section class="mt-8">
     <div class="flex items-center gap-2"><span class="tag">附註</span><h3 class="text-base font-bold">無實際影響的小事</h3></div>
     <p class="mt-2 text-[13px]" style="color:var(--doc-muted)"><span class="filepath">app/(app)/admin/items/page.tsx:23</span> 用 <code class="doc-mono">&lt;div className="space-y-8"&gt;</code> 包住唯一一個子元件——space-y 只在有多個子元素時才有效果，這裡等於沒作用，拿掉不影響畫面，純粹是多餘的 class。</p>
+  </section>
+
+  <p class="mt-10 text-sm font-bold" style="color:var(--doc-accent)">－－ 前台 －－</p>
+
+  <!-- B5 -->
+  <section class="mt-4">
+    <div class="flex items-center gap-2"><span class="bad-tag">落差 B-5</span><h3 class="text-base font-bold">小型篩選下拉選單各頁各刻一份，padding 不統一</h3></div>
+    <p class="mt-2 text-[13px]" style="color:var(--doc-muted)">跟後台一樣的問題出現在前台：<span class="filepath">wallet-tabs.tsx:115,131</span>（日期區間篩選）跟 <span class="filepath">orders-history.tsx:49,65</span>（日期區間篩選）都手刻 <code class="doc-mono">px-2 py-1 text-xs</code>，比共用的 <code class="doc-mono">&lt;PageSizeSelect&gt;</code> 少 0.5 個 py 單位。詳細比較見 Part A「A3.5」。</p>
+  </section>
+
+  <!-- B6 -->
+  <section class="mt-8">
+    <div class="flex items-center gap-2"><span class="bad-tag">落差 B-6</span><h3 class="text-base font-bold">前台頁首標籤（Pill/圓角按鈕）字級跟後台不一致</h3></div>
+    <p class="mt-2 text-[13px]" style="color:var(--doc-muted)"><code class="doc-mono">&lt;PillTabs&gt;</code> 本身統一是 <code class="doc-mono">text-[13px]</code>（primitives.tsx:374），但前台好幾處另外手刻的「圓角篩選鈕」用了不同字級：<span class="filepath">group-order-export-button.tsx:77</span> 跟 <span class="filepath">group-order-cluster-view.tsx:318</span> 都是 <code class="doc-mono">rounded-full border px-2.5 py-1 text-[13px]</code>——字級剛好對上 PillTabs，但 padding（px-2.5 py-1）跟 PillTabs 的（px-3 py-1.5）不同，外觀上是「同字級、不同大小」的圓角鈕，跟後台 PillTabs 放在一起比對得出高度差異。</p>
+  </section>
+
+  <!-- B7 -->
+  <section class="mt-8 mb-4">
+    <div class="flex items-center gap-2"><span class="good-tag">✓ 前台整體評價</span><h3 class="text-base font-bold">核心清單元件共用程度其實跟後台一樣高</h3></div>
+    <p class="mt-2 text-[13px]" style="color:var(--doc-muted)">前台 5 個有分頁的清單（favorites-tabs／group-orders-list／wallet-tabs／item-grid／orders-history）全部正確使用 <code class="doc-mono">&lt;Pagination&gt;</code>，其中 3 個（wallet-tabs／item-grid／orders-history）也正確使用 <code class="doc-mono">&lt;ListToolbar&gt;</code>；favorites-tabs 的「我的評論」跟 group-orders-list 因為篩選需求比較特殊（沒有每頁筆數選單／改成「每頁顯示天數」），沒有用 ListToolbar 本身是合理的，不是共用度不足，只是上面 B-5／B-6 兩個欄位尺寸的小落差。前台真正的問題不是「元件沒共用」，而是「共用元件之外，各頁手刻的零件尺寸沒對齊共用元件的尺寸」。</p>
   </section>
 
   <!-- 摘要表 -->
@@ -468,6 +603,8 @@
           <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">就地編輯名稱列</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="bad-tag">非共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">3 個檔案各自實作</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">name-list-card／tag-groups／org-unit-section，見 B-2</td></tr>
           <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">CardBody space-y-5（表單）</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="good-tag">共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">9 / 10</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">template-editor.tsx 用 space-y-3，見 B-3</td></tr>
           <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">DismissibleNote 單一訊息槽</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="good-tag">共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">全部清單頁</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">同一時間只顯示一則狀態框，含新併入的首頁菜單預覽分頁</td></tr>
+          <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">小型篩選下拉（PageSizeSelect 尺寸）</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="bad-tag">非共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">2 處對、7 處差 0.5 py</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">前後台都有，見 A3.5</td></tr>
+          <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">圓角篩選鈕（PillTabs 尺寸）</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="bad-tag">非共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">前台 2 處手刻</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">見 B-6</td></tr>
         </tbody>
       </table>
     </div>
@@ -475,7 +612,7 @@
 
   <!-- 分組清單 -->
   <section class="mt-10 mb-10">
-    <div class="flex items-baseline gap-2"><span class="tag">分頁清單</span><h3 class="text-lg font-bold tracking-tight">逐頁共用元件對照</h3></div>
+    <div class="flex items-baseline gap-2"><span class="tag">分頁清單 · 後台</span><h3 class="text-lg font-bold tracking-tight">逐頁共用元件對照</h3></div>
 
     <div class="mt-4 space-y-6">
       <div>
@@ -524,6 +661,27 @@
           <div class="card-doc p-3"><p class="text-[13px] font-semibold">稽核紀錄 /admin/audit</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination</p></div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- 前台分頁清單 -->
+  <section class="mt-10 mb-10">
+    <div class="flex items-baseline gap-2"><span class="tag">分頁清單 · 前台</span><h3 class="text-lg font-bold tracking-tight">逐頁共用元件對照</h3></div>
+    <p class="mt-2 text-[13px]" style="color:var(--doc-muted)">前台頁面骨架統一用 <code class="doc-mono">&lt;PageContainer&gt;</code>＋<code class="doc-mono">&lt;PageHeader&gt;</code>（等同後台的 &lt;Section&gt;），這點全站一致，沒有例外。</p>
+
+    <div class="mt-4 grid gap-2 sm:grid-cols-2">
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">首頁 /</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ItemThumbnailFill；本週菜單預覽卡片改用真實資料後跟 /pages/[slug] 樣式一致</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">菜單頁 /pages/[slug]</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> PageContainer／PageHeader／ItemGrid（含 ListToolbar／Pagination）</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">開團訂餐 /group-orders</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="bad-tag">⚠</span> group-orders-list.tsx 手刻工具列，見 B-0／A3.5（方向對，選單高度不一致）</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">團訂明細 /group-orders/[id]</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="bad-tag">⚠</span> group-order-export-button.tsx 圓角鈕字級／padding 見 B-6</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">同日團合併 /group-orders/cluster/[dateSlug]</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> PageContainer／PageHeader；group-order-cluster-view.tsx 圓角鈕同見 B-6</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">我的訂單 /orders</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> PageContainer／PageHeader／ListToolbar／Pagination（orders-history.tsx）</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">我的收藏 /favorites</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> PageContainer／PageHeader／PillTabs／Pagination；「我的評論」表格沿用後台會員洞察樣式</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">錢包/儲值 /wallet</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="bad-tag">⚠</span> wallet-tabs.tsx 篩選下拉 padding 見 A3.5／B-5</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">會員資料 /account</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> PageContainer／PageHeader／Card；account-avatar-uploader.tsx 的 text-[11px] 見 A2</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">意見回饋 /feedback</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> PageContainer／PageHeader／Card／Field／inputClass／Button 全套共用</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">使用說明 /help、常見問題 /faq</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> PageContainer／PageHeader／Card／CardBody，純內容頁不涉及分頁/篩選</p></div>
+      <div class="card-doc p-3"><p class="text-[13px] font-semibold">登入 /login、申請帳號 /register</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> 未使用 PageContainer（獨立版面，訪客頁不需要側欄），表單樣式手刻但跟 inputClass 視覺一致，沒有發現尺寸落差</p></div>
     </div>
   </section>
 
