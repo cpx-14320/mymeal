@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, inputClass, Button } from "@/components/ui/primitives";
+import { Modal, ModalHeader } from "@/components/ui/modal";
 import type { OrgOption, UnitOption } from "@/lib/models/org";
 import type { OrgFormState, DeleteOrgState } from "@/app/(app)/admin/org/actions";
 
@@ -28,12 +29,14 @@ export function OrgUnitSection({
   const [state, formAction, pending] = useActionState(createAction, initialState);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | undefined>();
+  const [confirmTarget, setConfirmTarget] = useState<UnitOption | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [editPending, setEditPending] = useState(false);
   const [editError, setEditError] = useState<string | undefined>();
 
   async function handleDelete(id: string) {
+    setConfirmTarget(null);
     setDeletingId(id);
     setDeleteError(undefined);
     const result = await deleteAction(id);
@@ -171,7 +174,7 @@ export function OrgUnitSection({
                           <button
                             type="button"
                             disabled={deletingId === item.id}
-                            onClick={() => handleDelete(item.id)}
+                            onClick={() => setConfirmTarget(item)}
                             className="text-xs font-medium text-danger hover:underline disabled:opacity-50"
                           >
                             {deletingId === item.id ? "刪除中…" : "刪除"}
@@ -189,6 +192,23 @@ export function OrgUnitSection({
         {editError && <p className="text-[13px] lg:text-[14px] text-danger">{editError}</p>}
         {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}
       </CardBody>
+
+      <Modal open={confirmTarget !== null} onClose={() => setConfirmTarget(null)} ariaLabel="確認刪除單位" className="max-w-sm">
+        <ModalHeader title="確認刪除單位" onClose={() => setConfirmTarget(null)} />
+        <div className="space-y-4 p-4">
+          <p className="text-[13px] lg:text-[14px] text-ink">
+            確定要刪除「{confirmTarget?.name}」嗎？
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setConfirmTarget(null)}>
+              否
+            </Button>
+            <Button variant="danger" onClick={() => confirmTarget && handleDelete(confirmTarget.id)}>
+              是
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </Card>
   );
 }

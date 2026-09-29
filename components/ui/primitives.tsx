@@ -1,6 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import type { ComponentProps, ReactNode } from "react";
+import { useEffect, useRef, type ComponentProps, type ReactNode } from "react";
 
 /* ── 品項縮圖 ──────────────────────────────────────────
  * 有上傳圖片就用 next/image，沒有就退回 emoji——全站每個顯示品項縮圖的地方
@@ -726,16 +728,34 @@ export function Note({
 
 /** 執行完一個動作（匯入、上傳、打包下載…）後顯示的結果訊息，帶一顆關閉鈕自己收掉——
  *  CSV 匯入、批次上傳圖片、打包圖片下載…等後台批次操作的「結果摘要」都共用這個殼，
- *  呼叫端只要管一個 state（成功與否、有沒有內容）就好，不用每個地方都重寫一次外層排版跟關閉鈕。 */
+ *  呼叫端只要管一個 state（成功與否、有沒有內容）就好，不用每個地方都重寫一次外層排版跟關閉鈕。
+ *  autoDismissMs：狀態類提示（新增/刪除/核准成功…）統一帶 5000 讓它自己消失；有列表內容
+ *  值得使用者慢慢看的結果摘要（CSV 匯入、批次上傳）則不帶，維持手動關閉。
+ *  計時器依 [autoDismissMs, children] 重設——呼叫端每次 setMessage 都會給一份新的 children
+ *  （新的 JSX 參照），同一個訊息殼被 React 重用時計時器也會跟著換成新訊息重新倒數 5 秒，
+ *  不會被前一則訊息剩下的時間提前關掉。 */
 export function DismissibleNote({
   tone,
   onClose,
   children,
+  autoDismissMs,
 }: {
   tone: "brand" | "positive" | "danger";
   onClose: () => void;
   children: ReactNode;
+  autoDismissMs?: number;
 }) {
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  useEffect(() => {
+    if (!autoDismissMs) return;
+    const timer = setTimeout(() => onCloseRef.current(), autoDismissMs);
+    return () => clearTimeout(timer);
+  }, [autoDismissMs, children]);
+
   return (
     <Note tone={tone}>
       <div className="flex items-start justify-between gap-2">

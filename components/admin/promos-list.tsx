@@ -13,14 +13,12 @@ import {
   Pagination,
   ListToolbar,
   BulkActionBar,
-  DismissibleNote,
   ItemThumbnail,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
 import type { InterstitialView, InterstitialStatus } from "@/lib/models/interstitial";
 import { setPromosEnabledAction, deletePromosAction } from "@/app/(app)/admin/promos/actions";
-import { CreatedBanner } from "@/components/admin/created-banner";
 
 const statusMeta: Record<InterstitialStatus, { label: string; tone: "positive" | "warning" | "neutral" }> = {
   showing: { label: "顯示中", tone: "positive" },
@@ -44,14 +42,19 @@ function statusOf(a: InterstitialView, now: Date): InterstitialStatus {
   return "showing";
 }
 
-export function PromosList({ promos }: { promos: InterstitialView[] }) {
+export function PromosList({
+  promos,
+  onMessage,
+}: {
+  promos: InterstitialView[];
+  onMessage: (m: { tone: "positive" | "danger"; text: string }) => void;
+}) {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [deleting, setDeleting] = useState(false);
-  const [deletedCount, setDeletedCount] = useState<number | null>(null);
   const now = new Date();
 
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(promos, page, pageSize);
@@ -87,20 +90,12 @@ export function PromosList({ promos }: { promos: InterstitialView[] }) {
     await deletePromosAction([...selected]);
     setSelected(new Set());
     setDeleting(false);
-    setDeletedCount(count);
+    onMessage({ tone: "positive", text: `已刪除 ${count} 則廣告。` });
     router.refresh();
   }
 
   return (
     <div className="space-y-4">
-      <CreatedBanner message="新增廣告成功。" />
-
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
-          <p>已刪除 {deletedCount} 則廣告。</p>
-        </DismissibleNote>
-      )}
-
       <ListToolbar
         pageSize={pageSize}
         onPageSizeChange={(n) => {

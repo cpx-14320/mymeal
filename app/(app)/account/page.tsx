@@ -86,29 +86,31 @@ export default async function AccountPage() {
             ))}
           </dl>
           <Button variant="secondary">修改密碼</Button>
+        </CardBody>
+      </Card>
 
-          {/* 等級 */}
-          <div className="space-y-3 border-t border-line pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold">目前等級</h2>
-              <Badge tone="brand">
-                Lv.{levelIndex + 1} {level.name}
-              </Badge>
-            </div>
-            <p className="text-2xl font-bold tabular-nums">
-              {exp} <span className="text-sm font-normal text-muted">exp</span>
-            </p>
-            {next ? (
-              <>
-                <Progress value={exp - level.minExp} max={next.minExp - level.minExp} />
-                <p className="text-xs text-muted">
-                  距離 Lv.{levelIndex + 2}「{next.name}」還差 {expToNext} exp
-                </p>
-              </>
-            ) : (
-              <p className="text-xs text-muted">已達最高等級</p>
-            )}
+      {/* 等級：獨立成一張卡片，跟上面的個人資料明確分開，避免擠在同一張卡片裡、視覺上黏在一起 */}
+      <Card>
+        <CardBody className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">目前等級</h2>
+            <Badge tone="brand">
+              Lv.{levelIndex + 1} {level.name}
+            </Badge>
           </div>
+          <p className="text-2xl font-bold tabular-nums">
+            {exp} <span className="text-sm font-normal text-muted">exp</span>
+          </p>
+          {next ? (
+            <>
+              <Progress value={exp - level.minExp} max={next.minExp - level.minExp} />
+              <p className="text-xs text-muted">
+                距離 Lv.{levelIndex + 2}「{next.name}」還差 {expToNext} exp
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-muted">已達最高等級</p>
+          )}
         </CardBody>
       </Card>
 

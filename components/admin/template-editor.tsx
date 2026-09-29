@@ -14,7 +14,6 @@ import {
   removeItemFromSectionAction,
   type TemplateBasicState,
 } from "@/app/(app)/admin/templates/[id]/actions";
-import { CreatedBanner } from "@/components/admin/created-banner";
 
 const initialBasicState: TemplateBasicState = {};
 
@@ -74,8 +73,6 @@ export function TemplateEditor({
 
   return (
     <div className="space-y-8">
-      <CreatedBanner message="模板已建立成功，可以繼續編輯以下內容。" />
-
       <Section title="基本資料">
         <form action={basicFormAction} className="flex flex-wrap items-end gap-3">
           <div className="min-w-0 flex-1">

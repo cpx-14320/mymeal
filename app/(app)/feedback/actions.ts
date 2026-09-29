@@ -9,7 +9,7 @@ export interface FeedbackState {
   success?: boolean;
 }
 
-const FEEDBACK_TYPES: FeedbackType[] = ["功能建議", "操作問題", "餐點 / 餐廳問題", "錢包 / 儲值問題", "其他"];
+const FEEDBACK_TYPES: FeedbackType[] = ["功能建議", "操作問題", "點餐問題", "儲值扣款問題", "其他"];
 
 export async function submitFeedbackAction(
   _prevState: FeedbackState,

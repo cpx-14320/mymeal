@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ButtonLink, PillTabs } from "@/components/ui/primitives";
+import { ButtonLink, PillTabs, DismissibleNote } from "@/components/ui/primitives";
 import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { PromosList } from "@/components/admin/promos-list";
 import { NotificationsList } from "@/components/admin/notifications-list";
+import { CreatedBanner } from "@/components/admin/created-banner";
 import type { InterstitialView } from "@/lib/models/interstitial";
 import type { NotificationView } from "@/lib/models/notification";
 
 type Tab = "promos" | "notifications";
+type Message = { tone: "positive" | "danger"; text: string };
 
 /**
  * 蓋台廣告跟通知訊息都是「前台廣宣版位」的一種，合併成一頁用 tabs 切換——
@@ -23,9 +25,17 @@ export function MarketingTabs({
   notifications: NotificationView[];
 }) {
   const [tab, setTab] = useState<Tab>("promos");
+  const [message, setMessage] = useState<Message | null>(null);
 
   return (
     <div className="space-y-4">
+      <CreatedBanner message="新增廣告成功。" />
+      {message && (
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={5000}>
+          <p>{message.text}</p>
+        </DismissibleNote>
+      )}
+
       <AdminHeaderActions>
         {tab === "promos" ? (
           <ButtonLink href="/admin/promos/new" size="sm">新增廣告</ButtonLink>
@@ -44,7 +54,7 @@ export function MarketingTabs({
       />
 
       {tab === "promos" ? (
-        <PromosList promos={promos} />
+        <PromosList promos={promos} onMessage={setMessage} />
       ) : (
         <NotificationsList notifications={notifications} />
       )}

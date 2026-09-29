@@ -22,6 +22,7 @@ import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import type { TemplateListItem } from "@/lib/models/template";
 import { formatTaiwanDateTime } from "@/lib/date";
 import { setTemplatesActiveAction, deleteTemplatesAction } from "@/app/(app)/admin/templates/actions";
+import { CreatedBanner } from "@/components/admin/created-banner";
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
@@ -99,8 +100,10 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
         <ButtonLink href="/admin/templates/new" size="sm">新增模板</ButtonLink>
       </AdminHeaderActions>
 
+      <CreatedBanner message="模板已建立成功，可以繼續編輯以下內容。" />
+
       {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={5000}>
           <p>已刪除 {deletedCount} 個模板。</p>
         </DismissibleNote>
       )}

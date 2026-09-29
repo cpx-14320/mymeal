@@ -22,8 +22,8 @@ export function FeedbackForm() {
             <select className={inputClass} name="type" defaultValue="功能建議">
               <option>功能建議</option>
               <option>操作問題</option>
-              <option>餐點 / 餐廳問題</option>
-              <option>錢包 / 儲值問題</option>
+              <option>點餐問題</option>
+              <option>儲值扣款問題</option>
               <option>其他</option>
             </select>
           </Field>

@@ -116,6 +116,15 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
 
   return (
     <div className="space-y-4">
+      <CreatedBanner message="會員已建立成功。" />
+      <CreatedBanner message="會員資料已更新。" param="updated" />
+
+      {deletedCount !== null && (
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={5000}>
+          <p>已刪除 {deletedCount} 位會員。</p>
+        </DismissibleNote>
+      )}
+
       <ListToolbar
         search={{
           value: search,
@@ -131,14 +140,6 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
           setPage(1);
         }}
       />
-
-      <CreatedBanner message="會員已建立成功。" />
-
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
-          <p>已刪除 {deletedCount} 位會員。</p>
-        </DismissibleNote>
-      )}
 
       {statusError && <p className="text-[13px] lg:text-[14px] text-danger">{statusError}</p>}
       {deleteError && <p className="text-[13px] lg:text-[14px] text-danger">{deleteError}</p>}

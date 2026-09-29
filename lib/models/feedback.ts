@@ -6,7 +6,7 @@ import { connectMongo } from "@/lib/mongoose";
  * 前台頁面本來就不擋訪客瀏覽），有登入才會存 memberId；senderName 是寄件當下的姓名快照
  * （訪客記「訪客」），跟其他「建立者」欄位一樣不會因為會員後續改名/刪除而跟著變動。
  */
-export type FeedbackType = "功能建議" | "操作問題" | "餐點 / 餐廳問題" | "錢包 / 儲值問題" | "其他";
+export type FeedbackType = "功能建議" | "操作問題" | "點餐問題" | "儲值扣款問題" | "其他";
 
 export interface FeedbackDocument {
   _id: Types.ObjectId;
@@ -22,7 +22,7 @@ const feedbackSchema = new Schema<FeedbackDocument>(
   {
     type: {
       type: String,
-      enum: ["功能建議", "操作問題", "餐點 / 餐廳問題", "錢包 / 儲值問題", "其他"],
+      enum: ["功能建議", "操作問題", "點餐問題", "儲值扣款問題", "其他"],
       required: true,
       default: "其他",
     },

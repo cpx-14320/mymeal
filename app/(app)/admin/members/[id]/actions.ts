@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { updateMember, type MemberStatus } from "@/lib/models/member";
 import { createAuditLog } from "@/lib/models/audit-log";
@@ -7,7 +8,6 @@ import { getCurrentActorName } from "@/lib/session";
 
 export interface UpdateMemberState {
   error?: string;
-  success?: boolean;
 }
 
 export async function updateMemberAction(
@@ -59,5 +59,5 @@ export async function updateMemberAction(
   revalidatePath("/admin/members");
   revalidatePath(`/admin/members/${id}`);
   revalidatePath("/admin/audit");
-  return { success: true };
+  redirect("/admin/members?updated=1");
 }

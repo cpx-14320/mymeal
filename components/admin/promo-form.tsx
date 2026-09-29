@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, Field, inputClass, Note, Button, ButtonLink } from "@/components/ui/primitives";
 import { ImageField } from "@/components/admin/image-field";
@@ -9,6 +9,13 @@ import { PROMO_PAGE_OPTIONS } from "@/lib/promo-pages";
 import type { InterstitialView } from "@/lib/models/interstitial";
 import { createPromoAction, type CreatePromoState } from "@/app/(app)/admin/promos/new/actions";
 import { updatePromoAction, type UpdatePromoState } from "@/app/(app)/admin/promos/[id]/actions";
+
+/** datetime-local 輸入框要吃「本機時間」格式的字串（YYYY-MM-DDTHH:mm），不是 ISO 字串
+ *  （ISO 帶時區換算後在使用者本機看起來會錯位），所以直接用 Date 的本機 getter 兜。 */
+function toDatetimeLocalValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 /** 新增 / 編輯蓋台廣告共用的表單。傳 promo 就是編輯模式（欄位帶入現值）。
  *  pendingPromoId：新增模式下，進頁面就先產生好的廣告 id（見 new/page.tsx），
@@ -22,6 +29,12 @@ export function PromoForm({ promo, pendingPromoId }: { promo?: InterstitialView;
     {},
   );
   const promoId = promo?.id ?? pendingPromoId!;
+  // 新增模式下排程開始/結束沒有現值可帶，預設帶入「現在」與「現在 +24 小時」，省去管理者手動輸入；
+  // 用 useState 的 lazy initializer 取「現在」，只在第一次掛載時算一次（跟 new Date() 直接寫在渲染
+  // 本體裡不同，不會被 React Compiler 當成渲染期間呼叫的不純函式）；defaultValue 本身也只在 input
+  // 第一次掛載時生效，之後這個元件重新渲染不會蓋掉使用者已經改過的值。
+  const [defaultStartAt] = useState(() => promo?.startAt ?? toDatetimeLocalValue(new Date()));
+  const [defaultEndAt] = useState(() => promo?.endAt ?? toDatetimeLocalValue(new Date(Date.now() + 24 * 60 * 60 * 1000)));
 
   useEffect(() => {
     if (isEdit && state.success) router.refresh();
@@ -85,10 +98,10 @@ export function PromoForm({ promo, pendingPromoId }: { promo?: InterstitialView;
 
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="排程開始">
-              <input className={inputClass} type="datetime-local" name="startAt" defaultValue={promo?.startAt} required />
+              <input className={inputClass} type="datetime-local" name="startAt" defaultValue={defaultStartAt} required />
             </Field>
             <Field label="排程結束">
-              <input className={inputClass} type="datetime-local" name="endAt" defaultValue={promo?.endAt} required />
+              <input className={inputClass} type="datetime-local" name="endAt" defaultValue={defaultEndAt} required />
             </Field>
           </div>
 

@@ -45,10 +45,9 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   const [rPage, setRPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<string | undefined>();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
-  const [deletedCount, setDeletedCount] = useState<number | null>(null);
+  const [message, setMessage] = useState<{ tone: "positive" | "danger"; text: string } | null>(null);
 
   const pending = requests.filter((r) => r.status === "pending");
   const approved = requests.filter((r) => r.status === "approved");
@@ -116,46 +115,51 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
 
   async function approve(id: string) {
     setBusyId(id);
-    setError(undefined);
     const result = await approveTopupAction(id);
     setBusyId(null);
-    if (result.error) setError(result.error);
+    setMessage(
+      result.error ? { tone: "danger", text: result.error } : { tone: "positive", text: "已核准這筆儲值申請。" },
+    );
     router.refresh();
   }
 
   async function reject(id: string) {
     setBusyId(id);
-    setError(undefined);
     const result = await rejectTopupAction(id);
     setBusyId(null);
-    if (result.error) setError(result.error);
+    setMessage(
+      result.error ? { tone: "danger", text: result.error } : { tone: "positive", text: "已退件這筆儲值申請。" },
+    );
     router.refresh();
   }
 
   async function remove(id: string) {
     setBusyId(id);
-    setError(undefined);
     const result = await deleteTopupAction(id);
     setBusyId(null);
-    if (result.error) setError(result.error);
-    else setDeletedCount(1);
+    setMessage(
+      result.error ? { tone: "danger", text: result.error } : { tone: "positive", text: "已刪除 1 筆儲值申請。" },
+    );
     router.refresh();
   }
 
   async function revoke(id: string) {
     setBusyId(id);
-    setError(undefined);
     const result = await revokeTopupAction(id);
     setBusyId(null);
-    if (result.error) setError(result.error);
+    setMessage(
+      result.error ? { tone: "danger", text: result.error } : { tone: "positive", text: "已撤銷核准。" },
+    );
     router.refresh();
   }
 
   async function bulkApprove() {
     setBulkBusy(true);
-    setError(undefined);
+    const count = selectedPendingIds.length;
     const result = await bulkApproveTopupsAction(selectedPendingIds);
-    if (result.error) setError(result.error);
+    setMessage(
+      result.error ? { tone: "danger", text: result.error } : { tone: "positive", text: `已核准 ${count} 筆儲值申請。` },
+    );
     setSelected(new Set());
     setBulkBusy(false);
     router.refresh();
@@ -163,9 +167,11 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
 
   async function bulkReject() {
     setBulkBusy(true);
-    setError(undefined);
+    const count = selectedPendingIds.length;
     const result = await bulkRejectTopupsAction(selectedPendingIds);
-    if (result.error) setError(result.error);
+    setMessage(
+      result.error ? { tone: "danger", text: result.error } : { tone: "positive", text: `已退件 ${count} 筆儲值申請。` },
+    );
     setSelected(new Set());
     setBulkBusy(false);
     router.refresh();
@@ -174,10 +180,10 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   async function bulkDelete() {
     const count = selectedDeletableIds.length;
     setBulkBusy(true);
-    setError(undefined);
     const result = await bulkDeleteTopupsAction(selectedDeletableIds);
-    if (result.error) setError(result.error);
-    else setDeletedCount(count);
+    setMessage(
+      result.error ? { tone: "danger", text: result.error } : { tone: "positive", text: `已刪除 ${count} 筆儲值申請。` },
+    );
     setSelected(new Set());
     setBulkBusy(false);
     router.refresh();
@@ -185,15 +191,13 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
 
   return (
     <Section>
-      <ListToolbar tabs={{ tabs, value: tab, onChange: changeTab }} pageSize={pageSize} onPageSizeChange={changeSize} />
-
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
-          <p>已刪除 {deletedCount} 筆儲值申請。</p>
+      {message && (
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={5000}>
+          <p>{message.text}</p>
         </DismissibleNote>
       )}
 
-      {error && <p className="text-[13px] lg:text-[14px] text-danger">{error}</p>}
+      <ListToolbar tabs={{ tabs, value: tab, onChange: changeTab }} pageSize={pageSize} onPageSizeChange={changeSize} />
 
       <BulkActionBar
         count={selected.size}

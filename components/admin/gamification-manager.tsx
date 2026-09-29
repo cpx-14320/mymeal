@@ -19,8 +19,6 @@ import {
   deleteDailyTasksAction,
   createExpRuleAction,
   updateExpRuleAction,
-  deleteExpRuleAction,
-  deleteExpRulesAction,
   createMemberLevelAction,
   updateMemberLevelAction,
   deleteMemberLevelAction,
@@ -34,12 +32,12 @@ const TASK_TYPES: TaskType[] = ["topup", "order", "favorite", "comment", "rating
 const TASK_PERIODS: TaskPeriod[] = ["daily", "weekly", "monthly", "achievement"];
 
 type Tab = "tasks" | "rules" | "levels";
+type Message = { tone: "positive" | "danger"; text: string };
 
-function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
+function TasksSection({ tasks, onMessage }: { tasks: DailyTaskView[]; onMessage: (m: Message) => void }) {
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   function patch(id: string, p: Parameters<typeof updateDailyTaskAction>[1]) {
     startTransition(async () => {
@@ -66,7 +64,7 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
     startTransition(async () => {
       await deleteDailyTasksAction([...selected]);
       setSelected(new Set());
-      setDeletedCount(count);
+      onMessage({ tone: "positive", text: `已刪除 ${count} 個任務。` });
       router.refresh();
     });
   }
@@ -79,6 +77,7 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
           onClick={() =>
             startTransition(async () => {
               await createDailyTaskAction();
+              onMessage({ tone: "positive", text: "已新增任務。" });
               router.refresh();
             })
           }
@@ -93,12 +92,6 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
         onCancel={() => setSelected(new Set())}
         actions={[{ label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy }]}
       />
-
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
-          <p>已刪除 {deletedCount} 個任務。</p>
-        </DismissibleNote>
-      )}
 
       <TableWrap>
         <thead>
@@ -196,6 +189,7 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
                   onClick={() =>
                     startTransition(async () => {
                       await deleteDailyTaskAction(t.id);
+                      onMessage({ tone: "positive", text: "已刪除任務。" });
                       router.refresh();
                     })
                   }
@@ -213,9 +207,7 @@ function TasksSection({ tasks }: { tasks: DailyTaskView[] }) {
 
 function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
   const router = useRouter();
-  const [busy, startTransition] = useTransition();
-  const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [deletedCount, setDeletedCount] = useState<number | null>(null);
+  const [, startTransition] = useTransition();
 
   function patch(id: string, p: Parameters<typeof updateExpRuleAction>[1]) {
     startTransition(async () => {
@@ -231,29 +223,6 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
   function parseLimit(v: string): number | null {
     const trimmed = v.trim();
     return trimmed === "" ? null : Number(trimmed);
-  }
-
-  const allSelected = rules.length > 0 && rules.every((r) => selected.has(r.id));
-
-  const toggleAll = () =>
-    setSelected(allSelected ? new Set() : new Set(rules.map((r) => r.id)));
-
-  const toggleOne = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-
-  function bulkDelete() {
-    const count = selected.size;
-    startTransition(async () => {
-      await deleteExpRulesAction([...selected]);
-      setSelected(new Set());
-      setDeletedCount(count);
-      router.refresh();
-    });
   }
 
   return (
@@ -272,44 +241,19 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
         </Button>
       </AdminHeaderActions>
 
-      <BulkActionBar
-        count={selected.size}
-        unit="項"
-        onCancel={() => setSelected(new Set())}
-        actions={[{ label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy }]}
-      />
-
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
-          <p>已刪除 {deletedCount} 項規則。</p>
-        </DismissibleNote>
-      )}
-
       <TableWrap>
         <thead>
           <tr>
-            <Th className="w-10">
-              <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="全選" />
-            </Th>
             <Th>動作類型</Th>
             <Th>每次 exp</Th>
             <Th>每日上限</Th>
             <Th>每週上限</Th>
             <Th>每月上限</Th>
-            <Th className="text-right">操作</Th>
           </tr>
         </thead>
         <tbody>
           {rules.map((r) => (
-            <tr key={r.id} className={selected.has(r.id) ? "bg-brand-soft" : ""}>
-              <Td>
-                <input
-                  type="checkbox"
-                  checked={selected.has(r.id)}
-                  onChange={() => toggleOne(r.id)}
-                  aria-label={`選取 ${taskTypeLabel[r.type]}`}
-                />
-              </Td>
+            <tr key={r.id}>
               <Td className="font-mono">
                 <select
                   className={cellInput}
@@ -347,20 +291,6 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
                   />
                 </Td>
               ))}
-              <Td className="text-right">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() =>
-                    startTransition(async () => {
-                      await deleteExpRuleAction(r.id);
-                      router.refresh();
-                    })
-                  }
-                >
-                  刪除
-                </Button>
-              </Td>
             </tr>
           ))}
         </tbody>
@@ -369,11 +299,10 @@ function ExpRulesSection({ rules }: { rules: ExpRuleView[] }) {
   );
 }
 
-function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
+function LevelsSection({ levels, onMessage }: { levels: MemberLevelView[]; onMessage: (m: Message) => void }) {
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [deletedCount, setDeletedCount] = useState<number | null>(null);
 
   function patch(id: string, p: { name?: string; minExp?: number }) {
     startTransition(async () => {
@@ -400,7 +329,7 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
     startTransition(async () => {
       await deleteMemberLevelsAction([...selected]);
       setSelected(new Set());
-      setDeletedCount(count);
+      onMessage({ tone: "positive", text: `已刪除 ${count} 個等級。` });
       router.refresh();
     });
   }
@@ -413,6 +342,7 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
           onClick={() =>
             startTransition(async () => {
               await createMemberLevelAction();
+              onMessage({ tone: "positive", text: "已新增等級。" });
               router.refresh();
             })
           }
@@ -427,12 +357,6 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
         onCancel={() => setSelected(new Set())}
         actions={[{ label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy }]}
       />
-
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
-          <p>已刪除 {deletedCount} 個等級。</p>
-        </DismissibleNote>
-      )}
 
       <TableWrap>
         <thead>
@@ -485,6 +409,7 @@ function LevelsSection({ levels }: { levels: MemberLevelView[] }) {
                   onClick={() =>
                     startTransition(async () => {
                       await deleteMemberLevelAction(l.id);
+                      onMessage({ tone: "positive", text: "已刪除等級。" });
                       router.refresh();
                     })
                   }
@@ -510,9 +435,16 @@ export function GamificationManager({
   levels: MemberLevelView[];
 }) {
   const [tab, setTab] = useState<Tab>("tasks");
+  const [message, setMessage] = useState<Message | null>(null);
 
   return (
     <div className="space-y-4">
+      {message && (
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={5000}>
+          <p>{message.text}</p>
+        </DismissibleNote>
+      )}
+
       <PillTabs
         tabs={[
           { key: "tasks", label: "任務", count: tasks.length },
@@ -523,9 +455,9 @@ export function GamificationManager({
         onChange={setTab}
       />
 
-      {tab === "tasks" && <TasksSection tasks={tasks} />}
+      {tab === "tasks" && <TasksSection tasks={tasks} onMessage={setMessage} />}
       {tab === "rules" && <ExpRulesSection rules={rules} />}
-      {tab === "levels" && <LevelsSection levels={levels} />}
+      {tab === "levels" && <LevelsSection levels={levels} onMessage={setMessage} />}
     </div>
   );
 }

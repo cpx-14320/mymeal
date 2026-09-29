@@ -18,12 +18,18 @@ import {
   checkTagOptionsUsageAction,
 } from "@/app/(app)/admin/items/tags/actions";
 
-/** 把「選項字串 → 還用到它的其他群組名稱」的查詢結果，組成一句確認訊息；沒有風險回傳 undefined。 */
-function usageWarningText(usage: Record<string, string[]>): string | undefined {
+/** 把「選項字串 → 還用到它的其他群組名稱」的查詢結果，組成一句提示（不含結尾問句）；沒有風險回傳 undefined。 */
+function usageImpactLine(usage: Record<string, string[]>): string | undefined {
   const entries = Object.entries(usage);
   if (entries.length === 0) return undefined;
   const lines = entries.map(([opt, groups]) => `「${opt}」（也用在：${groups.join("、")}）`);
-  return `這個動作會影響到品項的標籤資料，以下選項在其他群組也有用到，會一併受影響：${lines.join("、")}。確定要繼續嗎？`;
+  return `這個動作會影響到品項的標籤資料，以下選項在其他群組也有用到，會一併受影響：${lines.join("、")}。`;
+}
+
+/** 改名用的原生 confirm() 訊息——跟刪除選項不同，改名不算「刪除」，維持原本輕量的瀏覽器確認即可。 */
+function usageWarningText(usage: Record<string, string[]>): string | undefined {
+  const line = usageImpactLine(usage);
+  return line ? `${line}確定要繼續嗎？` : undefined;
 }
 
 /** 拖曳排序用的小把手，樣式跟 NameListCard 的「⠿」一致——群組卡片、選項列共用同一顆。 */
@@ -57,6 +63,8 @@ function TagGroupCard({ group, dragHandle }: { group: TagGroupView; dragHandle?:
   const [dragOption, setDragOption] = useState<string | null>(null);
   const [optionError, setOptionError] = useState<string | undefined>();
   const [crossGroupWarning, setCrossGroupWarning] = useState<string | undefined>();
+  const [confirmOption, setConfirmOption] = useState<string | null>(null);
+  const [confirmOptionImpact, setConfirmOptionImpact] = useState<string | undefined>();
 
   useEffect(() => {
     setLocalGroup(group);
@@ -122,11 +130,14 @@ function TagGroupCard({ group, dragHandle }: { group: TagGroupView; dragHandle?:
     setDraft("");
   }
 
-  async function removeOption(option: string) {
+  async function openRemoveOptionConfirm(option: string) {
     const usage = await checkTagOptionsUsageAction(group.id, [option]);
-    const warning = usageWarningText(usage);
-    if (warning && !confirm(warning)) return;
+    setConfirmOptionImpact(usageImpactLine(usage));
+    setConfirmOption(option);
+  }
 
+  function removeOption(option: string) {
+    setConfirmOption(null);
     setLocalGroup((g) => ({ ...g, options: g.options.filter((o) => o !== option) }));
     startTransition(async () => {
       await removeTagOptionAction(group.id, option);
@@ -314,7 +325,7 @@ function TagGroupCard({ group, dragHandle }: { group: TagGroupView; dragHandle?:
                     </button>
                     <button
                       type="button"
-                      onClick={() => removeOption(opt)}
+                      onClick={() => openRemoveOptionConfirm(opt)}
                       className="text-[13px] font-medium text-danger hover:underline"
                     >
                       刪除
@@ -340,6 +351,23 @@ function TagGroupCard({ group, dragHandle }: { group: TagGroupView; dragHandle?:
               否
             </Button>
             <Button variant="danger" onClick={handleDelete}>
+              是
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={confirmOption !== null} onClose={() => setConfirmOption(null)} ariaLabel="確認刪除選項" className="max-w-sm">
+        <ModalHeader title="確認刪除選項" onClose={() => setConfirmOption(null)} />
+        <div className="space-y-4 p-4">
+          <p className="text-[13px] lg:text-[14px] text-ink">
+            確定要刪除選項「{confirmOption}」嗎？{confirmOptionImpact && <> {confirmOptionImpact}</>}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setConfirmOption(null)}>
+              否
+            </Button>
+            <Button variant="danger" onClick={() => confirmOption && removeOption(confirmOption)}>
               是
             </Button>
           </div>

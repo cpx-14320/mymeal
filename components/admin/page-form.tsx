@@ -56,7 +56,16 @@ const ICON_SVG_PRESETS: { label: string; svg: string }[] = [
 ];
 
 /** 新增 / 編輯頁面共用的表單。傳 page 就是編輯模式（欄位帶入現值）。 */
-export function PageForm({ page, templates }: { page?: PageView; templates: TemplateListItem[] }) {
+export function PageForm({
+  page,
+  templates,
+  defaultSortOrder,
+}: {
+  page?: PageView;
+  templates: TemplateListItem[];
+  /** 新增模式時排序欄位的預設值（目前最大排序 + 1），讓新頁面預設接在現有頁面後面。 */
+  defaultSortOrder?: number;
+}) {
   const router = useRouter();
   const isEdit = !!page;
   const action = isEdit ? updatePageAction.bind(null, page.id) : createPageAction;
@@ -112,7 +121,7 @@ export function PageForm({ page, templates }: { page?: PageView; templates: Temp
                 type="number"
                 name="sortOrder"
                 min={0}
-                defaultValue={page?.sortOrder ?? 1}
+                defaultValue={page?.sortOrder ?? defaultSortOrder ?? 1}
                 placeholder="數字越小越前面"
               />
             </Field>

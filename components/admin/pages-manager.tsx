@@ -87,7 +87,7 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
       <CreatedBanner message="新增頁面成功。" />
 
       {deletedMessage !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedMessage(null)}>
+        <DismissibleNote tone="positive" onClose={() => setDeletedMessage(null)} autoDismissMs={5000}>
           <p>已刪除 {deletedMessage} 個頁面。</p>
         </DismissibleNote>
       )}

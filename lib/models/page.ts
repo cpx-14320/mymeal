@@ -135,6 +135,14 @@ export async function listPages(options?: { withCreatorLabels?: boolean }): Prom
   }));
 }
 
+/** 新增頁面表單的排序欄位預設值：目前最大排序 + 1，讓管理者沒特別調整的話，新頁面自然接在
+ *  現有頁面後面（由舊到新），不會因為表單固定給 1 而跳到最前面去。 */
+export async function getNextPageSortOrder(): Promise<number> {
+  await connectMongo();
+  const top = await Page.findOne({}).sort({ sortOrder: -1 }).select("sortOrder");
+  return (top?.sortOrder ?? 0) + 1;
+}
+
 export async function findPageById(id: string): Promise<PageView | null> {
   await connectMongo();
   if (!Types.ObjectId.isValid(id)) return null;

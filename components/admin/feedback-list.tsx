@@ -29,7 +29,6 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(feedback, page, pageSize);
 
   async function remove(id: string) {
-    if (!confirm("確定要刪除這筆意見回饋嗎？")) return;
     setBusyId(id);
     await deleteFeedbackAction(id);
     setBusyId(null);
@@ -48,7 +47,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
       />
 
       {deleted && (
-        <DismissibleNote tone="positive" onClose={() => setDeleted(false)}>
+        <DismissibleNote tone="positive" onClose={() => setDeleted(false)} autoDismissMs={5000}>
           <p>已刪除這筆意見回饋。</p>
         </DismissibleNote>
       )}
@@ -58,6 +57,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
           <tr>
             <Th>姓名</Th>
             <Th>時間</Th>
+            <Th>類型</Th>
             <Th>內容</Th>
             <Th className="text-right">操作</Th>
           </tr>
@@ -75,10 +75,10 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
                 )}
               </Td>
               <Td className="text-muted tabular-nums">{formatTaiwanDateTime(f.createdAt)}</Td>
+              <Td>
+                <Badge tone="neutral">{f.type}</Badge>
+              </Td>
               <Td className="max-w-md">
-                <div className="mb-1">
-                  <Badge tone="neutral">{f.type}</Badge>
-                </div>
                 <p className="whitespace-pre-wrap break-words text-ink">{f.content}</p>
               </Td>
               <Td className="text-right">
@@ -90,7 +90,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
           ))}
           {rows.length === 0 && (
             <tr>
-              <Td className="text-center text-muted" colSpan={4}>
+              <Td className="text-center text-muted" colSpan={5}>
                 目前沒有任何意見回饋
               </Td>
             </tr>
