@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createRole, type RolePermissions } from "@/lib/models/role";
 import type { AdminNavKey } from "@/components/layout/nav";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface CreateRoleState {
   error?: string;
@@ -21,6 +22,7 @@ export async function createRoleAction(
   _prevState: CreateRoleState,
   formData: FormData,
 ): Promise<CreateRoleState> {
+  await requireAdminPermission("roles");
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "請填寫組別名稱。" };
 

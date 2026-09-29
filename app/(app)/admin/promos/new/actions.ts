@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createInterstitial, type InterstitialInput, type PromoFrequency } from "@/lib/models/interstitial";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface CreatePromoState {
   error?: string;
@@ -31,6 +32,7 @@ export async function createPromoAction(
   _prevState: CreatePromoState,
   formData: FormData,
 ): Promise<CreatePromoState> {
+  await requireAdminPermission("promos");
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
   const pendingPromoId = String(formData.get("pendingPromoId") ?? "").trim() || undefined;

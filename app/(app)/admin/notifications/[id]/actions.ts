@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { updateNotification, type NotificationInput } from "@/lib/models/notification";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface UpdateNotificationState {
   error?: string;
@@ -25,6 +26,7 @@ export async function updateNotificationAction(
   _prevState: UpdateNotificationState,
   formData: FormData,
 ): Promise<UpdateNotificationState> {
+  await requireAdminPermission("promos");
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
 

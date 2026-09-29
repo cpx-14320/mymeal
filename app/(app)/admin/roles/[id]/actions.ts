@@ -5,6 +5,7 @@ import { updateRole, type RolePermissions } from "@/lib/models/role";
 import type { AdminNavKey } from "@/components/layout/nav";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface UpdateRoleState {
   error?: string;
@@ -23,6 +24,7 @@ export async function updateRoleAction(
   _prevState: UpdateRoleState,
   formData: FormData,
 ): Promise<UpdateRoleState> {
+  await requireAdminPermission("roles");
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "請填寫組別名稱。" };
 

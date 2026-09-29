@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createMember, parseMemberForm, type MemberStatus } from "@/lib/models/member";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface CreateMemberState {
   error?: string;
@@ -12,6 +13,7 @@ export async function createMemberAction(
   _prevState: CreateMemberState,
   formData: FormData,
 ): Promise<CreateMemberState> {
+  await requireAdminPermission("members");
   const parsed = await parseMemberForm(formData);
   if (!parsed.ok) return { error: parsed.error };
   const fields = parsed.fields;

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { deleteRoles, listRoles } from "@/lib/models/role";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface BulkDeleteRolesState {
   deleted: number;
@@ -11,6 +12,7 @@ export interface BulkDeleteRolesState {
 }
 
 export async function deleteRolesAction(ids: string[]): Promise<BulkDeleteRolesState> {
+  await requireAdminPermission("roles");
   const roles = await listRoles();
   const names = roles.filter((r) => ids.includes(r.id)).map((r) => r.name);
 

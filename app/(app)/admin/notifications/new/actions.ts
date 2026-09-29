@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createNotification, type NotificationInput } from "@/lib/models/notification";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface CreateNotificationState {
   error?: string;
@@ -25,6 +26,7 @@ export async function createNotificationAction(
   _prevState: CreateNotificationState,
   formData: FormData,
 ): Promise<CreateNotificationState> {
+  await requireAdminPermission("promos");
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
 

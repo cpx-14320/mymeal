@@ -9,6 +9,7 @@ import {
   deleteUnit,
   updateUnit,
 } from "@/lib/models/org";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface OrgFormState {
   error?: string;
@@ -23,6 +24,7 @@ export async function createDepartmentAction(
   if (!name) return { error: "請輸入部門名稱。" };
 
   try {
+    await requireAdminPermission("orgUnits");
     await createDepartment(name);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
@@ -43,6 +45,7 @@ export async function createUnitAction(
   if (!departmentId) return { error: "請選擇所屬部門。" };
 
   try {
+    await requireAdminPermission("orgUnits");
     await createUnit(name, departmentId);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
@@ -63,6 +66,7 @@ export async function updateDepartmentAction(id: string, name: string): Promise<
   if (!trimmed) return { error: "請輸入部門名稱。" };
 
   try {
+    await requireAdminPermission("orgUnits");
     await updateDepartment(id, trimmed);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
@@ -79,6 +83,7 @@ export async function updateUnitAction(id: string, name: string): Promise<Delete
   if (!trimmed) return { error: "請輸入單位名稱。" };
 
   try {
+    await requireAdminPermission("orgUnits");
     await updateUnit(id, trimmed);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
@@ -92,6 +97,7 @@ export async function updateUnitAction(id: string, name: string): Promise<Delete
 
 export async function deleteDepartmentAction(id: string): Promise<DeleteOrgState> {
   try {
+    await requireAdminPermission("orgUnits");
     const deleted = await deleteDepartment(id);
     if (!deleted) return { error: "找不到這筆資料，可能已被刪除。" };
   } catch (err: unknown) {
@@ -105,6 +111,7 @@ export async function deleteDepartmentAction(id: string): Promise<DeleteOrgState
 
 export async function deleteUnitAction(id: string): Promise<DeleteOrgState> {
   try {
+    await requireAdminPermission("orgUnits");
     const deleted = await deleteUnit(id);
     if (!deleted) return { error: "找不到這筆資料，可能已被刪除。" };
   } catch (err: unknown) {

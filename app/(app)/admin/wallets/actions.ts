@@ -5,6 +5,7 @@ import { adjustMemberBalance } from "@/lib/models/wallet";
 import { findMemberById } from "@/lib/models/member";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface AdjustBalanceState {
   error?: string;
@@ -18,6 +19,7 @@ export async function adjustBalanceAction(
 ): Promise<AdjustBalanceState> {
   const actor = await getCurrentActorName();
   try {
+    await requireAdminPermission("wallets");
     await adjustMemberBalance(memberId, amount, note, actor);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };

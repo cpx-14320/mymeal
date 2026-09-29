@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { updateInterstitial, type InterstitialInput, type PromoFrequency } from "@/lib/models/interstitial";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface UpdatePromoState {
   error?: string;
@@ -31,6 +32,7 @@ export async function updatePromoAction(
   _prevState: UpdatePromoState,
   formData: FormData,
 ): Promise<UpdatePromoState> {
+  await requireAdminPermission("promos");
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
 

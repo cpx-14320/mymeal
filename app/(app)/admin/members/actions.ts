@@ -8,6 +8,7 @@ import { deleteFeedbackByMembers } from "@/lib/models/feedback";
 import { removeMemberOrderLines } from "@/lib/models/group-order";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 /** 稽核紀錄的對象欄位：列出前 3 位姓名，其餘用「等 N 位」收尾。 */
 function summarizeNames(names: string[]): string {
@@ -25,6 +26,7 @@ export async function setMembersStatusAction(
   status: MemberStatus,
 ): Promise<SetMembersStatusState> {
   if (ids.length === 0) return { error: "請先選取要變更的會員。" };
+  await requireAdminPermission("members");
 
   const actor = await getCurrentActorName();
   const names = await findMemberNames(ids);
@@ -55,6 +57,7 @@ export interface DeleteMembersState {
 /** 真的刪除會員（不是停權）：連同收藏／評論／意見回饋／團訂點餐紀錄一起清掉，見 deleteMembers 註解。 */
 export async function deleteMembersAction(ids: string[]): Promise<DeleteMembersState> {
   if (ids.length === 0) return { error: "請先選取要刪除的會員。" };
+  await requireAdminPermission("members");
 
   const actor = await getCurrentActorName();
   const names = await findMemberNames(ids);

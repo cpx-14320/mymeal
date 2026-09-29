@@ -3,6 +3,7 @@
 import { MAX_UPLOAD_IMAGE_BYTES, MAX_UPLOAD_IMAGE_LABEL } from "@/lib/upload-limits";
 import { uploadKeyedImage } from "@/lib/blob-upload";
 import type { UploadImageState } from "@/app/(app)/admin/items/upload-image-action";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 /** 蓋台廣告圖片上傳，固定放在 mymeal/pop_up/ 資料夾下，公開存取——跟品項圖片
  *  （admin/items/upload-image-action.ts）同一套機制，只是資料夾跟命名來源換成廣告自己的 id：
@@ -11,6 +12,11 @@ import type { UploadImageState } from "@/app/(app)/admin/items/upload-image-acti
  *  （見 lib/blob-upload.ts 的 uploadKeyedImage，會先清掉副檔名不同的舊檔）；
  *  沒有合法 id 就照舊用隨機檔名，一樣不會互相覆蓋。 */
 export async function uploadPromoImageAction(formData: FormData): Promise<UploadImageState> {
+  try {
+    await requireAdminPermission("promos");
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "沒有權限。" };
+  }
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     return { error: "沒有選到檔案。" };

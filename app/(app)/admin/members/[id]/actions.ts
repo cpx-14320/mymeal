@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { updateMember, type MemberStatus } from "@/lib/models/member";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface UpdateMemberState {
   error?: string;
@@ -15,6 +16,7 @@ export async function updateMemberAction(
   _prevState: UpdateMemberState,
   formData: FormData,
 ): Promise<UpdateMemberState> {
+  await requireAdminPermission("members");
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const employeeId = String(formData.get("employeeId") ?? "").trim();

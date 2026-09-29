@@ -10,6 +10,7 @@ import {
 } from "@/lib/models/topup-request";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface TopupActionState {
   error?: string;
@@ -23,6 +24,11 @@ async function findRequestLabel(id: string): Promise<string> {
 }
 
 export async function approveTopupAction(id: string): Promise<TopupActionState> {
+  try {
+    await requireAdminPermission("topups");
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "沒有權限。" };
+  }
   const actor = await getCurrentActorName();
   const label = await findRequestLabel(id);
   try {
@@ -41,6 +47,11 @@ export async function approveTopupAction(id: string): Promise<TopupActionState> 
 }
 
 export async function rejectTopupAction(id: string, reviewNote?: string): Promise<TopupActionState> {
+  try {
+    await requireAdminPermission("topups");
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "沒有權限。" };
+  }
   const actor = await getCurrentActorName();
   const label = await findRequestLabel(id);
   try {
@@ -59,6 +70,11 @@ export async function rejectTopupAction(id: string, reviewNote?: string): Promis
 
 /** 撤銷誤按核准：沖銷等額餘額、把申請退回待審核，讓管理員可以重新正確處理。 */
 export async function revokeTopupAction(id: string): Promise<TopupActionState> {
+  try {
+    await requireAdminPermission("topups");
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "沒有權限。" };
+  }
   const actor = await getCurrentActorName();
   const label = await findRequestLabel(id);
   try {
@@ -78,6 +94,7 @@ export async function revokeTopupAction(id: string): Promise<TopupActionState> {
 
 export async function deleteTopupAction(id: string): Promise<TopupActionState> {
   try {
+    await requireAdminPermission("topups");
     await deleteTopupRequest(id);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
