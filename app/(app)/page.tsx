@@ -1,7 +1,7 @@
 import { navIcons } from "@/components/layout/icons";
 import { LoginButton } from "@/components/layout/login-button";
 import { ItemThumbnailFill } from "@/components/ui/primitives";
-import { getHomePreviewTemplateId } from "@/lib/models/site-settings";
+import { getHomePreviewConfig } from "@/lib/models/site-settings";
 import { findTemplateById } from "@/lib/models/template";
 
 interface PreviewDish {
@@ -53,21 +53,19 @@ const features = [
 ];
 
 export default async function HomePage() {
-  const templateId = await getHomePreviewTemplateId();
+  const { templateId, sectionId } = await getHomePreviewConfig();
   const template = templateId ? await findTemplateById(templateId) : null;
-  const templateDishes: PreviewDish[] = template
-    ? template.sections
-        .flatMap((s) => s.items)
-        .slice(0, 4)
-        .map((it) => ({
-          key: it.id,
-          name: it.name,
-          subtitle: it.pageName ?? "",
-          price: it.price,
-          emoji: it.emoji,
-          imageUrl: it.imageUrl,
-        }))
-    : [];
+  // 有指定區塊就只取那個區塊的品項；沒指定（或那個區塊已經被刪掉）就混合模板全部區塊。
+  const section = sectionId ? template?.sections.find((s) => s.id === sectionId) : undefined;
+  const sourceItems = section ? section.items : (template?.sections.flatMap((s) => s.items) ?? []);
+  const templateDishes: PreviewDish[] = sourceItems.map((it) => ({
+    key: it.id,
+    name: it.name,
+    subtitle: it.pageName ?? "",
+    price: it.price,
+    emoji: it.emoji,
+    imageUrl: it.imageUrl,
+  }));
   // 模板選了但還沒加任何品項時，先退回範例假資料，避免區塊直接空著。
   const previewDishes = templateDishes.length > 0 ? templateDishes : fallbackDishes;
 
@@ -110,7 +108,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {previewDishes.map((dish) => (
             <li
               key={dish.key}
