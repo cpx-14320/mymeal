@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { MAX_UPLOAD_IMAGE_BYTES, MAX_UPLOAD_IMAGE_LABEL } from "@/lib/upload-limits";
 import { uploadKeyedImage } from "@/lib/blob-upload";
 import { listCatalogItems, setCatalogItemImage } from "@/lib/models/catalog-item";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface UploadImageState {
   url?: string;
@@ -20,6 +21,11 @@ export interface UploadImageState {
  *  （見 lib/blob-upload.ts 的 uploadKeyedImage，會先清掉副檔名不同的舊檔）；
  *  沒有合法 itemId 就照舊用隨機檔名，一樣不會互相覆蓋。 */
 export async function uploadItemImageAction(formData: FormData): Promise<UploadImageState> {
+  try {
+    await requireAdminPermission("items");
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "沒有權限。" };
+  }
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     return { error: "沒有選到檔案。" };
@@ -61,6 +67,7 @@ export interface BatchUploadImagesResult {
  *  再把回傳網址存回該品項的 imageUrl；比不到名稱的檔案列在 unmatched，
  *  不會自動建立新品項（批次上傳只補圖，不是用來新增品項的）。 */
 export async function batchUploadItemImagesAction(formData: FormData): Promise<BatchUploadImagesResult> {
+  await requireAdminPermission("items");
   const files = formData.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
   const uploaded: string[] = [];
   const unmatched: string[] = [];

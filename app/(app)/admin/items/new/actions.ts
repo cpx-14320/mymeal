@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createCatalogItem, collectTagsFromFormData } from "@/lib/models/catalog-item";
 import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface CreateItemState {
   error?: string;
@@ -15,6 +16,7 @@ export async function createItemAction(
   _prevState: CreateItemState,
   formData: FormData,
 ): Promise<CreateItemState> {
+  await requireAdminPermission("items");
   const name = String(formData.get("name") ?? "").trim();
   const categoryId = String(formData.get("categoryId") ?? "").trim();
   const pageId = String(formData.get("pageId") ?? "").trim();

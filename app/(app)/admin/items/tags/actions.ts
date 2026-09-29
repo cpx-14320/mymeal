@@ -16,6 +16,7 @@ import {
 } from "@/lib/models/tag-group";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 function refresh() {
   revalidatePath("/admin/classification");
@@ -30,6 +31,7 @@ async function logTagAudit(action: string, target?: string) {
 }
 
 export async function createTagGroupAction() {
+  await requireAdminPermission("itemClassification");
   const group = await createTagGroup("新群組");
   await logTagAudit("新增標籤群組", group.name);
   refresh();
@@ -37,6 +39,7 @@ export async function createTagGroupAction() {
 }
 
 export async function renameTagGroupAction(id: string, name: string) {
+  await requireAdminPermission("itemClassification");
   const before = (await listTagGroups()).find((g) => g.id === id);
   await renameTagGroup(id, name);
   await logTagAudit("標籤群組改名", before ? `${before.name}→${name}` : name);
@@ -44,12 +47,14 @@ export async function renameTagGroupAction(id: string, name: string) {
 }
 
 export async function toggleTagGroupMultiAction(id: string, multi: boolean) {
+  await requireAdminPermission("itemClassification");
   const group = await setTagGroupMulti(id, multi);
   await logTagAudit(multi ? "標籤群組改為可複選" : "標籤群組改為單選", group?.name);
   refresh();
 }
 
 export async function addTagOptionAction(id: string, option: string) {
+  await requireAdminPermission("itemClassification");
   const group = await addTagOption(id, option);
   await logTagAudit("新增標籤選項", group ? `${group.name}．${option}` : option);
   refresh();
@@ -61,10 +66,12 @@ export async function checkTagOptionsUsageAction(
   id: string,
   options: string[],
 ): Promise<Record<string, string[]>> {
+  await requireAdminPermission("itemClassification");
   return findGroupsUsingOptions(id, options);
 }
 
 export async function renameTagOptionAction(id: string, oldOption: string, newOption: string) {
+  await requireAdminPermission("itemClassification");
   const group = await renameTagOption(id, oldOption, newOption);
   const actor = await getCurrentActorName();
   await createAuditLog({
@@ -77,6 +84,7 @@ export async function renameTagOptionAction(id: string, oldOption: string, newOp
 }
 
 export async function removeTagOptionAction(id: string, option: string) {
+  await requireAdminPermission("itemClassification");
   const group = await removeTagOption(id, option);
   const actor = await getCurrentActorName();
   await createAuditLog({
@@ -89,6 +97,7 @@ export async function removeTagOptionAction(id: string, option: string) {
 }
 
 export async function deleteTagGroupAction(id: string) {
+  await requireAdminPermission("itemClassification");
   const before = (await listTagGroups()).find((g) => g.id === id);
   await deleteTagGroup(id);
   const actor = await getCurrentActorName();
@@ -107,6 +116,7 @@ export interface ReorderTagState {
 
 export async function reorderTagGroupsAction(orderedIds: string[]): Promise<ReorderTagState> {
   try {
+    await requireAdminPermission("itemClassification");
     await reorderTagGroups(orderedIds);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
@@ -117,6 +127,7 @@ export async function reorderTagGroupsAction(orderedIds: string[]): Promise<Reor
 
 export async function reorderTagOptionsAction(id: string, orderedOptions: string[]): Promise<ReorderTagState> {
   try {
+    await requireAdminPermission("itemClassification");
     await reorderTagOptions(id, orderedOptions);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };

@@ -15,19 +15,23 @@ import { listPages } from "@/lib/models/page";
 import { listTagGroups, createTagGroup, addTagOption } from "@/lib/models/tag-group";
 import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export async function setItemsActiveAction(ids: string[], active: boolean) {
+  await requireAdminPermission("items");
   await setCatalogItemsActive(ids, active);
   revalidatePath("/admin/items");
 }
 
 export async function deleteItemsAction(ids: string[]) {
+  await requireAdminPermission("items");
   await deleteCatalogItems(ids);
   revalidatePath("/admin/items");
 }
 
 /** pageId 傳 "" 代表批次取消掛頁面（跟 items-table 的「取消掛頁面」選項對應）。 */
 export async function setItemsPageAction(ids: string[], pageId: string) {
+  await requireAdminPermission("items");
   await setCatalogItemsPage(ids, pageId || undefined);
   revalidatePath("/admin/items");
 }
@@ -37,6 +41,7 @@ export async function patchItemAction(
   id: string,
   patch: Partial<Pick<CatalogItemInput, "categoryId" | "price" | "tags">>,
 ) {
+  await requireAdminPermission("items");
   await patchCatalogItem(id, patch);
   revalidatePath("/admin/items");
 }
@@ -55,6 +60,7 @@ export interface BulkItemPatch {
 /** 品項設定列表頁「批次編輯」彈窗用：把彈窗傳來的 groupId 換成該群組目前的 options，
  *  這樣資料層（patchCatalogItemsBulk）才知道要從每個品項的 tags 陣列裡換掉哪一段。 */
 export async function bulkPatchItemsAction(ids: string[], patch: BulkItemPatch) {
+  await requireAdminPermission("items");
   const tagGroups = patch.tagGroups?.length ? await listTagGroups() : [];
   const resolvedTagGroups = (patch.tagGroups ?? [])
     .map(({ groupId, value }) => {
@@ -100,6 +106,7 @@ export interface ItemImportSummary {
  *  頁面維持原本行為——找不到就留空、不自動建立（頁面欄位多、屬於前台導覽，自動生成品質不會好）。
  *  同一次匯入裡新建過的分類/群組/選項會快取起來，不會同名重複建立。 */
 export async function importItemsAction(rows: ItemImportRow[]): Promise<ItemImportSummary> {
+  await requireAdminPermission("items");
   const memberId = await getSessionMemberId();
   const [categories, pages, tagGroups, member] = await Promise.all([
     listItemCategories(),

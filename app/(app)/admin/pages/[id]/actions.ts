@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { updatePage, type PageInput } from "@/lib/models/page";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface UpdatePageState {
   error?: string;
@@ -29,6 +30,7 @@ export async function updatePageAction(
   _prevState: UpdatePageState,
   formData: FormData,
 ): Promise<UpdatePageState> {
+  await requireAdminPermission("pages");
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
 

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createTemplate } from "@/lib/models/template";
 import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface CreateTemplateState {
   error?: string;
@@ -14,6 +15,7 @@ export async function createTemplateAction(
   _prevState: CreateTemplateState,
   formData: FormData,
 ): Promise<CreateTemplateState> {
+  await requireAdminPermission("templates");
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "請填寫模板名稱。" };
 

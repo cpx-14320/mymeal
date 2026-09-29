@@ -7,6 +7,7 @@ import {
   deleteItemCategory,
   reorderItemCategories,
 } from "@/lib/models/item-category";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface CategoryFormState {
   error?: string;
@@ -21,6 +22,7 @@ export async function createCategoryAction(
   if (!name) return { error: "請輸入分類名稱。" };
 
   try {
+    await requireAdminPermission("itemClassification");
     await createItemCategory(name);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
@@ -42,6 +44,7 @@ export async function updateCategoryAction(id: string, name: string): Promise<Up
   if (!trimmed) return { error: "請輸入分類名稱。" };
 
   try {
+    await requireAdminPermission("itemClassification");
     await updateItemCategory(id, trimmed);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
@@ -59,6 +62,7 @@ export interface ReorderCategoryState {
 
 export async function reorderCategoryAction(orderedIds: string[]): Promise<ReorderCategoryState> {
   try {
+    await requireAdminPermission("itemClassification");
     await reorderItemCategories(orderedIds);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
@@ -77,6 +81,7 @@ export interface DeleteCategoryState {
 
 export async function deleteCategoryAction(id: string): Promise<DeleteCategoryState> {
   try {
+    await requireAdminPermission("itemClassification");
     await deleteItemCategory(id);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };

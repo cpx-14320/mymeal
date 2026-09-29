@@ -196,3 +196,21 @@ export const REGISTER_HREF = "/register";
 export function resolveHref(item: NavItem, isAuthed: boolean): string {
   return item.requiresAuth && !isAuthed ? LOGIN_HREF : item.href;
 }
+
+/** 依目前網址找出這個後台頁面需要哪個權限鍵——跟 sidebar.tsx 判斷「目前 active 項目」同一套
+ *  「取最長（最精確）符合的 href」邏輯，這樣巢狀路由（例如 /admin/pages/[id]）會對應到
+ *  正確的父層項目（pages），不會被 href 比較短的其他項目搶走。
+ *  找不到符合的項目（例如未來新增的頁面忘了註冊進 adminNav）回傳 null——呼叫端對 null
+ *  的處理方式是「只要求有任一後台權限即可」，不會因為漏掛而直接把整個功能擋死。 */
+export function resolveAdminNavKey(pathname: string): AdminNavKey | null {
+  const items = adminNav.flatMap((g) => g.items);
+  const matches = items.filter((item) =>
+    item.href === "/admin"
+      ? pathname === "/admin"
+      : pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
+  if (matches.length === 0) return null;
+  return matches.reduce((best, item) =>
+    item.href.length > best.href.length ? item : best,
+  ).key;
+}

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { updateCatalogItem, collectTagsFromFormData } from "@/lib/models/catalog-item";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface UpdateItemState {
   error?: string;
@@ -14,6 +15,7 @@ export async function updateItemAction(
   _prevState: UpdateItemState,
   formData: FormData,
 ): Promise<UpdateItemState> {
+  await requireAdminPermission("items");
   const name = String(formData.get("name") ?? "").trim();
   const categoryId = String(formData.get("categoryId") ?? "").trim();
   const pageId = String(formData.get("pageId") ?? "").trim();

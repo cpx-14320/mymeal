@@ -4,13 +4,16 @@ import { revalidatePath } from "next/cache";
 import { setPagesActive, deletePages, listPages } from "@/lib/models/page";
 import { createAuditLog } from "@/lib/models/audit-log";
 import { getCurrentActorName } from "@/lib/session";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export async function setPagesActiveAction(ids: string[], active: boolean) {
+  await requireAdminPermission("pages");
   await setPagesActive(ids, active);
   revalidatePath("/admin/pages");
 }
 
 export async function deletePagesAction(ids: string[]) {
+  await requireAdminPermission("pages");
   const actor = await getCurrentActorName();
   const pages = await listPages();
   const names = pages.filter((p) => ids.includes(p.id)).map((p) => p.name);

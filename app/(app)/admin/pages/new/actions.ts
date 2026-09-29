@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createPage, type PageInput } from "@/lib/models/page";
 import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
+import { requireAdminPermission } from "@/lib/admin-guard";
 
 export interface CreatePageState {
   error?: string;
@@ -31,6 +32,7 @@ export async function createPageAction(
   _prevState: CreatePageState,
   formData: FormData,
 ): Promise<CreatePageState> {
+  await requireAdminPermission("pages");
   const input = parseInput(formData);
   if ("error" in input) return { error: input.error };
 
