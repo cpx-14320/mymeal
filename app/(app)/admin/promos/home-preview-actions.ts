@@ -18,7 +18,7 @@ export async function saveHomePreviewTemplateAction(
   const sectionId = String(formData.get("sectionId") ?? "").trim();
   await setHomePreviewConfig({ templateId: templateId || undefined, sectionId: sectionId || undefined });
 
-  revalidatePath("/admin/home-preview");
+  revalidatePath("/admin/promos");
   revalidatePath("/");
-  redirect("/admin/home-preview?saved=1");
+  redirect("/admin/promos?saved=1&tab=homePreview");
 }

@@ -3,15 +3,15 @@
 import { useActionState, useState } from "react";
 import { Card, CardBody, Field, inputClass, Button } from "@/components/ui/primitives";
 import type { TemplateListItem } from "@/lib/models/template";
-import { saveHomePreviewTemplateAction, type SaveHomePreviewState } from "@/app/(app)/admin/home-preview/actions";
-import { CreatedBanner } from "@/components/admin/created-banner";
+import { saveHomePreviewTemplateAction, type SaveHomePreviewState } from "@/app/(app)/admin/promos/home-preview-actions";
 
 const initialState: SaveHomePreviewState = {};
 
 /** 只有兩個欄位的設定表單：選模板、再選（可留空）該模板底下的區塊，存進 SiteSettings
  *  （見 lib/models/site-settings.ts）。區塊選單跟著目前選的模板即時換選項——換了模板但
  *  舊區塊不屬於新模板時，區塊選單自動退回「不指定」，不會送出一個對不上的區塊 id。
- *  存檔後導回自己這頁帶 ?saved=1，用共用的 CreatedBanner 跳成功訊息。 */
+ *  存檔後導回廣宣版位頁帶 ?saved=1&tab=homePreview，由外層 MarketingTabs 統一跳成功訊息、
+ *  切回這個分頁。 */
 export function HomePreviewForm({
   templates,
   currentTemplateId,
@@ -36,8 +36,6 @@ export function HomePreviewForm({
 
   return (
     <>
-      <CreatedBanner param="saved" message="已儲存首頁菜單預覽設定。" />
-
       <form action={formAction}>
         <Card>
           <CardBody className="space-y-5">

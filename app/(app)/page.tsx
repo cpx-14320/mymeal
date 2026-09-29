@@ -17,8 +17,8 @@ interface PreviewDish {
   emoji: string;
 }
 
-/** 首頁菜單預覽的預設範例假資料——後台「首頁菜單預覽」（/admin/home-preview）沒指定模板時
- *  才會用到這組，讓區塊不會空著。不是真的品項（沒有 id），沒辦法收藏／看評論，
+/** 首頁菜單預覽的預設範例假資料——後台「廣宣版位」的「首頁菜單預覽」分頁（/admin/promos）
+ *  沒指定模板時才會用到這組，讓區塊不會空著。不是真的品項（沒有 id），沒辦法收藏／看評論，
  *  所以走簡化的靜態卡片，不能套用 ItemCard。 */
 const fallbackDishes: PreviewDish[] = [
   { key: "1", name: "招牌雞腿便當", subtitle: "福來鮮食", price: 95, emoji: "🍗" },
