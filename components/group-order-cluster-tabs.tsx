@@ -17,11 +17,13 @@ export function GroupOrderClusterTabs({
 
   return (
     <div className="space-y-6">
-      <PillTabs
-        tabs={templates.map((t) => ({ key: t.templateId, label: t.templateName, count: t.orders.length }))}
-        value={activeId}
-        onChange={setActiveId}
-      />
+      {templates.length > 1 && (
+        <PillTabs
+          tabs={templates.map((t) => ({ key: t.templateId, label: t.templateName, count: t.orders.length }))}
+          value={activeId}
+          onChange={setActiveId}
+        />
+      )}
 
       {active && (
         <GroupOrderClusterView
