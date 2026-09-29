@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Badge,
@@ -19,7 +19,8 @@ import {
 import type { MemberListItem, MemberStatus } from "@/lib/models/member";
 import { formatTaiwanDateTime } from "@/lib/date";
 import { setMembersStatusAction, deleteMembersAction } from "@/app/(app)/admin/members/actions";
-import { CreatedBanner } from "@/components/admin/created-banner";
+
+type Message = { tone: "positive" | "danger"; content: React.ReactNode };
 
 const statusMap = {
   active: { label: "啟用", tone: "positive" as const },
@@ -27,7 +28,15 @@ const statusMap = {
   pending: { label: "待審核", tone: "warning" as const },
 };
 
-export function MembersTable({ members: initialMembers }: { members: MemberListItem[] }) {
+export function MembersTable({
+  members: initialMembers,
+  justCreated = false,
+  justUpdated = false,
+}: {
+  members: MemberListItem[];
+  justCreated?: boolean;
+  justUpdated?: boolean;
+}) {
   const router = useRouter();
   const [members, setMembers] = useState(initialMembers);
   const [page, setPage] = useState(1);
@@ -38,7 +47,19 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
   const [statusError, setStatusError] = useState<string | undefined>();
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | undefined>();
-  const [deletedCount, setDeletedCount] = useState<number | null>(null);
+  // 新增／更新／刪除共用同一個訊息槽，跟品項設定同一套邏輯，同一時間只顯示一則狀態框。
+  const [message, setMessage] = useState<Message | null>(
+    justCreated
+      ? { tone: "positive", content: <p>會員已建立成功。</p> }
+      : justUpdated
+        ? { tone: "positive", content: <p>會員資料已更新。</p> }
+        : null,
+  );
+
+  useEffect(() => {
+    if (justCreated || justUpdated) router.replace("/admin/members");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const query = search.trim().toLowerCase();
   const filtered = query
@@ -110,18 +131,15 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
     }
     setMembers((prev) => prev.filter((m) => !ids.includes(m.id)));
     setSelected(new Set());
-    setDeletedCount(result.deletedCount ?? 0);
+    setMessage({ tone: "positive", content: <p>已刪除 {result.deletedCount ?? 0} 位會員。</p> });
     router.refresh();
   };
 
   return (
     <div className="space-y-4">
-      <CreatedBanner message="會員已建立成功。" />
-      <CreatedBanner message="會員資料已更新。" param="updated" />
-
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={3000}>
-          <p>已刪除 {deletedCount} 位會員。</p>
+      {message && (
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={3000}>
+          {message.content}
         </DismissibleNote>
       )}
 

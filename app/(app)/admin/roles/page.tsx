@@ -6,8 +6,12 @@ import { listRoles } from "@/lib/models/role";
 
 export const metadata = { title: "會員權限" };
 
-export default async function AdminRolesPage() {
-  const roles = await listRoles();
+export default async function AdminRolesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ created?: string }>;
+}) {
+  const [roles, params] = await Promise.all([listRoles(), searchParams]);
 
   return (
     <div className="space-y-8">
@@ -20,7 +24,7 @@ export default async function AdminRolesPage() {
           title="組別"
           description="組別是權限鍵的組合，指派給會員整包套用；不同會員可以套用同一個組別的權限。"
         >
-          <RolesTable roles={roles} />
+          <RolesTable roles={roles} justCreated={params.created === "1"} />
         </Section>
 
         <Section title="權限矩陣" description="✓ 該組別具備此權限　– 無">

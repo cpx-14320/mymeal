@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Badge, ButtonLink, TableWrap, Th, Td, BulkActionBar, DismissibleNote } from "@/components/ui/primitives";
 import type { RoleView } from "@/lib/models/role";
 import { deleteRolesAction } from "@/app/(app)/admin/roles/actions";
-import { CreatedBanner } from "@/components/admin/created-banner";
 
-export function RolesTable({ roles }: { roles: RoleView[] }) {
+type Message = { tone: "positive" | "danger"; content: React.ReactNode };
+
+export function RolesTable({ roles, justCreated = false }: { roles: RoleView[]; justCreated?: boolean }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
-  const [deletedCount, setDeletedCount] = useState<number | null>(null);
+  // 新增／刪除共用同一個訊息槽，跟品項設定同一套邏輯，同一時間只顯示一則狀態框。
+  const [message, setMessage] = useState<Message | null>(
+    justCreated ? { tone: "positive", content: <p>新增組別成功。</p> } : null,
+  );
+
+  useEffect(() => {
+    if (justCreated) router.replace("/admin/roles");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const allSelected = roles.length > 0 && roles.every((r) => selected.has(r.id));
 
@@ -30,11 +39,12 @@ export function RolesTable({ roles }: { roles: RoleView[] }) {
   async function bulkDelete() {
     setBusy(true);
     setError(undefined);
-    setDeletedCount(null);
     const result = await deleteRolesAction([...selected]);
     setSelected(new Set());
     setBusy(false);
-    if (result.deleted > 0) setDeletedCount(result.deleted);
+    if (result.deleted > 0) {
+      setMessage({ tone: "positive", content: <p>已刪除 {result.deleted} 個組別。</p> });
+    }
     if (result.blocked.length > 0) {
       setError(`「${result.blocked.join("、")}」還有會員套用，已略過未刪除。`);
     }
@@ -43,7 +53,11 @@ export function RolesTable({ roles }: { roles: RoleView[] }) {
 
   return (
     <div className="space-y-4">
-      <CreatedBanner message="新增組別成功。" />
+      {message && (
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={3000}>
+          {message.content}
+        </DismissibleNote>
+      )}
 
       <BulkActionBar
         count={selected.size}
@@ -52,11 +66,6 @@ export function RolesTable({ roles }: { roles: RoleView[] }) {
         actions={[{ label: "刪除選取", tone: "danger", onClick: bulkDelete, disabled: busy }]}
       />
 
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={3000}>
-          <p>已刪除 {deletedCount} 個組別。</p>
-        </DismissibleNote>
-      )}
       {error && <p className="text-[13px] lg:text-[14px] text-danger">{error}</p>}
 
       <TableWrap>

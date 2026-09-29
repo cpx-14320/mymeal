@@ -5,8 +5,12 @@ import { listMembers } from "@/lib/models/member";
 
 export const metadata = { title: "會員列表" };
 
-export default async function AdminMembersPage() {
-  const members = await listMembers();
+export default async function AdminMembersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ created?: string; updated?: string }>;
+}) {
+  const [members, params] = await Promise.all([listMembers(), searchParams]);
 
   return (
     <Section>
@@ -14,7 +18,11 @@ export default async function AdminMembersPage() {
         <ButtonLink href="/admin/members/new" size="sm">新增會員</ButtonLink>
       </AdminHeaderActions>
 
-      <MembersTable members={members} />
+      <MembersTable
+        members={members}
+        justCreated={params.created === "1"}
+        justUpdated={params.updated === "1"}
+      />
     </Section>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,16 +22,34 @@ import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import { formatTaiwanDateTime } from "@/lib/date";
 import type { PageView } from "@/lib/models/page";
 import { setPagesActiveAction, deletePagesAction } from "@/app/(app)/admin/pages/actions";
-import { CreatedBanner } from "@/components/admin/created-banner";
 
-export function PagesManager({ pages }: { pages: PageView[] }) {
+type Message = { tone: "positive" | "danger"; content: React.ReactNode };
+
+export function PagesManager({
+  pages,
+  justCreated = false,
+}: {
+  pages: PageView[];
+  /** 新增頁面存檔後帶著 ?created=1 導回這頁——進來就跳成功訊息，並把網址列的參數清掉，
+   *  避免使用者重新整理這一頁時又跳出一次「新增成功」。 */
+  justCreated?: boolean;
+}) {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [deletedMessage, setDeletedMessage] = useState<number | null>(null);
+  // 新增／刪除共用同一個訊息槽——跟品項設定同一套邏輯，同一時間只會顯示一則狀態框，
+  // 不會像分開管兩個 state 那樣，新增訊息還沒消失、又跳出一則刪除訊息，兩個同時疊在一起。
+  const [message, setMessage] = useState<Message | null>(
+    justCreated ? { tone: "positive", content: <p>新增頁面成功。</p> } : null,
+  );
+
+  useEffect(() => {
+    if (justCreated) router.replace("/admin/pages");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(pages, page, pageSize);
 
@@ -74,7 +92,7 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
     await deletePagesAction([...selected]);
     setSelected(new Set());
     setDeleting(false);
-    setDeletedMessage(count);
+    setMessage({ tone: "positive", content: <p>已刪除 {count} 個頁面。</p> });
     router.refresh();
   }
 
@@ -84,11 +102,9 @@ export function PagesManager({ pages }: { pages: PageView[] }) {
         <ButtonLink href="/admin/pages/new" size="sm">新增頁面</ButtonLink>
       </AdminHeaderActions>
 
-      <CreatedBanner message="新增頁面成功。" />
-
-      {deletedMessage !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedMessage(null)} autoDismissMs={3000}>
-          <p>已刪除 {deletedMessage} 個頁面。</p>
+      {message && (
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={3000}>
+          {message.content}
         </DismissibleNote>
       )}
 

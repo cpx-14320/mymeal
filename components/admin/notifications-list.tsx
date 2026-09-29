@@ -78,7 +78,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
       />
 
       {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)}>
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={3000}>
           <p>已刪除 {deletedCount} 則通知。</p>
         </DismissibleNote>
       )}

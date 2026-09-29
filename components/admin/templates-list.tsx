@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,11 +22,18 @@ import { AdminHeaderActions } from "@/components/layout/admin-header-actions";
 import type { TemplateListItem } from "@/lib/models/template";
 import { formatTaiwanDateTime } from "@/lib/date";
 import { setTemplatesActiveAction, deleteTemplatesAction } from "@/app/(app)/admin/templates/actions";
-import { CreatedBanner } from "@/components/admin/created-banner";
+
+type Message = { tone: "positive" | "danger"; content: React.ReactNode };
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
-export function TemplatesList({ templates }: { templates: TemplateListItem[] }) {
+export function TemplatesList({
+  templates,
+  justCreated = false,
+}: {
+  templates: TemplateListItem[];
+  justCreated?: boolean;
+}) {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -34,7 +41,15 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
   const [month, setMonth] = useState<number | "all">("all");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
-  const [deletedCount, setDeletedCount] = useState<number | null>(null);
+  // 新增／刪除共用同一個訊息槽，跟品項設定同一套邏輯，同一時間只顯示一則狀態框。
+  const [message, setMessage] = useState<Message | null>(
+    justCreated ? { tone: "positive", content: <p>模板已建立成功，可以繼續編輯以下內容。</p> } : null,
+  );
+
+  useEffect(() => {
+    if (justCreated) router.replace("/admin/templates");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 依「模板建立時間」篩選——目前模板沒有另外記錄「這是哪一週的菜單」，
   // 以每週建立一個模板的實際節奏來看，建立時間可以直接當作篩選依據。
@@ -83,7 +98,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
     await deleteTemplatesAction([...selected]);
     setSelected(new Set());
     setBusy(false);
-    setDeletedCount(count);
+    setMessage({ tone: "positive", content: <p>已刪除 {count} 個模板。</p> });
     router.refresh();
   }
 
@@ -100,11 +115,9 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
         <ButtonLink href="/admin/templates/new" size="sm">新增模板</ButtonLink>
       </AdminHeaderActions>
 
-      <CreatedBanner message="模板已建立成功，可以繼續編輯以下內容。" />
-
-      {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={3000}>
-          <p>已刪除 {deletedCount} 個模板。</p>
+      {message && (
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={3000}>
+          {message.content}
         </DismissibleNote>
       )}
 
