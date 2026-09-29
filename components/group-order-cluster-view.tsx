@@ -11,7 +11,10 @@ import {
   TableWrap,
   Th,
   Td,
+  Field,
+  inputClass,
 } from "@/components/ui/primitives";
+import { Modal, ModalHeader } from "@/components/ui/modal";
 import { riceLevelLabel, summarizeOrderLines } from "@/lib/mock";
 import type { GroupOrderDetail } from "@/lib/models/group-order";
 import { downloadCsv } from "@/lib/csv-export";
@@ -31,6 +34,10 @@ export function GroupOrderClusterView({
     () => new Set(orders.map((o) => o.unitId)),
   );
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  // 匯出當下才決定每個單位的團主顯示名稱，不寫進資料庫——各單位實際開團帳號常常是同一個人，
+  // 但送給店家的單子上，各單位可能想標不同的人，所以用 order.id 各自記一份，預設帶入 hostName。
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
 
   const toggleUnit = (unitId: string) =>
     setSelected((prev) => {
@@ -65,6 +72,8 @@ export function GroupOrderClusterView({
     router.refresh();
   }
 
+  const participantNamesOf = (o: GroupOrderDetail) => [...new Set(o.lines.map((l) => l.memberName))];
+
   const selectedOrders = orders.filter((o) => selected.has(o.unitId));
   const combinedTotals = selectedOrders.reduce(
     (acc, o) => ({ qty: acc.qty + o.qty, amount: acc.amount + o.amount }),
@@ -78,19 +87,27 @@ export function GroupOrderClusterView({
   const buildUnitBlock = (o: GroupOrderDetail): (string | number)[][] => {
     const summary = summarizeOrderLines(o.lines);
     const totalQty = summary.reduce((sum, s) => sum + s.totalQty, 0);
+    const displayName = displayNames[o.id]?.trim() || o.hostName;
     return [
-      [o.hostName],
+      [displayName],
       ["餐點", "飯量", "數量"],
       ...summary.map((s) => [s.itemName, s.riceBreakdown, s.totalQty]),
       ["合計", "", totalQty],
     ];
   };
 
-  const handleExport = () => {
+  function openExportDialog() {
+    // 每次打開都重新帶入預設值（原本開團帳號的名字），不會保留上次亂改的殘留值。
+    setDisplayNames(Object.fromEntries(selectedOrders.map((o) => [o.id, o.hostName])));
+    setExportOpen(true);
+  }
+
+  const confirmExport = () => {
     const blocks = selectedOrders.map(buildUnitBlock);
     const allRows = blocks.flatMap((block, i) => (i === 0 ? block : [[], [], ...block]));
     const [firstRow, ...restRows] = allRows;
     downloadCsv(`${templateName}_${date}_單位彙總.csv`, firstRow, restRows);
+    setExportOpen(false);
   };
 
   return (
@@ -140,7 +157,7 @@ export function GroupOrderClusterView({
             ))}
           </div>
           <div className="flex justify-end">
-            <Button disabled={selected.size === 0} onClick={handleExport}>
+            <Button disabled={selected.size === 0} onClick={openExportDialog}>
               匯出選取單位（{selected.size}）
             </Button>
           </div>
@@ -247,6 +264,52 @@ export function GroupOrderClusterView({
           返回列表
         </ButtonLink>
       </div>
+
+      <Modal open={exportOpen} onClose={() => setExportOpen(false)} ariaLabel="匯出前確認各單位團主顯示名稱" className="max-w-lg">
+        <ModalHeader
+          title="匯出前確認各單位團主顯示名稱"
+          subtitle="只影響這次匯出的 CSV，不會存到系統裡"
+          onClose={() => setExportOpen(false)}
+        />
+        <div className="space-y-4 overflow-y-auto p-4">
+          {selectedOrders.map((o) => (
+            <div key={o.id} className="space-y-1.5 border-b border-line pb-4 last:border-0 last:pb-0">
+              <Field label={`${o.departmentName} ${o.unitName}`}>
+                <input
+                  className={inputClass}
+                  value={displayNames[o.id] ?? o.hostName}
+                  onChange={(e) => setDisplayNames((prev) => ({ ...prev, [o.id]: e.target.value }))}
+                />
+              </Field>
+              {participantNamesOf(o).length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {participantNamesOf(o).map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setDisplayNames((prev) => ({ ...prev, [o.id]: name }))}
+                      className={`rounded-full border px-2.5 py-1 text-[13px] ${
+                        name === (displayNames[o.id] ?? o.hostName)
+                          ? "border-brand bg-brand-soft text-ink"
+                          : "border-line text-muted hover:text-ink"
+                      }`}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setExportOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={confirmExport}>確認並下載</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
