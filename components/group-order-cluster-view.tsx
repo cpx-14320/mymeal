@@ -110,6 +110,28 @@ export function GroupOrderClusterView({
     setExportOpen(false);
   };
 
+  // 跟下面「合併訂購明細」表格逐列對應——單位/團員欄位只在該 rowSpan 的第一列填值，
+  // 其餘列留空，比照頁面上合併儲存格的視覺效果（也是 Excel 匯出合併儲存格的慣例）。
+  const exportMergedDetail = () => {
+    const rows: (string | number)[][] = selectedOrders.flatMap((o) =>
+      memberGroupsByOrder(o).flatMap((mg, mgIndex) => {
+        const paid = mg.lines.every((line) => line.paid);
+        const memberLabel = `${paid ? "✓" : "○"} ${mg.memberId === o.hostId ? `${mg.memberName}（團主）` : mg.memberName}`;
+        return mg.lines.map((l, li) => [
+          mgIndex === 0 && li === 0 ? o.unitName : "",
+          li === 0 ? memberLabel : "",
+          l.itemName,
+          riceLevelLabel[l.rice],
+          l.qty,
+          l.note || "",
+          l.price * l.qty,
+        ]);
+      }),
+    );
+    rows.push(["合計", "", "", "", combinedTotals.qty, "", combinedTotals.amount]);
+    downloadCsv(`${templateName}_${date}_合併訂購明細.csv`, ["單位", "團員", "餐點", "飯量", "數量", "備註", "小計"], rows);
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -167,10 +189,15 @@ export function GroupOrderClusterView({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-bold tracking-tight">合併訂購明細</h2>
-          <p className="text-xs text-muted">
-            <span className="text-positive">✓</span> 已付款．
-            <span className="text-muted">○</span> 未付款．點人名前的圖示切換
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-muted">
+              <span className="text-positive">✓</span> 已付款．
+              <span className="text-muted">○</span> 未付款．點人名前的圖示切換
+            </p>
+            <Button variant="secondary" size="sm" disabled={selectedOrders.length === 0} onClick={exportMergedDetail}>
+              匯出 CSV
+            </Button>
+          </div>
         </div>
         <TableWrap>
           <thead>
