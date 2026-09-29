@@ -1,8 +1,13 @@
 import { navIcons } from "@/components/layout/icons";
 import { LoginButton } from "@/components/layout/login-button";
 import { ItemThumbnailFill } from "@/components/ui/primitives";
+import { TemplateMenuSections } from "@/components/template-menu-sections";
 import { getHomePreviewConfig } from "@/lib/models/site-settings";
 import { findTemplateById } from "@/lib/models/template";
+import { listCatalogItemsByIds, type CatalogItemView } from "@/lib/models/catalog-item";
+import { getItemStatsByItems } from "@/lib/models/item-review";
+import { listFavoritesByMember } from "@/lib/models/favorite";
+import { getSessionMemberId } from "@/lib/session";
 
 interface PreviewDish {
   key: string;
@@ -10,11 +15,11 @@ interface PreviewDish {
   subtitle: string;
   price: number;
   emoji: string;
-  imageUrl?: string;
 }
 
 /** 首頁菜單預覽的預設範例假資料——後台「首頁菜單預覽」（/admin/home-preview）沒指定模板時
- *  才會用到這組，讓區塊不會空著。 */
+ *  才會用到這組，讓區塊不會空著。不是真的品項（沒有 id），沒辦法收藏／看評論，
+ *  所以走簡化的靜態卡片，不能套用 ItemCard。 */
 const fallbackDishes: PreviewDish[] = [
   { key: "1", name: "招牌雞腿便當", subtitle: "福來鮮食", price: 95, emoji: "🍗" },
   { key: "2", name: "蔥爆牛肉便當", subtitle: "阿明快餐", price: 100, emoji: "🥩" },
@@ -53,21 +58,36 @@ const features = [
 ];
 
 export default async function HomePage() {
-  const { templateId, sectionId } = await getHomePreviewConfig();
+  const [{ templateId, sectionId }, memberId] = await Promise.all([
+    getHomePreviewConfig(),
+    getSessionMemberId(),
+  ]);
   const template = templateId ? await findTemplateById(templateId) : null;
-  // 有指定區塊就只取那個區塊的品項；沒指定（或那個區塊已經被刪掉）就混合模板全部區塊。
-  const section = sectionId ? template?.sections.find((s) => s.id === sectionId) : undefined;
-  const sourceItems = section ? section.items : (template?.sections.flatMap((s) => s.items) ?? []);
-  const templateDishes: PreviewDish[] = sourceItems.map((it) => ({
-    key: it.id,
-    name: it.name,
-    subtitle: it.pageName ?? "",
-    price: it.price,
-    emoji: it.emoji,
-    imageUrl: it.imageUrl,
-  }));
-  // 模板選了但還沒加任何品項時，先退回範例假資料，避免區塊直接空著。
-  const previewDishes = templateDishes.length > 0 ? templateDishes : fallbackDishes;
+  // 有指定區塊就只取那個區塊；沒指定（或那個區塊已經被刪掉）就顯示模板全部區塊——
+  // 跟 /pages/[slug] 套用模板時的畫法（TemplateMenuSections）完全同一套，包含卡片樣式、
+  // 收藏愛心、評論按鈕、標籤，未登入點收藏一樣會跳登入彈窗（見 TemplateMenuSections 內部）。
+  const rawSections = sectionId
+    ? (template?.sections.filter((s) => s.id === sectionId) ?? [])
+    : (template?.sections ?? []);
+  const allItemIds = rawSections.flatMap((sec) => sec.items.map((it) => it.id));
+
+  const [fullItems, stats, favorites] = allItemIds.length
+    ? await Promise.all([
+        listCatalogItemsByIds(allItemIds),
+        getItemStatsByItems(allItemIds),
+        memberId ? listFavoritesByMember(memberId) : Promise.resolve([]),
+      ])
+    : [[] as CatalogItemView[], {}, []];
+  const itemById = new Map(fullItems.map((it) => [it.id, it]));
+  const templateSections = rawSections
+    .map((sec) => ({
+      id: sec.id,
+      name: sec.name,
+      items: sec.items
+        .map((it) => itemById.get(it.id))
+        .filter((it): it is CatalogItemView => !!it && it.active),
+    }))
+    .filter((sec) => sec.items.length > 0);
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6">
@@ -108,29 +128,40 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <ul className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {previewDishes.map((dish) => (
-            <li
-              key={dish.key}
-              className="overflow-hidden rounded-xl border border-line bg-surface"
-            >
-              <ItemThumbnailFill
-                imageUrl={dish.imageUrl}
-                emoji={dish.emoji}
-                alt={dish.name}
-                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                containerClassName="relative grid h-28 place-items-center overflow-hidden bg-brand-soft text-4xl"
-              />
-              <div className="p-4">
-                <p className="font-medium">{dish.name}</p>
-                <p className="mt-0.5 text-xs text-muted">{dish.subtitle}</p>
-                <p className="mt-2 text-sm font-semibold text-brand">
-                  NT$ {dish.price}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>      </section>
+        {templateSections.length > 0 ? (
+          <div className="mt-6">
+            <TemplateMenuSections
+              sections={templateSections}
+              stats={stats}
+              initialFavoriteIds={favorites.map((f) => f.itemId)}
+            />
+          </div>
+        ) : (
+          <ul className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {fallbackDishes.map((dish) => (
+              <li
+                key={dish.key}
+                className="overflow-hidden rounded-xl border border-line bg-surface"
+              >
+                <ItemThumbnailFill
+                  imageUrl={undefined}
+                  emoji={dish.emoji}
+                  alt={dish.name}
+                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  containerClassName="relative grid aspect-[3/2] place-items-center overflow-hidden bg-brand-soft text-4xl"
+                />
+                <div className="p-4">
+                  <p className="font-medium">{dish.name}</p>
+                  <p className="mt-0.5 text-xs text-muted">{dish.subtitle}</p>
+                  <p className="mt-2 text-sm font-semibold text-brand">
+                    NT$ {dish.price}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* 運作方式 */}
       <section className="border-t border-line py-12">
