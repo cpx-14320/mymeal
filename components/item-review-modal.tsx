@@ -9,7 +9,7 @@ import {
   getItemReviewsAction,
   submitItemReviewAction,
   deleteItemReviewAction,
-} from "@/app/(app)/catalog/actions";
+} from "@/app/(app)/item-review-actions";
 
 function stars(n: number) {
   return "★".repeat(n) + "☆".repeat(5 - n);
