@@ -2,11 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // 品項圖片存在 Vercel Blob（mymeal/items_images/...），讓 next/image 可以讀取並最佳化。
+    // 品項圖片、廣告圖片、頁面圖示…這些欄位（見 components/admin/image-field.tsx）除了能上傳到
+    // Vercel Blob，管理者也可以直接貼外部網址——只允許 Blob 網域的話，貼外部圖片網址時
+    // next/image 的最佳化服務會直接擋掉，前台讀不到圖。這些欄位都是後台管理者專用（需要登入
+    // 才能寫入），不是任意訪客可控的輸入，允許任意 https 網域的風險可接受。
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
+        hostname: "**",
       },
     ],
   },
