@@ -79,6 +79,7 @@ const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
       audit: true,
       promos: true,
       feedback: true,
+      homePreview: true,
     },
   },
 ];
