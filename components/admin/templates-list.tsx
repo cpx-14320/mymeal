@@ -103,7 +103,7 @@ export function TemplatesList({ templates }: { templates: TemplateListItem[] }) 
       <CreatedBanner message="模板已建立成功，可以繼續編輯以下內容。" />
 
       {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={5000}>
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={3000}>
           <p>已刪除 {deletedCount} 個模板。</p>
         </DismissibleNote>
       )}

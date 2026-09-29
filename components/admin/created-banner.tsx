@@ -33,7 +33,7 @@ export function CreatedBanner({
 
   if (!show) return null;
   return (
-    <DismissibleNote tone="positive" onClose={() => setShow(false)} autoDismissMs={5000}>
+    <DismissibleNote tone="positive" onClose={() => setShow(false)} autoDismissMs={3000}>
       <p>{message}</p>
     </DismissibleNote>
   );

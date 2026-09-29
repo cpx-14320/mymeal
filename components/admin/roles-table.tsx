@@ -53,7 +53,7 @@ export function RolesTable({ roles }: { roles: RoleView[] }) {
       />
 
       {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={5000}>
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={3000}>
           <p>已刪除 {deletedCount} 個組別。</p>
         </DismissibleNote>
       )}

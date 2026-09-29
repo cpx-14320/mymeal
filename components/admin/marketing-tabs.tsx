@@ -31,7 +31,7 @@ export function MarketingTabs({
     <div className="space-y-4">
       <CreatedBanner message="新增廣告成功。" />
       {message && (
-        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={5000}>
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={3000}>
           <p>{message.text}</p>
         </DismissibleNote>
       )}

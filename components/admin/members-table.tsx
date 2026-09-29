@@ -120,7 +120,7 @@ export function MembersTable({ members: initialMembers }: { members: MemberListI
       <CreatedBanner message="會員資料已更新。" param="updated" />
 
       {deletedCount !== null && (
-        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={5000}>
+        <DismissibleNote tone="positive" onClose={() => setDeletedCount(null)} autoDismissMs={3000}>
           <p>已刪除 {deletedCount} 位會員。</p>
         </DismissibleNote>
       )}

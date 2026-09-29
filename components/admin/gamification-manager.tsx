@@ -440,7 +440,7 @@ export function GamificationManager({
   return (
     <div className="space-y-4">
       {message && (
-        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={5000}>
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={3000}>
           <p>{message.text}</p>
         </DismissibleNote>
       )}

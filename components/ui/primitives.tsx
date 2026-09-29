@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useRef, type ComponentProps, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 
 /* ── 品項縮圖 ──────────────────────────────────────────
  * 有上傳圖片就用 next/image，沒有就退回 emoji——全站每個顯示品項縮圖的地方
@@ -726,13 +726,17 @@ export function Note({
   );
 }
 
+/** 淡出動畫時長（ms）——autoDismissMs 倒數結束或手動按 ✕ 都先觸發這個漸隱效果，
+ *  等動畫播完才真的呼叫 onClose 把訊息從父層 state 移除，不會生硬地瞬間消失。 */
+const DISMISS_FADE_MS = 300;
+
 /** 執行完一個動作（匯入、上傳、打包下載…）後顯示的結果訊息，帶一顆關閉鈕自己收掉——
  *  CSV 匯入、批次上傳圖片、打包圖片下載…等後台批次操作的「結果摘要」都共用這個殼，
  *  呼叫端只要管一個 state（成功與否、有沒有內容）就好，不用每個地方都重寫一次外層排版跟關閉鈕。
- *  autoDismissMs：狀態類提示（新增/刪除/核准成功…）統一帶 5000 讓它自己消失；有列表內容
+ *  autoDismissMs：狀態類提示（新增/刪除/核准成功…）統一帶 3000，3 秒後淡出消失；有列表內容
  *  值得使用者慢慢看的結果摘要（CSV 匯入、批次上傳）則不帶，維持手動關閉。
  *  計時器依 [autoDismissMs, children] 重設——呼叫端每次 setMessage 都會給一份新的 children
- *  （新的 JSX 參照），同一個訊息殼被 React 重用時計時器也會跟著換成新訊息重新倒數 5 秒，
+ *  （新的 JSX 參照），同一個訊息殼被 React 重用時計時器也會跟著換成新訊息重新倒數，
  *  不會被前一則訊息剩下的時間提前關掉。 */
 export function DismissibleNote({
   tone,
@@ -750,25 +754,38 @@ export function DismissibleNote({
     onCloseRef.current = onClose;
   });
 
+  // closing 沒有依 children 變化重置——同一個訊息殼正常情況下要嘛整個卸載重掛（message
+  // 變 null 又變回非 null，重新從 closing=false 開始），要嘛就是同一則訊息倒數中，
+  // 不會出現「舊訊息才剛開始淡出、新訊息又緊接著換上」這種需要中途重置的情況。
+  const [closing, setClosing] = useState(false);
+
   useEffect(() => {
     if (!autoDismissMs) return;
-    const timer = setTimeout(() => onCloseRef.current(), autoDismissMs);
+    const timer = setTimeout(() => setClosing(true), autoDismissMs);
     return () => clearTimeout(timer);
   }, [autoDismissMs, children]);
 
+  useEffect(() => {
+    if (!closing) return;
+    const timer = setTimeout(() => onCloseRef.current(), DISMISS_FADE_MS);
+    return () => clearTimeout(timer);
+  }, [closing]);
+
   return (
-    <Note tone={tone}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="space-y-1">{children}</div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 opacity-70 hover:opacity-100"
-          aria-label="關閉"
-        >
-          ✕
-        </button>
-      </div>
-    </Note>
+    <div className={`transition-opacity duration-300 ${closing ? "opacity-0" : "opacity-100"}`}>
+      <Note tone={tone}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1">{children}</div>
+          <button
+            type="button"
+            onClick={() => setClosing(true)}
+            className="shrink-0 opacity-70 hover:opacity-100"
+            aria-label="關閉"
+          >
+            ✕
+          </button>
+        </div>
+      </Note>
+    </div>
   );
 }

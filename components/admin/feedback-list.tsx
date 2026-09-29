@@ -47,7 +47,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
       />
 
       {deleted && (
-        <DismissibleNote tone="positive" onClose={() => setDeleted(false)} autoDismissMs={5000}>
+        <DismissibleNote tone="positive" onClose={() => setDeleted(false)} autoDismissMs={3000}>
           <p>已刪除這筆意見回饋。</p>
         </DismissibleNote>
       )}

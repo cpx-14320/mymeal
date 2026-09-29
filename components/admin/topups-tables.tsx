@@ -192,7 +192,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
   return (
     <Section>
       {message && (
-        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={5000}>
+        <DismissibleNote tone={message.tone} onClose={() => setMessage(null)} autoDismissMs={3000}>
           <p>{message.text}</p>
         </DismissibleNote>
       )}
