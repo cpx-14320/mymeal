@@ -1,4 +1,5 @@
 import { Schema, model, models, Types } from "mongoose";
+import { del } from "@vercel/blob";
 import { connectMongo } from "@/lib/mongoose";
 // 確保 populate("categoryId"/"pageId") 前這幾個 model 一定已註冊，
 // 不依賴這次 request 剛好先經過哪個其他頁面（不然會間歇性 MissingSchemaError）。
@@ -411,7 +412,10 @@ export async function setCatalogItemsPage(ids: string[], pageId: string | undefi
   return result.modifiedCount;
 }
 
-/** 刪除品項：連同從所有模板的 sections[].itemIds 裡移除該品項的參照，避免模板留下孤兒 id。 */
+/** 刪除品項：連同從所有模板的 sections[].itemIds 裡移除該品項的參照，避免模板留下孤兒 id。
+ *  圖片檔案（存在 Vercel Blob）也一併刪掉，不然資料庫這筆沒了、圖片檔案卻一直留著變孤兒檔案——
+ *  跟 lib/models/interstitial.ts 的 deleteInterstitials 同一套做法，imageUrl 也可能是手動貼的
+ *  外部網址，不是我們自己 Blob 上的檔案，del() 對這種網址會失敗，失敗就忽略，不影響刪除本身。 */
 export async function deleteCatalogItems(ids: string[]): Promise<number> {
   await connectMongo();
   const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
@@ -426,12 +430,20 @@ export async function deleteCatalogItems(ids: string[]): Promise<number> {
   // 收藏／評論指向被刪的品項就沒有意義了，一併清掉，不留孤兒紀錄。
   const { Favorite } = await import("@/lib/models/favorite");
   const { ItemReview } = await import("@/lib/models/item-review");
-  await Promise.all([
+  const [docs] = await Promise.all([
+    CatalogItem.find({ _id: { $in: objIds } }, { imageUrl: 1 }),
     Favorite.deleteMany({ itemId: { $in: objIds } }),
     ItemReview.deleteMany({ itemId: { $in: objIds } }),
   ]);
 
   const result = await CatalogItem.deleteMany({ _id: { $in: objIds } });
+
+  await Promise.all(
+    docs
+      .filter((d) => d.imageUrl)
+      .map((d) => del(d.imageUrl!).catch(() => {})),
+  );
+
   return result.deletedCount;
 }
 
