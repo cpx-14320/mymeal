@@ -1,4 +1,5 @@
 import { Schema, model, models, Types } from "mongoose";
+import { del } from "@vercel/blob";
 import { connectMongo } from "@/lib/mongoose";
 import { PROMO_PAGE_OPTIONS } from "@/lib/promo-pages";
 
@@ -146,11 +147,23 @@ export async function updateInterstitial(id: string, input: InterstitialInput) {
   await Interstitial.findByIdAndUpdate(id, { $set: input });
 }
 
+/** 刪除廣告同時清掉存在 Vercel Blob 的圖片檔案，避免刪了列表資料、圖片檔案卻一直留著變孤兒檔案
+ *  （imageUrl 也可能是手動貼的外部網址，不是我們自己 Blob 上的檔案——del() 對這種網址會失敗，
+ *  跟 lib/blob-upload.ts 換圖時清舊檔同一套做法，失敗就忽略，不影響刪除本身）。 */
 export async function deleteInterstitials(ids: string[]): Promise<number> {
   await connectMongo();
   const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
   if (objIds.length === 0) return 0;
+
+  const docs = await Interstitial.find({ _id: { $in: objIds } }, { imageUrl: 1 });
   const result = await Interstitial.deleteMany({ _id: { $in: objIds } });
+
+  await Promise.all(
+    docs
+      .filter((d) => d.imageUrl)
+      .map((d) => del(d.imageUrl).catch(() => {})),
+  );
+
   return result.deletedCount;
 }
 
