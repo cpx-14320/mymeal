@@ -1,0 +1,530 @@
+<title>後台設計規範與稽核</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          page: "var(--page)",
+          surface: "var(--surface)",
+          "surface-2": "var(--surface-2)",
+          ink: "var(--ink)",
+          muted: "var(--muted)",
+          line: "var(--line)",
+          brand: "var(--brand)",
+          "brand-fg": "var(--brand-fg)",
+          "brand-soft": "var(--brand-soft)",
+          accent: "var(--accent)",
+          positive: "var(--positive)",
+          warning: "var(--warning)",
+          danger: "var(--danger)",
+        },
+        fontFamily: {
+          sans: ['"Noto Sans TC"', "system-ui", "sans-serif"],
+          mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  /* 這幾個變數值直接照抄 app/globals.css（唯一的正式來源）——跟 layout-anatomy.html
+     裡那份稍微手動同步的複本不是同一份，數值以這裡（跟 globals.css）為準。 */
+  :root {
+    --page: #faf8f5; --surface: #ffffff; --surface-2: #f4f0ea;
+    --ink: #1c1a17; --muted: #6b6459; --line: #e7e1d8;
+    --brand: #b5730f; --brand-fg: #ffffff; --brand-soft: #fdf3e0;
+    --accent: #2f6b57;
+    --positive: #1f7a4d; --warning: #9a6a12; --danger: #b23c2e;
+    --doc-page: #f6f3ee; --doc-ink: #262019; --doc-muted: #8a7f6c;
+    --doc-line: #e4dccc; --doc-accent: #6d5a3f; --doc-accent-soft: #efe7d8;
+    --bad: #b23c2e; --bad-soft: #f7e6e2; --good: #1f7a4d; --good-soft: #e6f2ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #14120f; --surface: #1b1916; --surface-2: #232019;
+      --ink: #ece7de; --muted: #9c9488; --line: #2f2a23;
+      --brand: #e0a63e; --brand-fg: #241a08; --brand-soft: #2a2213;
+      --accent: #68b79c;
+      --positive: #57c48a; --warning: #e0b45e; --danger: #e98a7c;
+      --doc-page: #171310; --doc-ink: #ece5d6; --doc-muted: #a89b83;
+      --doc-line: #332c20; --doc-accent: #d9b877; --doc-accent-soft: #2a2313;
+      --bad: #e98a7c; --bad-soft: #3a1f1a; --good: #57c48a; --good-soft: #16281f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #14120f; --surface: #1b1916; --surface-2: #232019;
+    --ink: #ece7de; --muted: #9c9488; --line: #2f2a23;
+    --brand: #e0a63e; --brand-fg: #241a08; --brand-soft: #2a2213;
+    --accent: #68b79c;
+    --positive: #57c48a; --warning: #e0b45e; --danger: #e98a7c;
+    --doc-page: #171310; --doc-ink: #ece5d6; --doc-muted: #a89b83;
+    --doc-line: #332c20; --doc-accent: #d9b877; --doc-accent-soft: #2a2313;
+    --bad: #e98a7c; --bad-soft: #3a1f1a; --good: #57c48a; --good-soft: #16281f;
+  }
+  body { background: var(--doc-page); color: var(--doc-ink); font-family: "Noto Sans TC", system-ui, sans-serif; }
+  .doc-mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  .tag {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .02em;
+    padding: 2px 7px; border-radius: 5px;
+    background: var(--doc-accent-soft); color: var(--doc-accent);
+    border: 1px solid color-mix(in srgb, var(--doc-accent) 35%, transparent);
+    white-space: nowrap;
+  }
+  .filepath {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    color: var(--doc-accent);
+    background: var(--doc-accent-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .frame {
+    border: 1.5px dashed color-mix(in srgb, var(--doc-accent) 45%, transparent);
+    border-radius: 14px;
+    position: relative;
+    background: var(--doc-page);
+    padding: 20px;
+  }
+  .frame-label {
+    position: absolute; top: -11px; left: 14px;
+    background: var(--doc-page); padding: 0 8px;
+  }
+  .specimen {
+    border-radius: 14px;
+    border: 1px solid var(--doc-line);
+    background: var(--surface);
+    padding: 18px;
+  }
+  .card-doc {
+    border-radius: 14px;
+    border: 1px solid var(--doc-line);
+    background: var(--surface);
+  }
+  .good-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11.5px; font-weight: 700;
+    color: var(--good); background: var(--good-soft);
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .bad-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11.5px; font-weight: 700;
+    color: var(--bad); background: var(--bad-soft);
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .swatch { border-radius: 10px; border: 1px solid var(--doc-line); }
+</style>
+
+<div class="mx-auto max-w-[1180px] px-5 py-12 sm:px-8">
+
+  <p class="tag">MYMEAL · 後台管理</p>
+  <h1 class="mt-4 text-[28px] font-black tracking-tight text-balance sm:text-[34px]">後台設計規範與稽核</h1>
+  <p class="mt-3 max-w-[70ch] text-[15px] leading-7" style="color:var(--doc-muted)">
+    這頁分兩塊：<b>Part A</b> 是設計規範——顏色、字級、間距、按鈕等等實際在用的樣式，全部用真的
+    Tailwind class＋<code class="doc-mono">app/globals.css</code> 的 CSS 變數即時渲染出來，不是純文字說明，
+    以後要調整任何後台頁面就照這份當標準。<b>Part B</b> 是逐頁稽核——目前 34 個後台頁面／清單元件裡，
+    哪些正確共用了 <code class="doc-mono">components/ui/primitives.tsx</code> 的元件，哪些是自己另外刻了一份、
+    跟共用版本長得不完全一樣，附檔名＋行號方便直接找到程式碼。
+  </p>
+  <p class="mt-3 max-w-[70ch] text-[13px] leading-6" style="color:var(--doc-muted)">
+    前台／後台的版面骨架跟共用元件庫總覽另外整理在
+    <code class="doc-mono">layout-anatomy.html</code>（這份不重複放，只放連結）；這頁專門講「後台頁面之間」
+    彼此有沒有共用一致，以及一份給後續調整用的樣式標準。
+  </p>
+
+  <!-- ═══════════════════════════════════════════ PART A ═══════════════════════════════════════════ -->
+  <div class="mt-14 flex items-baseline gap-2">
+    <span class="tag">PART A</span>
+    <h2 class="text-2xl font-extrabold tracking-tight">設計規範（Design System）</h2>
+  </div>
+  <p class="mt-2 max-w-[62ch] text-sm" style="color:var(--doc-muted)">以下每一格都是用真的 class 即時畫出來的樣本，不是截圖，深淺色模式會跟著你目前的瀏覽器/系統設定切換。</p>
+
+  <!-- A1 顏色 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">A1</span><h3 class="text-lg font-bold tracking-tight">色彩 Token</h3></div>
+    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">來源：<span class="filepath">app/globals.css</span>。元件一律用語意 class（bg-surface、text-ink…），沒有任何地方直接寫死色碼。</p>
+
+    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <!-- swatch cards -->
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--page)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--page</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #faf8f5　深 #14120f</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--surface)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--surface</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #ffffff　深 #1b1916</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--surface-2)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--surface-2</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #f4f0ea　深 #232019</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--ink)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--ink</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #1c1a17　深 #ece7de</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--muted)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--muted</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #6b6459　深 #9c9488</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--line)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--line</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #e7e1d8　深 #2f2a23</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--brand)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--brand</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #b5730f　深 #e0a63e</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--brand-soft)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--brand-soft</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #fdf3e0　深 #2a2213</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--accent)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--accent</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #2f6b57　深 #68b79c</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--positive)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--positive</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #1f7a4d　深 #57c48a</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--warning)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--warning</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #9a6a12　深 #e0b45e</p>
+      </div>
+      <div class="card-doc p-3">
+        <div class="swatch h-14" style="background:var(--danger)"></div>
+        <p class="mt-2 text-[12.5px] font-semibold doc-mono">--danger</p>
+        <p class="text-[11px]" style="color:var(--doc-muted)">淺 #b23c2e　深 #e98a7c</p>
+      </div>
+    </div>
+    <p class="mt-3 text-[12px]" style="color:var(--doc-muted)">注意：<span class="filepath">layout-anatomy.html</span> 裡複製的一份色碼跟這裡（跟 globals.css）已經有幾個值不一樣（例如 --line 深色、--danger 深色）——那份是手動同步的複本，容易跟著 globals.css 改版漂移，實際數值以這頁跟 globals.css 為準。</p>
+  </section>
+
+  <!-- A2 字級 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">A2</span><h3 class="text-lg font-bold tracking-tight">字級 Scale</h3></div>
+    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">後台實際在用的字級（依使用頻率排列，粗體是最主要的兩個）。</p>
+    <div class="specimen mt-4 space-y-3">
+      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-xs</span><span class="text-xs">12px — 表格輔助文字、Badge、PageSizeSelect（最常見的輔助字級）</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-[13px]</span><span class="text-[13px] font-semibold">13px — 全站表格內文標準字級（Th／Td／Note 的預設值，最主要的內文字級）</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">lg:text-[14px]</span><span class="text-[13px] lg:text-[14px]">13→14px — 表格內文在較寬螢幕放大一級（跟 text-[13px] 幾乎都是成對出現）</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-sm</span><span class="text-sm font-semibold">14px — 表單欄位 input／Field label／按鈕 size=md</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-lg</span><span class="text-lg font-bold tracking-tight">18px — Section 標題（&lt;Section title&gt; 預設樣式）</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-xl</span><span class="text-xl font-bold tracking-tight tabular-nums">20px — Stat 數值（&lt;Stat&gt; 預設 valueClassName）</span></div>
+      <div class="flex items-baseline gap-4"><span class="filepath w-20 shrink-0">text-2xl</span><span class="text-2xl font-bold tracking-tight">24px — 頁面主標題（&lt;PageHeader&gt; 的 &lt;h1&gt;）</span></div>
+    </div>
+  </section>
+
+  <!-- A3 間距 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">A3</span><h3 class="text-lg font-bold tracking-tight">間距 Scale</h3></div>
+    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">垂直節奏（space-y-*）依「內容類型」分兩種標準用法——不是隨頁面各自決定。</p>
+    <div class="specimen mt-4 grid gap-5 sm:grid-cols-2">
+      <div>
+        <p class="text-[12.5px] font-semibold">space-y-8 ＝ 32px　－　同一頁「多個 Section 之間」</p>
+        <div class="mt-2 h-6 w-full rounded" style="background:var(--brand)"></div>
+        <div class="mt-2 h-6 w-full rounded" style="background:var(--brand)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">例：/admin/wallets、/admin/roles、後台首頁儀表板</p>
+      </div>
+      <div>
+        <p class="text-[12.5px] font-semibold">space-y-5 ＝ 20px　－　表單卡片內欄位之間（9 個表單共用）</p>
+        <div class="mt-2 h-4 w-full rounded" style="background:var(--accent)"></div>
+        <div class="mt-2 h-4 w-full rounded" style="background:var(--accent)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">item-form／member-create-form／promo-form／role-form…</p>
+      </div>
+      <div>
+        <p class="text-[12.5px] font-semibold">space-y-4 ＝ 16px　－　清單編輯卡片內列之間（3 個檔案共用）</p>
+        <div class="mt-2 h-4 w-full rounded" style="background:var(--warning)"></div>
+        <div class="mt-2 h-4 w-full rounded" style="background:var(--warning)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">name-list-card／tag-groups／org-unit-section</p>
+      </div>
+      <div>
+        <p class="text-[12.5px] font-semibold">space-y-3 ＝ 12px　－　<span class="bad-tag">僅 1 處</span> 例外</p>
+        <div class="mt-2 h-3 w-full rounded" style="background:var(--bad)"></div>
+        <div class="mt-2 h-3 w-full rounded" style="background:var(--bad)"></div>
+        <p class="mt-1 text-[11px]" style="color:var(--doc-muted)">template-editor.tsx:122，見 Part B 稽核細節</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- A4 按鈕 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">A4</span><h3 class="text-lg font-bold tracking-tight">按鈕 Button</h3></div>
+    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">全站只有 <code class="doc-mono">&lt;Button&gt;</code> / <code class="doc-mono">&lt;ButtonLink&gt;</code> 兩支元件，靠 variant + size 決定樣式；後台範圍（<span class="filepath">.admin-scope .btn</span>）文字統一不加粗，前台維持 semibold。</p>
+    <div class="specimen mt-4 space-y-4">
+      <div>
+        <p class="text-[12px] font-semibold" style="color:var(--doc-muted)">size = md（預設，表單主要送出鈕）</p>
+        <div class="mt-2 flex flex-wrap items-center gap-3" style="font-weight:400">
+          <button class="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm" style="background:var(--brand);color:var(--brand-fg)">primary</button>
+          <button class="inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-sm" style="border-color:var(--line);background:var(--surface);color:var(--ink)">secondary</button>
+          <button class="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm" style="color:var(--ink)">ghost</button>
+          <button class="inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-sm" style="border-color:color-mix(in srgb,var(--danger) 40%,transparent);color:var(--danger)">danger</button>
+        </div>
+      </div>
+      <div>
+        <p class="text-[12px] font-semibold" style="color:var(--doc-muted)">size = sm（表格「操作」欄／頁首次要動作）</p>
+        <div class="mt-2 flex flex-wrap items-center gap-3" style="font-weight:400">
+          <button class="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-[13px] leading-5" style="background:var(--brand);color:var(--brand-fg)">primary</button>
+          <button class="inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1 text-[13px] leading-5" style="border-color:var(--line);background:var(--surface);color:var(--ink)">secondary</button>
+          <button class="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-[13px] leading-5" style="color:var(--ink)">ghost</button>
+          <button class="inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1 text-[13px] leading-5" style="border-color:color-mix(in srgb,var(--danger) 40%,transparent);color:var(--danger)">danger</button>
+        </div>
+        <p class="mt-2 text-[11px]" style="color:var(--doc-muted)">sm 用 text-[13px] + leading-5（20px 行高）是刻意的：字變小但行高不變，按鈕高度（28px）才會跟 text-xl 標題對齊。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- A5 表單欄位 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">A5</span><h3 class="text-lg font-bold tracking-tight">表單欄位 Field</h3></div>
+    <div class="specimen mt-4 max-w-sm">
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-medium">組別名稱</span>
+        <input class="w-full rounded-lg border px-3 py-2 text-sm outline-none" style="border-color:var(--line);background:var(--surface);color:var(--ink)" placeholder="請輸入" />
+        <span class="mt-1 block text-xs" style="color:var(--doc-muted)">輔助說明文字（hint）</span>
+      </label>
+    </div>
+  </section>
+
+  <!-- A6 徽章 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">A6</span><h3 class="text-lg font-bold tracking-tight">徽章 Badge</h3></div>
+    <div class="specimen mt-4 flex flex-wrap gap-2">
+      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:var(--surface-2);color:var(--muted)">neutral</span>
+      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:var(--brand-soft);color:var(--brand)">brand</span>
+      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:color-mix(in srgb,var(--positive) 15%,transparent);color:var(--positive)">positive</span>
+      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:color-mix(in srgb,var(--warning) 15%,transparent);color:var(--warning)">warning</span>
+      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)">danger</span>
+    </div>
+  </section>
+
+  <!-- A7 表格 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">A7</span><h3 class="text-lg font-bold tracking-tight">表格 Table</h3></div>
+    <div class="specimen mt-4 overflow-hidden rounded-xl border p-0" style="border-color:var(--doc-line)">
+      <table class="w-full">
+        <thead>
+          <tr>
+            <th class="whitespace-nowrap px-4 py-2.5 text-left text-[13px] font-normal lg:text-[14px]" style="background:var(--surface-2);color:var(--muted)">項目</th>
+            <th class="whitespace-nowrap px-4 py-2.5 text-left text-[13px] font-normal lg:text-[14px]" style="background:var(--surface-2);color:var(--muted)">狀態</th>
+            <th class="whitespace-nowrap px-4 py-2.5 text-right text-[13px] font-normal lg:text-[14px]" style="background:var(--surface-2);color:var(--muted)">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="whitespace-nowrap border-t px-4 py-3 text-left align-middle text-[13px] lg:text-[14px]" style="border-color:var(--doc-line)">範例列</td>
+            <td class="whitespace-nowrap border-t px-4 py-3 text-left align-middle text-[13px] lg:text-[14px]" style="border-color:var(--doc-line)"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style="background:color-mix(in srgb,var(--positive) 15%,transparent);color:var(--positive)">顯示中</span></td>
+            <td class="whitespace-nowrap border-t px-4 py-3 text-right align-middle text-[13px] lg:text-[14px]" style="border-color:var(--doc-line)"><button class="rounded-lg border px-3 py-1 text-[13px] leading-5" style="border-color:var(--line)">編輯</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- A8 分頁 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">A8</span><h3 class="text-lg font-bold tracking-tight">分頁 Pagination（唯一正確樣式）</h3></div>
+    <p class="mt-1 text-[13px]" style="color:var(--doc-muted)">來源：<code class="doc-mono">&lt;ListToolbar&gt;</code>＋<code class="doc-mono">&lt;Pagination&gt;</code>。左邊放篩選（頁籤或搜尋框，可留空），右邊固定放「每頁顯示」；表格下方分頁列固定左邊文字說明、右邊頁碼按鈕。</p>
+    <div class="specimen mt-4 space-y-3">
+      <div class="flex min-h-9 flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <button class="shrink-0 rounded-full px-3 py-1.5 text-[13px]" style="background:var(--brand);color:var(--brand-fg)">蓋台廣告 2</button>
+          <button class="shrink-0 rounded-full border px-3 py-1.5 text-[13px]" style="border-color:var(--line);color:var(--muted)">通知訊息 0</button>
+        </div>
+        <label class="flex items-center gap-1.5 whitespace-nowrap text-xs" style="color:var(--muted)">每頁顯示
+          <select class="rounded-lg border px-2 py-1.5 text-xs" style="border-color:var(--line);background:var(--surface);color:var(--ink)"><option>25</option></select>
+          筆
+        </label>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+        <p class="text-xs tabular-nums" style="color:var(--muted)">第 1–2 筆，共 2 筆</p>
+        <div class="flex items-center gap-1">
+          <button class="rounded-lg border px-2.5 py-1.5 text-sm" style="border-color:var(--line);color:var(--muted)">‹</button>
+          <button class="min-w-8 rounded-lg px-2.5 py-1.5 text-sm tabular-nums" style="background:var(--brand);color:var(--brand-fg)">1</button>
+          <button class="rounded-lg border px-2.5 py-1.5 text-sm" style="border-color:var(--line);color:var(--muted)">›</button>
+        </div>
+      </div>
+    </div>
+    <p class="mt-2 text-[12px]" style="color:var(--doc-muted)">15 個清單元件裡有 14 個是這個樣子；唯一的例外見 Part B「B-1」。</p>
+  </section>
+
+  <!-- A9 卡片/區塊 -->
+  <section class="mt-10 mb-4">
+    <div class="flex items-baseline gap-2"><span class="tag">A9</span><h3 class="text-lg font-bold tracking-tight">卡片與區塊 Card / Section</h3></div>
+    <div class="mt-4 rounded-xl border p-5" style="border-color:var(--doc-line);background:var(--surface)">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h4 class="text-lg font-bold tracking-tight leading-none">Section 標題</h4>
+          <p class="mt-3 text-[13px] lg:text-[14px]" style="color:var(--muted)">description 說明文字，放在標題下方。</p>
+        </div>
+        <button class="rounded-lg px-3 py-1 text-[13px] leading-5" style="background:var(--brand);color:var(--brand-fg)">actions</button>
+      </div>
+      <div class="mt-4 rounded-xl border p-5" style="border-color:var(--doc-line)">Card + CardBody（rounded-xl，內距 p-5＝20px）</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ PART B ═══════════════════════════════════════════ -->
+  <div class="mt-16 flex items-baseline gap-2">
+    <span class="tag">PART B</span>
+    <h2 class="text-2xl font-extrabold tracking-tight">共用 vs 非共用稽核</h2>
+  </div>
+  <p class="mt-2 max-w-[64ch] text-sm" style="color:var(--doc-muted)">依後台側欄分組（<span class="filepath">components/layout/nav.ts</span> 的 adminNav）逐頁列出：✓ 正確共用了哪些元件、⚠ 哪裡自己另外刻了一份。下面先放這次稽核抓到、值得優先處理的落差，再放完整分頁清單。</p>
+
+  <!-- B1 -->
+  <section class="mt-8">
+    <div class="flex items-center gap-2"><span class="bad-tag">落差 B-1</span><h3 class="text-base font-bold">清單工具列位置不一致（「有的置左有的置右」的實際原因）</h3></div>
+    <p class="mt-2 text-[13px]" style="color:var(--doc-muted)">14 個清單元件都用 <code class="doc-mono">&lt;ListToolbar&gt;</code>（篩選靠左、每頁顯示固定靠右）。唯一例外是 <span class="filepath">components/admin/templates-list.tsx:124</span>，直接接 <code class="doc-mono">&lt;PageSizeSelect&gt;</code>，把年份／月份篩選也一起塞進 <code class="doc-mono">justify-end</code>，變成全部靠右——這就是你看到「有的置左有的置右」的地方。</p>
+    <div class="specimen mt-3 grid gap-4 sm:grid-cols-2">
+      <div>
+        <p class="good-tag">✓ 其餘 14 個清單（ListToolbar）</p>
+        <div class="mt-2 flex min-h-9 items-center justify-between gap-3 rounded-lg border p-2" style="border-color:var(--doc-line)">
+          <span class="rounded-full px-2 py-1 text-[11px]" style="background:var(--brand-soft);color:var(--brand)">篩選／頁籤</span>
+          <span class="rounded-lg border px-2 py-1 text-[11px]" style="border-color:var(--line);color:var(--muted)">每頁顯示 ▾</span>
+        </div>
+      </div>
+      <div>
+        <p class="bad-tag">⚠ /admin/templates（templates-list.tsx:124）</p>
+        <div class="mt-2 flex min-h-9 items-center justify-end gap-3 rounded-lg border p-2" style="border-color:var(--doc-line)">
+          <span class="rounded-lg border px-2 py-1 text-[11px]" style="border-color:var(--line);color:var(--muted)">每頁顯示 ▾</span>
+          <span class="rounded-lg border px-2 py-1 text-[11px]" style="border-color:var(--line);color:var(--muted)">年份 ▾</span>
+          <span class="rounded-lg border px-2 py-1 text-[11px]" style="border-color:var(--line);color:var(--muted)">月份 ▾</span>
+        </div>
+      </div>
+    </div>
+    <p class="mt-2 text-[12px]" style="color:var(--doc-muted)">建議：<code class="doc-mono">&lt;ListToolbar&gt;</code> 的 <code class="doc-mono">search</code> 槽只接受單一輸入框，年份/月份是兩個 select——要收斂的話可以幫 ListToolbar 加一個 <code class="doc-mono">filters</code>（放左邊，接任意 ReactNode）的選用 prop，讓 templates-list 也能左邊放篩選、右邊固定 PageSizeSelect。</p>
+  </section>
+
+  <!-- B2 -->
+  <section class="mt-8">
+    <div class="flex items-center gap-2"><span class="bad-tag">落差 B-2</span><h3 class="text-base font-bold">「名稱清單＋就地編輯」重刻了三份，字級還不一致</h3></div>
+    <p class="mt-2 text-[13px]" style="color:var(--doc-muted)">
+      <span class="filepath">name-list-card.tsx</span>、<span class="filepath">tag-groups.tsx</span>、<span class="filepath">org-unit-section.tsx</span>
+      三個檔案各自重寫了幾乎一模一樣的「編輯中顯示輸入框＋儲存/取消、平常顯示名稱＋修改/刪除」列樣板（結構、class 大部分逐字重複），不是共用同一支元件，所以三份會各自悄悄長歪：
+    </p>
+    <div class="specimen mt-3 space-y-2">
+      <div class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2" style="border-color:var(--doc-line)">
+        <span class="text-[13px]">範例項目</span>
+        <div class="flex items-center gap-3">
+          <span class="text-[13px] font-medium" style="color:var(--ink)">修改</span>
+          <span class="text-[13px] font-medium" style="color:var(--danger)">刪除</span>
+        </div>
+      </div>
+      <p class="text-[11px]" style="color:var(--doc-muted)"><span class="good-tag">text-[13px]</span> name-list-card.tsx:222,230　與　tag-groups.tsx:233,241（兩個檔案一致）</p>
+      <div class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2" style="border-color:var(--doc-line)">
+        <span class="text-[13px]">範例項目</span>
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-medium" style="color:var(--ink)">修改</span>
+          <span class="text-xs font-medium" style="color:var(--danger)">刪除</span>
+        </div>
+      </div>
+      <p class="text-[11px]" style="color:var(--doc-muted)"><span class="bad-tag">text-xs</span> org-unit-section.tsx:170,178 —— 同樣的「修改／刪除」文字連結，這裡比另外兩個檔案小一號</p>
+    </div>
+    <p class="mt-2 text-[12px]" style="color:var(--doc-muted)">附帶一提：連 name-list-card.tsx／tag-groups.tsx 自己內部也不完全一致——編輯狀態的「儲存/取消」用 text-xs（name-list-card.tsx:186,194），檢視狀態的「修改/刪除」卻用 text-[13px]（同檔案 :222,230），同一列兩種狀態字級不同。建議把這個「就地編輯名稱列」抽成一支共用元件（例如 <code class="doc-mono">EditableNameRow</code>），三個檔案改成呼叫它，字級跟著統一，之後也只要改一個地方。</p>
+  </section>
+
+  <!-- B3 -->
+  <section class="mt-8">
+    <div class="flex items-center gap-2"><span class="bad-tag">落差 B-3</span><h3 class="text-base font-bold">表單卡片間距的唯一例外</h3></div>
+    <p class="mt-2 text-[13px]" style="color:var(--doc-muted)">9 個表單頁（item-form／member-create-form／member-edit-form／notification-form／promo-form／template-create-form／page-form／role-form／home-preview-form）的 <code class="doc-mono">&lt;CardBody&gt;</code> 全部是 <code class="doc-mono">space-y-5</code>；<span class="filepath">template-editor.tsx:122</span> 是唯一用 <code class="doc-mono">space-y-3</code> 的一處，同頁面內欄位間距明顯比其他表單頁緊。</p>
+  </section>
+
+  <!-- B4 -->
+  <section class="mt-8 mb-4">
+    <div class="flex items-center gap-2"><span class="tag">附註</span><h3 class="text-base font-bold">無實際影響的小事</h3></div>
+    <p class="mt-2 text-[13px]" style="color:var(--doc-muted)"><span class="filepath">app/(app)/admin/items/page.tsx:23</span> 用 <code class="doc-mono">&lt;div className="space-y-8"&gt;</code> 包住唯一一個子元件——space-y 只在有多個子元素時才有效果，這裡等於沒作用，拿掉不影響畫面，純粹是多餘的 class。</p>
+  </section>
+
+  <!-- 摘要表 -->
+  <section class="mt-10">
+    <div class="flex items-baseline gap-2"><span class="tag">摘要</span><h3 class="text-lg font-bold tracking-tight">一覽表</h3></div>
+    <div class="specimen mt-4 overflow-x-auto p-0">
+      <table class="w-full text-[13px]">
+        <thead>
+          <tr style="background:var(--surface-2)">
+            <th class="px-4 py-2.5 text-left font-normal" style="color:var(--muted)">元件／樣式</th>
+            <th class="px-4 py-2.5 text-left font-normal" style="color:var(--muted)">共用狀態</th>
+            <th class="px-4 py-2.5 text-left font-normal" style="color:var(--muted)">使用頁面數</th>
+            <th class="px-4 py-2.5 text-left font-normal" style="color:var(--muted)">備註</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">Pagination</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="good-tag">共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">15 / 15</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">完全一致，無例外</td></tr>
+          <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">ListToolbar</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="bad-tag">部分共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">14 / 15</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">templates-list.tsx 直接用 PageSizeSelect，見 B-1</td></tr>
+          <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">Button / ButtonLink</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="good-tag">共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">全站</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">找不到繞過 buttonClass() 手刻的主要按鈕</td></tr>
+          <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">就地編輯名稱列</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="bad-tag">非共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">3 個檔案各自實作</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">name-list-card／tag-groups／org-unit-section，見 B-2</td></tr>
+          <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">CardBody space-y-5（表單）</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="good-tag">共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">9 / 10</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">template-editor.tsx 用 space-y-3，見 B-3</td></tr>
+          <tr><td class="border-t px-4 py-2.5 doc-mono" style="border-color:var(--doc-line)">DismissibleNote 單一訊息槽</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)"><span class="good-tag">共用</span></td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">全部清單頁</td><td class="border-t px-4 py-2.5" style="border-color:var(--doc-line)">同一時間只顯示一則狀態框，含新併入的首頁菜單預覽分頁</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 分組清單 -->
+  <section class="mt-10 mb-10">
+    <div class="flex items-baseline gap-2"><span class="tag">分頁清單</span><h3 class="text-lg font-bold tracking-tight">逐頁共用元件對照</h3></div>
+
+    <div class="mt-4 space-y-6">
+      <div>
+        <p class="text-sm font-bold" style="color:var(--doc-accent)">品項管理</p>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">頁面設定 /admin/pages</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination／DismissibleNote／Table*</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">模板設定 /admin/templates</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="bad-tag">⚠</span> 見 B-1（templates-list.tsx:124 未用 ListToolbar）</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">類別設定 /admin/classification</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="bad-tag">⚠</span> tag-groups.tsx 就地編輯列見 B-2</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">品項設定 /admin/items</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination／BulkActionBar 全套共用</p></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-sm font-bold" style="color:var(--doc-accent)">財務管理</p>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">儲值審核 /admin/topups</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination／BulkActionBar</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">錢包與交易 /admin/wallets</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination ×2（會員/明細兩個表）</p></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-sm font-bold" style="color:var(--doc-accent)">會員與權限</p>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">會員列表 /admin/members</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination／BulkActionBar</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">會員洞察 /admin/insights</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination（member-insights-table／member-insight-tabs）</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">會員權限 /admin/roles</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> Section 分區＋權限矩陣（roles-table 無分頁，資料量小）</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">部門與單位 /admin/org</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="bad-tag">⚠</span> org-unit-section.tsx 就地編輯列見 B-2</p></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-sm font-bold" style="color:var(--doc-accent)">互動與行銷</p>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">任務與經驗 /admin/tasks</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> Section 分區＋Badge 狀態；gamification-manager.tsx 有一處 Badge 外包 &lt;button&gt; 切換啟用/停用（非典型互動，但無樣式落差）</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">廣宣版位 /admin/promos</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination／PillTabs（蓋台廣告／通知訊息／首頁菜單預覽三分頁共用一個訊息槽）</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">意見列表 /admin/feedback</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination</p></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-sm font-bold" style="color:var(--doc-accent)">數據統計</p>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">團訂狀況 /admin/group-orders</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination／BulkActionBar</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">餐點統計 /admin/item-stats</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination（item-stats-table／item-comments-table）</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">報表 /admin/reports</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> Stat／StatGrid3（無列表，不涉及分頁）</p></div>
+          <div class="card-doc p-3"><p class="text-[13px] font-semibold">稽核紀錄 /admin/audit</p><p class="mt-1 text-[12px]" style="color:var(--doc-muted)"><span class="good-tag">✓</span> ListToolbar／Pagination</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
