@@ -42,7 +42,10 @@ export async function registerAction(
       referredByCode: isAdminInvite ? undefined : fields.referredByCode,
       referredByName: isAdminInvite ? undefined : fields.referredByName,
     });
-    // 註冊後不需要審核，直接視為登入成功。
+    // 註冊後不需要審核，直接視為登入成功——跟 verifyLogin 一樣要更新 lastLoginAt，
+    // 不然這裡直接建 session、沒走過 verifyLogin 的人，後台會員列表永遠看不到最後登入時間。
+    member.lastLoginAt = new Date();
+    await member.save();
     await createSession(String(member._id));
     return { success: true, memberCode: member.memberCode };
   } catch (err: unknown) {
