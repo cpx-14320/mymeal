@@ -57,7 +57,7 @@ export function TemplateMenuSections({
           sec.items.length > 0 && (
             <section key={sec.id} className="space-y-3">
               <h2 className="text-lg font-bold tracking-tight">{sec.name}</h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {sec.items.map((item) => (
                   <ItemCard
                     key={item.id}
