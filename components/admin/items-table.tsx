@@ -353,7 +353,7 @@ export function ItemsTable({
           {pageRows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={8 + tagGroups.length}>
-                目前沒有資料
+                目前無相關資料。
               </Td>
             </tr>
           )}

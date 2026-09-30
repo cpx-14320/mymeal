@@ -154,7 +154,7 @@ export function WalletsTables({
               {b.pageRows.length === 0 ? (
                 <tr>
                   <Td colSpan={6} className="text-center text-muted">
-                    沒有符合的會員。
+                    {search.trim() ? "沒有符合的會員。" : "目前無相關資料。"}
                   </Td>
                 </tr>
               ) : (
@@ -223,7 +223,7 @@ export function WalletsTables({
               {t.pageRows.length === 0 ? (
                 <tr>
                   <Td colSpan={7} className="text-center text-muted">
-                    目前沒有任何交易紀錄。
+                    目前無相關資料。
                   </Td>
                 </tr>
               ) : (

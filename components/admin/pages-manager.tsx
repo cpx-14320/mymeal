@@ -191,7 +191,7 @@ export function PagesManager({
           {rows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={9}>
-                目前沒有資料
+                目前無相關資料。
               </Td>
             </tr>
           )}

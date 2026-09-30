@@ -143,7 +143,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
           {rows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={7}>
-                還沒有任何通知訊息，點右上角「新增通知」開始建立。
+                目前無相關資料。
               </Td>
             </tr>
           )}

@@ -93,7 +93,7 @@ export function MemberInsightTabs({
 
       {tab === "orders" &&
         (breakdown.length === 0 ? (
-          <p className="text-[13px] lg:text-[14px] text-muted">尚無訂餐紀錄。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">目前無相關資料。</p>
         ) : (
           <>
             <TableWrap>
@@ -185,7 +185,7 @@ export function MemberInsightTabs({
 
       {tab === "favorites" &&
         (favorites.length === 0 ? (
-          <p className="text-[13px] lg:text-[14px] text-muted">尚未收藏任何品項。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">目前無相關資料。</p>
         ) : (
           <>
             <TableWrap>
@@ -225,7 +225,7 @@ export function MemberInsightTabs({
 
       {tab === "comments" &&
         (comments.length === 0 ? (
-          <p className="text-[13px] lg:text-[14px] text-muted">尚未留下任何評論。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">目前無相關資料。</p>
         ) : (
           <>
             <TableWrap>
@@ -261,7 +261,7 @@ export function MemberInsightTabs({
 
       {tab === "ratings" &&
         (ratings.length === 0 ? (
-          <p className="text-[13px] lg:text-[14px] text-muted">尚無評分紀錄。</p>
+          <p className="text-[13px] lg:text-[14px] text-muted">目前無相關資料。</p>
         ) : (
           <>
             <TableWrap>

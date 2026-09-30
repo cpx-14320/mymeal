@@ -91,7 +91,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackView[] }) {
           {rows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={5}>
-                目前沒有任何意見回饋
+                目前無相關資料。
               </Td>
             </tr>
           )}

@@ -179,7 +179,7 @@ export function PromosList({
           {rows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={8}>
-                還沒有任何廣告，點右上角「新增廣告」開始建立。
+                目前無相關資料。
               </Td>
             </tr>
           )}

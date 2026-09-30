@@ -239,7 +239,7 @@ export function TemplatesList({
           {rows.length === 0 && (
             <tr>
               <Td className="text-center text-muted" colSpan={8}>
-                {templates.length === 0 ? "目前沒有資料" : "這個範圍內沒有模板。"}
+                {templates.length === 0 ? "目前無相關資料。" : "這個範圍內沒有模板。"}
               </Td>
             </tr>
           )}

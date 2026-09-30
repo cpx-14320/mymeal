@@ -62,7 +62,7 @@ export function MemberInsightsTable({
           {rows.length === 0 ? (
             <tr>
               <Td colSpan={9} className="text-center text-muted">
-                目前沒有會員資料。
+                目前無相關資料。
               </Td>
             </tr>
           ) : (

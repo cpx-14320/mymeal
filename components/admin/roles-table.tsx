@@ -84,7 +84,7 @@ export function RolesTable({ roles, justCreated = false }: { roles: RoleView[]; 
           {roles.length === 0 ? (
             <tr>
               <Td colSpan={5} className="text-center text-muted">
-                目前沒有組別。
+                目前無相關資料。
               </Td>
             </tr>
           ) : (
