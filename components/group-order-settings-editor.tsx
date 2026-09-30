@@ -10,10 +10,16 @@ import { updateGroupOrderSettingsAction } from "@/app/(app)/group-orders/[id]/ac
 
 interface GroupOrderSettingsEditorProps {
   groupOrderId: string;
-  current: { name: string; templateId: string; sectionId: string; unitId: string };
+  current: { name: string; templateId: string; sectionId: string; unitId: string; deadline: string };
   templates: TemplateDetail[];
   departments: OrgOption[];
   units: UnitOption[];
+}
+
+/** "YYYY-MM-DD HH:mm"（後端存的格式）轉成 datetime-local 欄位要的 "YYYY-MM-DDTHH:mm"；格式對不上就回傳空字串。 */
+function toDatetimeLocalValue(deadline: string): string {
+  const m = deadline.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/);
+  return m ? `${m[1]}T${m[2]}` : "";
 }
 
 /** 團主專用：修正開團時設錯的套用模板／區塊／單位／團名——不影響大家已經點好的餐點，
@@ -34,6 +40,7 @@ export function GroupOrderSettingsEditor({
     units.find((u) => u.id === current.unitId)?.departmentId ?? departments[0]?.id ?? "",
   );
   const [unitId, setUnitId] = useState(current.unitId);
+  const [deadline, setDeadline] = useState(toDatetimeLocalValue(current.deadline));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
@@ -46,6 +53,7 @@ export function GroupOrderSettingsEditor({
     setSectionId(current.sectionId);
     setDepartmentId(units.find((u) => u.id === current.unitId)?.departmentId ?? departments[0]?.id ?? "");
     setUnitId(current.unitId);
+    setDeadline(toDatetimeLocalValue(current.deadline));
     setError(undefined);
     setOpen(true);
   }
@@ -58,6 +66,7 @@ export function GroupOrderSettingsEditor({
       templateId,
       sectionId: sectionId || undefined,
       unitId,
+      deadline,
     });
     setPending(false);
     if (result.error) {
@@ -78,12 +87,22 @@ export function GroupOrderSettingsEditor({
         <Modal open onClose={() => setOpen(false)} ariaLabel="編輯團訂設定" className="max-w-lg">
           <ModalHeader
             title="編輯團訂設定"
-            subtitle="調整套用模板／區塊／單位／團名，不會影響大家目前已經點好的餐點。"
+            subtitle="調整套用模板／區塊／單位／團名／截止時間，不會影響大家目前已經點好的餐點。"
             onClose={() => setOpen(false)}
           />
           <div className="space-y-4 overflow-y-auto p-4">
             <Field label="團名">
               <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} required />
+            </Field>
+
+            <Field label="截止時間">
+              <input
+                className={inputClass}
+                type="datetime-local"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                required
+              />
             </Field>
 
             <div className="grid gap-4 sm:grid-cols-2">

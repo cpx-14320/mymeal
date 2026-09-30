@@ -17,7 +17,6 @@ import {
 import { GroupOrderForm, type OrderableDish } from "@/components/group-order-form";
 import { GroupOrderExportButton } from "@/components/group-order-export-button";
 import { GroupOrderHostActions } from "@/components/group-order-host-actions";
-import { GroupOrderDeadlineStat } from "@/components/group-order-deadline-stat";
 import { GroupOrderSettingsEditor } from "@/components/group-order-settings-editor";
 import { findGroupOrderById, getMemberFrequentItems, type RiceLevel } from "@/lib/models/group-order";
 import { findTemplateById, listActiveTemplateDetails } from "@/lib/models/template";
@@ -117,10 +116,10 @@ export default async function GroupOrderDetailPage({
       />
 
       <StatGrid3>
-        <GroupOrderDeadlineStat
-          groupOrderId={group.id}
-          deadline={group.deadline}
-          editable={isHost && group.status === "open"}
+        <Stat
+          label="截止時間"
+          value={group.deadline || "—"}
+          valueClassName={COMPACT_STAT_VALUE_CLASS}
         />
         <Stat
           label="目前份數"
@@ -225,6 +224,7 @@ export default async function GroupOrderDetailPage({
                   templateId: group.templateId,
                   sectionId: group.sectionId,
                   unitId: group.unitId,
+                  deadline: group.deadline,
                 }}
                 templates={editableTemplates}
                 departments={departments}

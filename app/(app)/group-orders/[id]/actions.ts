@@ -128,31 +128,18 @@ export async function reopenGroupOrderAction(
   return { success: true };
 }
 
-/** 開放中隨時調整截止時間，不影響狀態。 */
-export async function updateGroupOrderDeadlineAction(
-  groupOrderId: string,
-  deadline: string,
-): Promise<HostActionState> {
-  try {
-    await assertHost(groupOrderId);
-    await setGroupOrderStatusAndDeadline(groupOrderId, { deadline: deadline.trim().replace("T", " ") });
-  } catch (err: unknown) {
-    return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
-  }
-  revalidatePath(`/group-orders/${groupOrderId}`);
-  return { success: true };
-}
-
 export interface UpdateGroupOrderSettingsState {
   error?: string;
   success?: boolean;
 }
 
-/** 團主修正開團時設錯的模板／區塊／單位／團名用；不影響大家已經點好的品項
- *  （見 lib/models/group-order 的 updateGroupOrderSettings 說明）。 */
+/** 團主修正開團時設錯的模板／區塊／單位／團名／截止時間用；模板／區塊／單位／團名
+ *  不影響大家已經點好的品項（見 lib/models/group-order 的 updateGroupOrderSettings
+ *  說明）。截止時間原本是獨立一支 action（updateGroupOrderDeadlineAction）在改，
+ *  現在併進這支一起送出，後台只留「編輯團訂設定」這一個彈窗。 */
 export async function updateGroupOrderSettingsAction(
   groupOrderId: string,
-  input: { name: string; templateId: string; sectionId?: string; unitId: string },
+  input: { name: string; templateId: string; sectionId?: string; unitId: string; deadline: string },
 ): Promise<UpdateGroupOrderSettingsState> {
   try {
     await assertHost(groupOrderId);

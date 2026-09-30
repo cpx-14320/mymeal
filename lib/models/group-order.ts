@@ -342,11 +342,15 @@ export interface UpdateGroupOrderSettingsInput {
   templateId: string;
   sectionId?: string;
   unitId: string;
+  deadline: string;
 }
 
 /**
- * 團主修正「開團時設錯模板／區塊／單位／團名」用。改這些欄位不會動到已經點好的品項——
- * lines 只存各自的品項 id、名稱與價格快照，不記 section/unit，見檔案開頭的說明。
+ * 團主修正「開團時設錯模板／區塊／單位／團名／截止時間」用。模板／區塊／單位／團名
+ * 這幾個欄位改了不會動到已經點好的品項——lines 只存各自的品項 id、名稱與價格快照，
+ * 不記 section/unit，見檔案開頭的說明。截止時間本來是獨立一支 action 在改（見
+ * setGroupOrderStatusAndDeadline），現在併進這支一起改，後台只留「編輯團訂設定」
+ * 這一個彈窗，不用兩個地方都能調整團的基本設定。
  */
 export async function updateGroupOrderSettings(id: string, input: UpdateGroupOrderSettingsInput) {
   await connectMongo();
@@ -355,6 +359,8 @@ export async function updateGroupOrderSettings(id: string, input: UpdateGroupOrd
   if (!Types.ObjectId.isValid(input.unitId)) throw new Error("請選擇有效的單位。");
   const name = input.name.trim();
   if (!name) throw new Error("請填寫團名。");
+  const deadline = input.deadline.trim().replace("T", " ");
+  if (!deadline) throw new Error("請填寫截止時間。");
 
   const current = await GroupOrder.findById(id);
   if (!current) throw new Error("找不到這個團，可能已被刪除。");
@@ -382,6 +388,7 @@ export async function updateGroupOrderSettings(id: string, input: UpdateGroupOrd
         templateId: new Types.ObjectId(input.templateId),
         unitId: new Types.ObjectId(input.unitId),
         sectionName,
+        deadline,
         ...(hasSection ? { sectionId: new Types.ObjectId(input.sectionId!) } : {}),
       },
       ...(hasSection ? {} : { $unset: { sectionId: "" } }),
