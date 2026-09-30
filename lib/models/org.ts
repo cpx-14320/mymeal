@@ -4,8 +4,7 @@ import { connectMongo } from "@/lib/mongoose";
 /**
  * department / unit collection —— 註冊表單與會員編輯頁「部門」「單位」下拉選單的資料來源。
  * 原本寫死在 app/register/constants.ts，現在讓管理者可以在後台自己增減，不用改程式碼。
- * 單位隸屬於部門（一個單位只會屬於一個部門）；兩個集合第一次讀取若是空的，
- * 會自動補回原本寫死的預設值，避免舊資料/註冊流程壞掉。
+ * 單位隸屬於部門（一個單位只會屬於一個部門）。
  *
  * member 的部門/單位是關聯這兩個集合的 ObjectId（見 member.ts 的 departmentId/unitId），
  * 所以這裡改名字不用再手動同步 member 的資料。
@@ -19,23 +18,6 @@ export interface OrgOption {
 export interface UnitOption extends OrgOption {
   departmentId: string;
   departmentName: string;
-}
-
-const DEFAULT_DEPARTMENTS = ["網路發展部"];
-const DEFAULT_UNITS = [
-  "會員經營課",
-  "數位推展課",
-  "網通行銷課",
-  "平台開發課",
-  "運營推展課",
-  "卡務控管課",
-  "客戶服務課",
-];
-
-const DUPLICATE_KEY_ERROR = 11000;
-
-function isDuplicateKeyError(err: unknown): boolean {
-  return !!err && typeof err === "object" && "code" in err && err.code === DUPLICATE_KEY_ERROR;
 }
 
 interface DepartmentDocument {
@@ -71,28 +53,8 @@ unitSchema.index({ departmentId: 1, name: 1 }, { unique: true });
 const Department = models.Department ?? model<DepartmentDocument>("Department", departmentSchema);
 const Unit = models.Unit ?? model<UnitDocument>("Unit", unitSchema);
 
-/** 集合是空的才補預設值；靠唯一索引擋重複，避免熱重載或多個請求同時觸發時重複塞入。 */
-async function seedIfEmpty<T extends { name: string }>(
-  count: () => Promise<number>,
-  insertMany: (docs: T[]) => Promise<unknown>,
-  docs: T[],
-) {
-  if (docs.length === 0) return;
-  if ((await count()) > 0) return;
-  try {
-    await insertMany(docs);
-  } catch (err) {
-    if (!isDuplicateKeyError(err)) throw err;
-  }
-}
-
 export async function listDepartments(): Promise<OrgOption[]> {
   await connectMongo();
-  await seedIfEmpty(
-    () => Department.countDocuments(),
-    (docs) => Department.insertMany(docs, { ordered: false }),
-    DEFAULT_DEPARTMENTS.map((name) => ({ name })),
-  );
   const docs = await Department.find({}).sort({ createdAt: 1 });
   return docs.map((d) => ({ id: String(d._id), name: d.name }));
 }
@@ -139,15 +101,7 @@ export async function deleteDepartment(id: string): Promise<boolean> {
 /** 不傳 departmentId 拿全部單位（後台管理頁用）；傳了就只拿該部門底下的單位（表單cascading用）。 */
 export async function listUnits(departmentId?: string): Promise<UnitOption[]> {
   await connectMongo();
-  const departments = await listDepartments(); // 順便確保部門已經有種子資料
-  if (departments.length > 0) {
-    const defaultDeptId = new Types.ObjectId(departments[0].id);
-    await seedIfEmpty(
-      () => Unit.countDocuments(),
-      (docs) => Unit.insertMany(docs, { ordered: false }),
-      DEFAULT_UNITS.map((name) => ({ name, departmentId: defaultDeptId })),
-    );
-  }
+  const departments = await listDepartments();
 
   const filter =
     departmentId && Types.ObjectId.isValid(departmentId)

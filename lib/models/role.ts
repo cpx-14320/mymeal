@@ -8,7 +8,6 @@ import type { AdminNavKey } from "@/components/layout/nav";
  * { [key in AdminNavKey]?: boolean }，勾了才有那個權限鍵。
  * member.role 存的是這裡的 name（字串比對，不是 ObjectId 關聯）——沿用註冊/會員編輯
  * 表單原本就是存權限「名稱」字串的做法，改成關聯會牽動 member.ts 和既有資料，先不做。
- * 集合第一次讀取若是空的，會自動補回原本寫死的預設組別，避免舊資料/既有頁面壞掉。
  */
 
 export type RolePermissions = Partial<Record<AdminNavKey, boolean>>;
@@ -30,66 +29,6 @@ const roleSchema = new Schema<RoleDocument>(
 );
 
 export const Role = models.Role ?? model<RoleDocument>("Role", roleSchema);
-
-const DUPLICATE_KEY_ERROR = 11000;
-
-function isDuplicateKeyError(err: unknown): boolean {
-  return !!err && typeof err === "object" && "code" in err && err.code === DUPLICATE_KEY_ERROR;
-}
-
-/** 沿用既有介面預覽的 5 個預設組別；集合是空的才會種入。 */
-const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
-  { name: "一般使用者", permissions: {} },
-  {
-    name: "餐飲管理員",
-    permissions: {
-      templates: true,
-      pages: true,
-      itemClassification: true,
-      items: true,
-      grouporders: true,
-    },
-  },
-  {
-    name: "財務管理員",
-    permissions: { topups: true, wallets: true, audit: true },
-  },
-  {
-    name: "客服管理員",
-    permissions: { grouporders: true, members: true, memberInsights: true, gamification: true },
-  },
-  {
-    name: "超級管理員",
-    permissions: {
-      pages: true,
-      items: true,
-      itemClassification: true,
-      templates: true,
-      grouporders: true,
-      topups: true,
-      wallets: true,
-      members: true,
-      memberInsights: true,
-      roles: true,
-      orgUnits: true,
-      itemStats: true,
-      gamification: true,
-      audit: true,
-      promos: true,
-      feedback: true,
-      homePreview: true,
-    },
-  },
-];
-
-async function seedIfEmpty() {
-  if ((await Role.countDocuments()) > 0) return;
-  try {
-    await Role.insertMany(DEFAULT_ROLES, { ordered: false });
-  } catch (err) {
-    if (!isDuplicateKeyError(err)) throw err;
-  }
-}
 
 export interface RoleInput {
   name: string;
@@ -116,7 +55,6 @@ async function countMembersByRole(name: string): Promise<number> {
 
 export async function listRoles(): Promise<RoleView[]> {
   await connectMongo();
-  await seedIfEmpty();
   const docs = await Role.find({}).sort({ createdAt: 1 });
   return Promise.all(
     docs.map(async (d) => ({

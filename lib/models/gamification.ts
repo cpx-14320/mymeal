@@ -13,7 +13,6 @@ import { connectMongo } from "@/lib/mongoose";
  * 目前沒有實作 ExpRule 的 dailyLimit/weeklyLimit/monthlyLimit 上限——這三個欄位存在但還沒有
  * 任何地方真的拿來限制每天/每週/每月能拿到的經驗值上限，是已知還沒做的部分。
  * 這裡只負責讓「設定」本身是真資料，能新增/編輯/刪除任務、規則、等級。
- * 集合是空的才會種入原本寫死的預設值，跟 org.ts 的 seedIfEmpty 同一套做法。
  */
 
 export type TaskType = "topup" | "order" | "favorite" | "comment" | "rating";
@@ -34,23 +33,6 @@ export const taskPeriodLabel: Record<TaskPeriod, string> = {
   achievement: "成就",
 };
 const TASK_PERIODS: TaskPeriod[] = ["daily", "weekly", "monthly", "achievement"];
-
-const DUPLICATE_KEY_ERROR = 11000;
-function isDuplicateKeyError(err: unknown): boolean {
-  return !!err && typeof err === "object" && "code" in err && err.code === DUPLICATE_KEY_ERROR;
-}
-
-async function seedIfEmpty<T>(
-  Model: { countDocuments: () => Promise<number>; insertMany: (docs: T[], opts: { ordered: boolean }) => Promise<unknown> },
-  docs: T[],
-) {
-  if ((await Model.countDocuments()) > 0) return;
-  try {
-    await Model.insertMany(docs, { ordered: false });
-  } catch (err) {
-    if (!isDuplicateKeyError(err)) throw err;
-  }
-}
 
 /* ── 任務 ── */
 
@@ -80,15 +62,6 @@ const dailyTaskSchema = new Schema<DailyTaskDocument>(
 
 export const DailyTask = models.DailyTask ?? model<DailyTaskDocument>("DailyTask", dailyTaskSchema);
 
-const DEFAULT_TASKS = [
-  { name: "每日訂餐", type: "order" as TaskType, period: "daily" as TaskPeriod, targetCount: 1, rewardPoints: 10, active: true },
-  { name: "每週訂餐", type: "order" as TaskType, period: "weekly" as TaskPeriod, targetCount: 4, rewardPoints: 20, active: true },
-  { name: "每週儲值", type: "topup" as TaskType, period: "weekly" as TaskPeriod, targetCount: 1, rewardPoints: 10, active: true },
-  { name: "每月評分", type: "rating" as TaskType, period: "monthly" as TaskPeriod, targetCount: 5, rewardPoints: 15, active: true },
-  { name: "每月評論", type: "comment" as TaskType, period: "monthly" as TaskPeriod, targetCount: 3, rewardPoints: 10, active: false },
-  { name: "訂餐達人", type: "order" as TaskType, period: "achievement" as TaskPeriod, targetCount: 20, rewardPoints: 50, active: true },
-];
-
 export interface DailyTaskView {
   id: string;
   name: string;
@@ -113,7 +86,6 @@ function toTaskView(d: DailyTaskDocument): DailyTaskView {
 
 export async function listDailyTasks(): Promise<DailyTaskView[]> {
   await connectMongo();
-  await seedIfEmpty(DailyTask, DEFAULT_TASKS);
   const docs = await DailyTask.find({}).sort({ createdAt: 1 });
   return docs.map(toTaskView);
 }
@@ -180,14 +152,6 @@ const expRuleSchema = new Schema<ExpRuleDocument>(
 
 export const ExpRule = models.ExpRule ?? model<ExpRuleDocument>("ExpRule", expRuleSchema);
 
-const DEFAULT_EXP_RULES = [
-  { type: "order" as TaskType, expPerAction: 5, dailyLimit: 10, weeklyLimit: 40, monthlyLimit: null, active: true },
-  { type: "topup" as TaskType, expPerAction: 10, dailyLimit: 10, weeklyLimit: 20, monthlyLimit: 60, active: true },
-  { type: "rating" as TaskType, expPerAction: 3, dailyLimit: 6, weeklyLimit: null, monthlyLimit: null, active: true },
-  { type: "comment" as TaskType, expPerAction: 3, dailyLimit: 6, weeklyLimit: null, monthlyLimit: null, active: true },
-  { type: "favorite" as TaskType, expPerAction: 1, dailyLimit: 5, weeklyLimit: null, monthlyLimit: null, active: true },
-];
-
 export interface ExpRuleView {
   id: string;
   type: TaskType;
@@ -212,7 +176,6 @@ function toExpRuleView(d: ExpRuleDocument): ExpRuleView {
 
 export async function listExpRules(): Promise<ExpRuleView[]> {
   await connectMongo();
-  await seedIfEmpty(ExpRule, DEFAULT_EXP_RULES);
   const docs = await ExpRule.find({}).sort({ createdAt: 1 });
   return docs.map(toExpRuleView);
 }
@@ -271,14 +234,6 @@ const memberLevelSchema = new Schema<MemberLevelDocument>(
 
 export const MemberLevel = models.MemberLevel ?? model<MemberLevelDocument>("MemberLevel", memberLevelSchema);
 
-const DEFAULT_LEVELS = [
-  { name: "新手", minExp: 0 },
-  { name: "常客", minExp: 300 },
-  { name: "熟客", minExp: 700 },
-  { name: "達人", minExp: 1500 },
-  { name: "傳說", minExp: 3000 },
-];
-
 export interface MemberLevelView {
   id: string;
   name: string;
@@ -291,7 +246,6 @@ function toLevelView(d: MemberLevelDocument): MemberLevelView {
 
 export async function listMemberLevels(): Promise<MemberLevelView[]> {
   await connectMongo();
-  await seedIfEmpty(MemberLevel, DEFAULT_LEVELS);
   const docs = await MemberLevel.find({}).sort({ minExp: 1 });
   return docs.map(toLevelView);
 }
