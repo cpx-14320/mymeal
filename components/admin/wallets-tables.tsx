@@ -11,6 +11,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -152,11 +153,7 @@ export function WalletsTables({
             </thead>
             <tbody>
               {b.pageRows.length === 0 ? (
-                <tr>
-                  <Td colSpan={6} className="text-center text-muted">
-                    {search.trim() ? "沒有符合的會員。" : "目前無相關資料。"}
-                  </Td>
-                </tr>
+                <EmptyTableRow colSpan={6} message={search.trim() ? "沒有符合的會員。" : undefined} />
               ) : (
                 b.pageRows.map((r) => (
                   <Fragment key={r.memberId}>
@@ -221,11 +218,7 @@ export function WalletsTables({
             </thead>
             <tbody>
               {t.pageRows.length === 0 ? (
-                <tr>
-                  <Td colSpan={7} className="text-center text-muted">
-                    目前無相關資料。
-                  </Td>
-                </tr>
+                <EmptyTableRow colSpan={7} />
               ) : (
                 t.pageRows.map((r) => (
                   <Fragment key={r.id}>

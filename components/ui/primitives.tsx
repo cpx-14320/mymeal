@@ -685,6 +685,24 @@ export function Td({
   );
 }
 
+/** 表格「沒有資料」那一列共用——預設文案「目前無相關資料。」，以後要統一改字只要改這裡；
+ *  查詢/篩選後沒有結果的情境跟「真的沒有資料」不同，用 message 覆蓋（例如「沒有符合的紀錄。」）。 */
+export function EmptyTableRow({
+  colSpan,
+  message = "目前無相關資料。",
+}: {
+  colSpan: number;
+  message?: string;
+}) {
+  return (
+    <tr>
+      <Td colSpan={colSpan} className="text-center text-muted">
+        {message}
+      </Td>
+    </tr>
+  );
+}
+
 /* ── 表單 ────────────────────────────────────────────── */
 
 export const inputClass =

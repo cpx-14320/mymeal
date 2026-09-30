@@ -8,6 +8,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -60,11 +61,7 @@ export function MemberInsightsTable({
         </thead>
         <tbody>
           {rows.length === 0 ? (
-            <tr>
-              <Td colSpan={9} className="text-center text-muted">
-                目前無相關資料。
-              </Td>
-            </tr>
+            <EmptyTableRow colSpan={9} />
           ) : (
             rows.map((m) => (
               <tr key={m.id}>

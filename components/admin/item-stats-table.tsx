@@ -8,6 +8,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
   ItemLabel,
@@ -44,11 +45,7 @@ export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
         </thead>
         <tbody>
           {rows.length === 0 ? (
-            <tr>
-              <Td colSpan={7} className="text-center text-muted">
-                目前無相關資料。
-              </Td>
-            </tr>
+            <EmptyTableRow colSpan={7} />
           ) : (
             rows.map((s) => (
               <tr key={s.itemId}>

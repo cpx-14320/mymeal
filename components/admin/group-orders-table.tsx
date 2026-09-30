@@ -12,6 +12,7 @@ import {
   ListToolbar,
   BulkActionBar,
   DismissibleNote,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -136,11 +137,7 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
         </thead>
         <tbody>
           {pageRows.length === 0 ? (
-            <tr>
-              <Td colSpan={10} className="text-center text-muted">
-                目前無相關資料。
-              </Td>
-            </tr>
+            <EmptyTableRow colSpan={10} />
           ) : (
             pageRows.map((r) => (
               <tr key={r.id} className={selected.has(r.id) ? "bg-brand-soft" : ""}>

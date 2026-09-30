@@ -13,6 +13,7 @@ import {
   ListToolbar,
   BulkActionBar,
   DismissibleNote,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -246,11 +247,7 @@ export function TopupsTables({ requests }: { requests: TopupRequestView[] }) {
         </thead>
         <tbody>
           {rows.length === 0 ? (
-            <tr>
-              <Td colSpan={8} className="text-center text-muted">
-                目前無相關資料。
-              </Td>
-            </tr>
+            <EmptyTableRow colSpan={8} />
           ) : (
             rows.map((req) => (
               <tr key={req.id} className={selected.has(req.id) ? "bg-brand-soft" : ""}>

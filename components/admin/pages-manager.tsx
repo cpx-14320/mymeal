@@ -15,6 +15,7 @@ import {
   ListToolbar,
   BulkActionBar,
   DismissibleNote,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -188,13 +189,7 @@ export function PagesManager({
               </Td>
             </tr>
           ))}
-          {rows.length === 0 && (
-            <tr>
-              <Td className="text-center text-muted" colSpan={9}>
-                目前無相關資料。
-              </Td>
-            </tr>
-          )}
+          {rows.length === 0 && <EmptyTableRow colSpan={9} />}
         </tbody>
       </TableWrap>
 

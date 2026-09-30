@@ -14,6 +14,7 @@ import {
   ListToolbar,
   BulkActionBar,
   DismissibleNote,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -140,13 +141,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
               </Td>
             </tr>
           ))}
-          {rows.length === 0 && (
-            <tr>
-              <Td className="text-center text-muted" colSpan={7}>
-                目前無相關資料。
-              </Td>
-            </tr>
-          )}
+          {rows.length === 0 && <EmptyTableRow colSpan={7} />}
         </tbody>
       </TableWrap>
 

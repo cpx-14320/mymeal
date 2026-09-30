@@ -9,6 +9,7 @@ import {
   Pagination,
   ListToolbar,
   inputClass,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -85,11 +86,7 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
         </thead>
         <tbody>
           {rows.length === 0 ? (
-            <tr>
-              <Td colSpan={5} className="text-center text-muted">
-                {search.trim() ? "沒有符合的紀錄。" : "目前無相關資料。"}
-              </Td>
-            </tr>
+            <EmptyTableRow colSpan={5} message={search.trim() ? "沒有符合的紀錄。" : undefined} />
           ) : (
             rows.map((l) => (
               <tr key={l.id}>

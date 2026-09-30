@@ -14,6 +14,7 @@ import {
   ListToolbar,
   BulkActionBar,
   ItemThumbnail,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -176,13 +177,7 @@ export function PromosList({
               </tr>
             );
           })}
-          {rows.length === 0 && (
-            <tr>
-              <Td className="text-center text-muted" colSpan={8}>
-                目前無相關資料。
-              </Td>
-            </tr>
-          )}
+          {rows.length === 0 && <EmptyTableRow colSpan={8} />}
         </tbody>
       </TableWrap>
 

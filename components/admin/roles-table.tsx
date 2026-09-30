@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Badge, ButtonLink, TableWrap, Th, Td, BulkActionBar, DismissibleNote } from "@/components/ui/primitives";
+import { Badge, ButtonLink, TableWrap, Th, Td, BulkActionBar, DismissibleNote, EmptyTableRow } from "@/components/ui/primitives";
 import type { RoleView } from "@/lib/models/role";
 import { deleteRolesAction } from "@/app/(app)/admin/roles/actions";
 
@@ -82,11 +82,7 @@ export function RolesTable({ roles, justCreated = false }: { roles: RoleView[]; 
         </thead>
         <tbody>
           {roles.length === 0 ? (
-            <tr>
-              <Td colSpan={5} className="text-center text-muted">
-                目前無相關資料。
-              </Td>
-            </tr>
+            <EmptyTableRow colSpan={5} />
           ) : (
             roles.map((r) => (
               <tr key={r.id} className={selected.has(r.id) ? "bg-brand-soft" : ""}>

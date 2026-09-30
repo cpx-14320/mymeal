@@ -14,6 +14,7 @@ import {
   ListToolbar,
   BulkActionBar,
   inputClass,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
   ItemThumbnail,
@@ -351,11 +352,7 @@ export function ItemsTable({
             </tr>
           ))}
           {pageRows.length === 0 && (
-            <tr>
-              <Td className="text-center text-muted" colSpan={8 + tagGroups.length}>
-                目前無相關資料。
-              </Td>
-            </tr>
+            <EmptyTableRow colSpan={8 + tagGroups.length} />
           )}
         </tbody>
       </TableWrap>

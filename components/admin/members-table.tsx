@@ -13,6 +13,7 @@ import {
   ListToolbar,
   BulkActionBar,
   DismissibleNote,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -212,11 +213,7 @@ export function MembersTable({
         </thead>
         <tbody>
           {rows.length === 0 ? (
-            <tr>
-              <Td colSpan={9} className="text-center text-muted">
-                {query ? "找不到符合條件的會員。" : "目前無相關資料。"}
-              </Td>
-            </tr>
+            <EmptyTableRow colSpan={9} message={query ? "找不到符合條件的會員。" : undefined} />
           ) : (
             rows.map((m) => {
               const st = statusMap[m.status];

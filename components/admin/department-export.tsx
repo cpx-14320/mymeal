@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Section, Stat, TableWrap, Th, Td } from "@/components/ui/primitives";
+import { Section, Stat, TableWrap, Th, Td, EmptyTableRow } from "@/components/ui/primitives";
 import type { OrgOption } from "@/lib/models/org";
 import type { DepartmentExportSummary } from "@/lib/models/group-order";
 import { getDepartmentExportSummaryAction } from "@/app/(app)/admin/group-orders/actions";
@@ -71,11 +71,7 @@ export function DepartmentExport({ departments }: { departments: OrgOption[] }) 
             </thead>
             <tbody>
               {summary.byUnit.length === 0 ? (
-                <tr>
-                  <Td colSpan={4} className="text-center text-muted">
-                    這個部門底下還沒有單位。
-                  </Td>
-                </tr>
+                <EmptyTableRow colSpan={4} message="這個部門底下還沒有單位。" />
               ) : (
                 summary.byUnit.map((u) => (
                   <tr key={u.unitId}>

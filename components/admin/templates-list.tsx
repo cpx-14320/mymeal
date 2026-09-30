@@ -15,6 +15,7 @@ import {
   PageSizeSelect,
   BulkActionBar,
   DismissibleNote,
+  EmptyTableRow,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -237,11 +238,7 @@ export function TemplatesList({
             );
           })}
           {rows.length === 0 && (
-            <tr>
-              <Td className="text-center text-muted" colSpan={8}>
-                {templates.length === 0 ? "目前無相關資料。" : "這個範圍內沒有模板。"}
-              </Td>
-            </tr>
+            <EmptyTableRow colSpan={8} message={templates.length === 0 ? undefined : "這個範圍內沒有模板。"} />
           )}
         </tbody>
       </TableWrap>
