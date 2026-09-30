@@ -425,6 +425,48 @@ export async function setGroupOrderStatusAndDeadline(
   return { id, status: doc.status, deadline: doc.deadline };
 }
 
+export interface WalletChargeShortfall {
+  memberId: string;
+  memberName: string;
+  currentBalance: number;
+  chargeAmount: number;
+  balanceAfter: number;
+}
+
+/** 結單前預覽用：跟 chargeWalletForGroupOrder 同一套彙總邏輯，但只讀不寫——
+ *  算出每個選「錢包扣款」的人結單後餘額會不會變負的，讓團主結單前先看到，決定要不要繼續。 */
+export async function previewWalletChargeShortfalls(groupOrderId: string): Promise<WalletChargeShortfall[]> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(groupOrderId)) throw new Error("無效的團 id");
+  const doc = await GroupOrder.findById(groupOrderId);
+  if (!doc) throw new Error("找不到這個團，可能已被刪除。");
+
+  const unchargedLines = doc.lines.filter(
+    (l: OrderLineSubdoc) => l.paymentMethod === "錢包扣款" && !l.walletCharged,
+  );
+  if (unchargedLines.length === 0) return [];
+
+  const totalsByMember = new Map<string, { memberName: string; amount: number }>();
+  for (const l of unchargedLines) {
+    const key = String(l.memberId);
+    const cur = totalsByMember.get(key) ?? { memberName: l.memberName, amount: 0 };
+    cur.amount += l.price * l.qty;
+    totalsByMember.set(key, cur);
+  }
+
+  const { getMemberBalance } = await import("@/lib/models/wallet");
+  const shortfalls: WalletChargeShortfall[] = [];
+  for (const [memberId, { memberName, amount }] of totalsByMember) {
+    if (amount <= 0) continue;
+    const currentBalance = await getMemberBalance(memberId);
+    const balanceAfter = currentBalance - amount;
+    if (balanceAfter < 0) {
+      shortfalls.push({ memberId, memberName, currentBalance, chargeAmount: amount, balanceAfter });
+    }
+  }
+  return shortfalls;
+}
+
 /** 結單時用：把選「錢包扣款」但還沒真的扣過款的行，依人彙總金額各扣一次，並標記 walletCharged。
  *  只挑 walletCharged=false 的行，所以同一團重新開放後再結一次單，不會對已扣過的行重複扣款。 */
 export async function chargeWalletForGroupOrder(groupOrderId: string): Promise<void> {

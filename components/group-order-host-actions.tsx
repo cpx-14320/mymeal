@@ -3,11 +3,12 @@
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, inputClass } from "@/components/ui/primitives";
-import type { GroupOrderStatus } from "@/lib/models/group-order";
+import type { GroupOrderStatus, WalletChargeShortfall } from "@/lib/models/group-order";
 import {
   closeGroupOrderAction,
   reopenGroupOrderAction,
   cancelGroupOrderAction,
+  previewCloseShortfallsAction,
 } from "@/app/(app)/group-orders/[id]/actions";
 
 /** 現在時間 +1 小時，給「重新開放」表單的預設截止時間。 */
@@ -30,6 +31,7 @@ export function GroupOrderHostActions({
   const router = useRouter();
   const [reopening, setReopening] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [shortfalls, setShortfalls] = useState<WalletChargeShortfall[] | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
@@ -39,7 +41,23 @@ export function GroupOrderHostActions({
     const result = await closeGroupOrderAction(groupOrderId);
     setPending(false);
     if (result.error) setError(result.error);
-    else router.refresh();
+    else {
+      setShortfalls(null);
+      router.refresh();
+    }
+  }
+
+  /** 按「提前結單」先跑這個：沒有人會扣成負的就直接結單，有的話先跳出清單讓團主確認。 */
+  async function handleCloseClick() {
+    setPending(true);
+    setError(undefined);
+    const found = await previewCloseShortfallsAction(groupOrderId);
+    setPending(false);
+    if (found.length === 0) {
+      await handleClose();
+      return;
+    }
+    setShortfalls(found);
   }
 
   async function handleReopen(formData: FormData) {
@@ -68,6 +86,29 @@ export function GroupOrderHostActions({
     <div className="space-y-2">
       {error && <p className="text-sm text-danger">{error}</p>}
 
+      {shortfalls && shortfalls.length > 0 && (
+        <div className="space-y-2 rounded-lg border border-danger/40 bg-danger/5 p-3">
+          <p className="text-sm font-medium text-danger">
+            結單後以下 {shortfalls.length} 人錢包餘額會變成負的，確定要繼續結單嗎？
+          </p>
+          <ul className="space-y-0.5 text-sm text-muted">
+            {shortfalls.map((s) => (
+              <li key={s.memberId}>
+                {s.memberName}：NT$ {s.currentBalance} → <span className="font-medium text-danger">NT$ {s.balanceAfter}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" disabled={pending} onClick={() => setShortfalls(null)}>
+              取消
+            </Button>
+            <Button variant="danger" disabled={pending} onClick={handleClose}>
+              {pending ? "處理中…" : "確認結單"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-end gap-2">
         {trailingActions}
 
@@ -89,8 +130,8 @@ export function GroupOrderHostActions({
           </Button>
         )}
 
-        {status === "open" && (
-          <Button variant="danger" disabled={pending} onClick={handleClose}>
+        {status === "open" && !(shortfalls && shortfalls.length > 0) && (
+          <Button variant="danger" disabled={pending} onClick={handleCloseClick}>
             {pending ? "處理中…" : "提前結單"}
           </Button>
         )}

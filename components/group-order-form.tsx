@@ -67,6 +67,13 @@ export function GroupOrderForm({
 
   const orderTotal = dishes.reduce((sum, d) => sum + getTotalQty(d.id) * d.price, 0);
   const estimatedBalance = walletBalance - orderTotal;
+  // 預估餘額變負數時，「錢包扣款」直接不能選——用衍生值蓋掉，不用 useEffect 另外同步一份狀態；
+  // 底下的 paymentMethod 還是留著原本選的值，餘額回正的話會自動恢復顯示為選中，不會遺失使用者原本的選擇。
+  const walletPaymentDisabled = estimatedBalance < 0;
+  const effectivePaymentMethod =
+    walletPaymentDisabled && paymentMethod === "錢包扣款"
+      ? (paymentMethods.find((m) => m !== "錢包扣款") ?? paymentMethods[0])
+      : paymentMethod;
 
   const setQty = (id: string, rice: RiceLevel, delta: number) =>
     setOrders((prev) => {
@@ -88,8 +95,8 @@ export function GroupOrderForm({
         qty: l.qty,
         rice: l.rice,
         note,
-        paymentMethod,
-        bankCode: paymentMethod === "銀行轉帳" ? bankCode : "",
+        paymentMethod: effectivePaymentMethod,
+        bankCode: effectivePaymentMethod === "銀行轉帳" ? bankCode : "",
       }));
 
     const result = await submitGroupOrderLinesAction(groupOrderId, lines);
@@ -234,20 +241,27 @@ export function GroupOrderForm({
       <div className="space-y-2">
         <p className="text-sm font-medium">付款方式</p>
         <div className="flex flex-wrap gap-4 text-sm">
-          {paymentMethods.map((m) => (
-            <label key={m} className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value={m}
-                checked={paymentMethod === m}
-                onChange={() => setPaymentMethod(m)}
-              />
-              {m}
-            </label>
-          ))}
+          {paymentMethods.map((m) => {
+            const disabled = m === "錢包扣款" && walletPaymentDisabled;
+            return (
+              <label key={m} className={`flex items-center gap-2 ${disabled ? "text-muted opacity-60" : ""}`}>
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value={m}
+                  checked={effectivePaymentMethod === m}
+                  disabled={disabled}
+                  onChange={() => setPaymentMethod(m)}
+                />
+                {m}
+              </label>
+            );
+          })}
         </div>
-        {paymentMethod === "銀行轉帳" && (
+        {walletPaymentDisabled && (
+          <p className="text-xs text-danger">錢包餘額不足，無法選擇錢包扣款。</p>
+        )}
+        {effectivePaymentMethod === "銀行轉帳" && (
           <input
             className={inputClass}
             placeholder="請輸入匯款後5碼"
