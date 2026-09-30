@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PillTabs, Card, CardBody } from "@/components/ui/primitives";
+import { PillTabs, Card, CardBody, TableWrap, Th, Td } from "@/components/ui/primitives";
 import type { AdminGuideCategory, GuideBlock } from "@/lib/admin-guide-content";
 
 function GuideBlocks({ blocks }: { blocks: GuideBlock[] }) {
@@ -19,30 +19,28 @@ function GuideBlocks({ blocks }: { blocks: GuideBlock[] }) {
           );
         }
         return (
-          <div key={i} className="overflow-x-auto rounded-md border border-line">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="bg-surface-2">
-                  {b.table.headers.map((h, j) => (
-                    <th key={j} className="border-b border-line px-3 py-1.5 font-medium text-ink">
-                      {h}
-                    </th>
+          <TableWrap key={i}>
+            <thead>
+              <tr>
+                {b.table.headers.map((h, j) => (
+                  <Th key={j} className="!whitespace-normal">
+                    {h}
+                  </Th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {b.table.rows.map((row, j) => (
+                <tr key={j}>
+                  {row.map((cell, k) => (
+                    <Td key={k} className="!whitespace-normal !align-top">
+                      {cell}
+                    </Td>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {b.table.rows.map((row, j) => (
-                  <tr key={j}>
-                    {row.map((cell, k) => (
-                      <td key={k} className="border-b border-line px-3 py-1.5 align-top last:border-b-0">
-                        {cell}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </TableWrap>
         );
       })}
     </div>
