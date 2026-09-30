@@ -89,31 +89,8 @@ function toView(d: InterstitialDocument): InterstitialView {
   };
 }
 
-const demoBanner =
-  "data:image/svg+xml;charset=utf-8," +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="880" height="495"><rect width="880" height="495" fill="#b5730f"/><rect y="360" width="880" height="135" fill="#00000022"/><text x="60" y="170" font-family="system-ui,sans-serif" font-size="58" font-weight="700" fill="#ffffff">本週新開團</text><text x="60" y="240" font-family="system-ui,sans-serif" font-size="34" fill="#ffe9c9">下午茶專區・星巴克揪團上線</text><text x="60" y="430" font-family="system-ui,sans-serif" font-size="28" fill="#ffffff">點我看看 &#8594;</text></svg>`,
-  );
-
-/** 集合是空的才補一筆示範廣告，讓前台一開始就有東西可以展示。 */
-async function seedIfEmpty() {
-  if ((await Interstitial.countDocuments()) > 0) return;
-  await Interstitial.create({
-    name: "下午茶專區上線",
-    enabled: true,
-    imageUrl: demoBanner,
-    linkUrl: "/group-orders",
-    dismissSeconds: 8,
-    frequency: "always",
-    showOnPages: ["group-orders", "pages"],
-    startAt: "2026-09-01T00:00",
-    endAt: "2026-12-31T23:59",
-  });
-}
-
 export async function listInterstitials(): Promise<InterstitialView[]> {
   await connectMongo();
-  await seedIfEmpty();
   const docs = await Interstitial.find({}).sort({ createdAt: 1 });
   return docs.map(toView);
 }
@@ -187,7 +164,6 @@ export function interstitialStatus(a: InterstitialView, now: Date = new Date()):
 /** 前台蓋台廣告用：只要「開啟」就給候選（排程時間窗要依使用者本機時間判斷，留給前端算）。 */
 export async function listEnabledInterstitials(): Promise<InterstitialView[]> {
   await connectMongo();
-  await seedIfEmpty();
   const docs = await Interstitial.find({ enabled: true }).sort({ createdAt: 1 });
   return docs.map(toView);
 }
