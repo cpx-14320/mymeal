@@ -38,6 +38,7 @@ export async function updateRoleAction(
     actor: await getCurrentActorName(),
     action: "編輯組別權限",
     target: name,
+    category: "people",
     risk: true,
   });
 

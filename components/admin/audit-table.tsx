@@ -11,15 +11,25 @@ import {
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
-import type { AuditLogRow } from "@/lib/models/audit-log";
+import type { AuditLogRow, AuditLogCategory } from "@/lib/models/audit-log";
 import { formatTaiwanDateTime } from "@/lib/date";
 
+type Tab = "all" | AuditLogCategory;
+
+const categoryLabel: Record<AuditLogCategory, string> = {
+  finance: "財務管理",
+  people: "會員管理",
+  catalog: "品項管理",
+};
+
 export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
+  const [tab, setTab] = useState<Tab>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-  const filtered = logs.filter((l) => {
+  const byCategory = tab === "all" ? logs : logs.filter((l) => l.category === tab);
+  const filtered = byCategory.filter((l) => {
     const q = search.trim();
     if (!q) return true;
     return l.actor.includes(q) || l.target.includes(q) || l.action.includes(q);
@@ -30,6 +40,21 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
   return (
     <div className="space-y-4">
       <ListToolbar
+        tabs={{
+          tabs: [
+            { key: "all", label: "全部", count: logs.length },
+            ...(Object.entries(categoryLabel) as [AuditLogCategory, string][]).map(([key, label]) => ({
+              key,
+              label,
+              count: logs.filter((l) => l.category === key).length,
+            })),
+          ],
+          value: tab,
+          onChange: (key) => {
+            setTab(key as Tab);
+            setPage(1);
+          },
+        }}
         search={{
           value: search,
           onChange: (v) => {
@@ -59,7 +84,7 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
           {rows.length === 0 ? (
             <tr>
               <Td colSpan={5} className="text-center text-muted">
-                {logs.length === 0 ? "還沒有稽核紀錄，執行高風險操作（如手動調整餘額、停權會員）後會自動記錄在這裡。" : "沒有符合的紀錄。"}
+                {search.trim() ? "沒有符合的紀錄。" : "目前無相關資料。"}
               </Td>
             </tr>
           ) : (

@@ -37,7 +37,7 @@ export async function approveTopupAction(id: string): Promise<TopupActionState> 
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
-  await createAuditLog({ actor, action: "核准儲值申請", target: label });
+  await createAuditLog({ actor, action: "核准儲值申請", target: label, category: "finance" });
 
   revalidatePath("/admin/topups");
   revalidatePath("/admin/wallets");
@@ -60,7 +60,7 @@ export async function rejectTopupAction(id: string, reviewNote?: string): Promis
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
-  await createAuditLog({ actor, action: "退件儲值申請", target: label });
+  await createAuditLog({ actor, action: "退件儲值申請", target: label, category: "finance" });
 
   revalidatePath("/admin/topups");
   revalidatePath("/admin");
@@ -83,7 +83,7 @@ export async function revokeTopupAction(id: string): Promise<TopupActionState> {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
 
-  await createAuditLog({ actor, action: "撤銷儲值核准", target: label });
+  await createAuditLog({ actor, action: "撤銷儲值核准", target: label, category: "finance" });
 
   revalidatePath("/admin/topups");
   revalidatePath("/admin/wallets");

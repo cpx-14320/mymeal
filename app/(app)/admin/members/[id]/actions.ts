@@ -56,6 +56,7 @@ export async function updateMemberAction(
     actor: await getCurrentActorName(),
     action: "編輯會員資料",
     target: name,
+    category: "people",
   });
 
   revalidatePath("/admin/members");

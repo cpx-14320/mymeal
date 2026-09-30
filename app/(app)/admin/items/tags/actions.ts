@@ -27,7 +27,7 @@ function refresh() {
 
 async function logTagAudit(action: string, target?: string) {
   const actor = await getCurrentActorName();
-  await createAuditLog({ actor, action, target });
+  await createAuditLog({ actor, action, target, category: "catalog" });
 }
 
 export async function createTagGroupAction() {
@@ -78,6 +78,7 @@ export async function renameTagOptionAction(id: string, oldOption: string, newOp
     actor,
     action: "標籤選項改名",
     target: group ? `${group.name}．${oldOption}→${newOption}（已同步套用到品項）` : `${oldOption}→${newOption}`,
+    category: "catalog",
     risk: true,
   });
   refresh();
@@ -91,6 +92,7 @@ export async function removeTagOptionAction(id: string, option: string) {
     actor,
     action: "移除標籤選項",
     target: group ? `${group.name}．${option}（已從品項移除）` : option,
+    category: "catalog",
     risk: true,
   });
   refresh();
@@ -105,6 +107,7 @@ export async function deleteTagGroupAction(id: string) {
     actor,
     action: "刪除標籤群組",
     target: before ? `${before.name}（${before.options.length} 個選項已從品項移除）` : id,
+    category: "catalog",
     risk: true,
   });
   refresh();

@@ -23,6 +23,7 @@ export async function deletePagesAction(ids: string[]) {
     actor,
     action: "刪除頁面",
     target: names.length <= 3 ? names.join("、") : `${names.slice(0, 3).join("、")} 等 ${names.length} 個`,
+    category: "catalog",
     risk: true,
   });
 

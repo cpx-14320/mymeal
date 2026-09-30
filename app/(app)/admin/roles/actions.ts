@@ -23,6 +23,7 @@ export async function deleteRolesAction(ids: string[]): Promise<BulkDeleteRolesS
       actor: await getCurrentActorName(),
       action: "刪除組別",
       target: names.join("、"),
+      category: "people",
       risk: true,
     });
   }

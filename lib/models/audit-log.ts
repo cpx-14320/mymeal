@@ -3,15 +3,19 @@ import { connectMongo } from "@/lib/mongoose";
 
 /**
  * audit_logs collection —— 後台操作紀錄，append-only（只新增，沒有更新/刪除函式）。
- * 目前涵蓋錢包手動調整、儲值審核、會員停權/復權/刪除、組別權限異動；
- * 之後有新的高風險操作要記錄，比照現有呼叫點在對應的 server action 裡加一行
- * createAuditLog() 即可，不用動這個檔案。
+ * 目前涵蓋錢包手動調整、儲值審核、會員停權/復權/刪除、組別權限異動、刪除頁面、
+ * 標籤群組相關操作；之後有新的高風險操作要記錄，比照現有呼叫點在對應的 server
+ * action 裡加一行 createAuditLog() 即可，category 對應後台稽核紀錄頁的分頁 tabs，
+ * 不用動這個檔案。
  */
+export type AuditLogCategory = "finance" | "people" | "catalog";
+
 export interface AuditLogDocument {
   _id: Types.ObjectId;
   actor: string; // 操作者姓名（來自 session；預覽模式無登入時記「管理員」）
   action: string; // 動作描述，例如「核准儲值申請」
   target?: string; // 操作對象描述，例如會員姓名、申請編號
+  category: AuditLogCategory; // 財務管理／會員管理／品項管理，對應稽核紀錄頁的分頁 tabs
   risk: boolean; // 是否為高風險操作（金流／權限／帳號狀態變更）
   createdAt: Date;
 }
@@ -21,6 +25,7 @@ const auditLogSchema = new Schema<AuditLogDocument>(
     actor: { type: String, required: true, trim: true },
     action: { type: String, required: true, trim: true },
     target: { type: String, trim: true },
+    category: { type: String, enum: ["finance", "people", "catalog"], required: true },
     risk: { type: Boolean, required: true, default: false },
   },
   { timestamps: { createdAt: true, updatedAt: false }, collection: "audit_logs" },
@@ -33,6 +38,7 @@ export interface CreateAuditLogInput {
   actor: string;
   action: string;
   target?: string;
+  category: AuditLogCategory;
   risk?: boolean;
 }
 
@@ -45,6 +51,7 @@ export async function createAuditLog(input: CreateAuditLogInput): Promise<void> 
       actor: input.actor,
       action: input.action,
       target: input.target,
+      category: input.category,
       risk: input.risk ?? false,
     });
   } catch (err) {
@@ -58,6 +65,7 @@ export interface AuditLogRow {
   actor: string;
   action: string;
   target: string;
+  category: AuditLogCategory;
   risk: boolean;
 }
 
@@ -71,6 +79,7 @@ export async function listAuditLogs(limit = 300): Promise<AuditLogRow[]> {
     actor: d.actor,
     action: d.action,
     target: d.target ?? "",
+    category: d.category,
     risk: d.risk,
   }));
 }

@@ -46,7 +46,7 @@ export function ItemStatsTable({ stats }: { stats: CatalogItemStat[] }) {
           {rows.length === 0 ? (
             <tr>
               <Td colSpan={7} className="text-center text-muted">
-                目前沒有品項統計資料。
+                目前無相關資料。
               </Td>
             </tr>
           ) : (

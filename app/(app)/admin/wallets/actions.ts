@@ -30,6 +30,7 @@ export async function adjustBalanceAction(
     actor,
     action: `手動調整餘額（${amount > 0 ? "+" : ""}${amount}）：${note}`,
     target: member?.name ?? memberId,
+    category: "finance",
     risk: true,
   });
 

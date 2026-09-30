@@ -138,7 +138,7 @@ export function GroupOrdersTable({ rows }: { rows: GroupOrderListItem[] }) {
           {pageRows.length === 0 ? (
             <tr>
               <Td colSpan={10} className="text-center text-muted">
-                還沒有任何團訂。
+                目前無相關資料。
               </Td>
             </tr>
           ) : (

@@ -41,6 +41,7 @@ export async function setMembersStatusAction(
     actor,
     action: statusActionLabel[status],
     target: summarizeNames(names),
+    category: "people",
     risk: true,
   });
 
@@ -74,6 +75,7 @@ export async function deleteMembersAction(ids: string[]): Promise<DeleteMembersS
     actor,
     action: "刪除會員",
     target: summarizeNames(names),
+    category: "people",
     risk: true,
   });
 

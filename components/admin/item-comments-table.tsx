@@ -29,7 +29,7 @@ export function ItemCommentsTable({
   const { pageRows: rows, pageCount, current, effectiveSize } = paginate(comments, page, pageSize);
 
   if (comments.length === 0) {
-    return <p className="text-[13px] lg:text-[14px] text-muted">尚未有任何評論。</p>;
+    return <p className="text-[13px] lg:text-[14px] text-muted">目前無相關資料。</p>;
   }
 
   return (
