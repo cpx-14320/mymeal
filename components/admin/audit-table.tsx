@@ -8,6 +8,7 @@ import {
   Td,
   Pagination,
   ListToolbar,
+  inputClass,
   paginate,
   DEFAULT_PAGE_SIZE,
 } from "@/components/ui/primitives";
@@ -55,17 +56,19 @@ export function AuditTable({ logs }: { logs: AuditLogRow[] }) {
             setPage(1);
           },
         }}
-        search={{
-          value: search,
-          onChange: (v) => {
-            setSearch(v);
-            setPage(1);
-          },
-          placeholder: "搜尋操作者 / 對象 / 動作",
-        }}
         pageSize={pageSize}
         onPageSizeChange={(n) => {
           setPageSize(n);
+          setPage(1);
+        }}
+      />
+
+      <input
+        className={`${inputClass} w-full`}
+        placeholder="搜尋操作者 / 對象 / 動作"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
           setPage(1);
         }}
       />
