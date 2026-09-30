@@ -185,7 +185,7 @@ export async function listGroupOrdersByDate(date: string): Promise<GroupOrderLis
   await Promise.all([import("@/lib/models/org"), import("@/lib/models/member"), import("@/lib/models/template")]);
 
   const docs = await GroupOrder.find({ date })
-    .sort({ createdAt: 1 })
+    .sort({ createdAt: -1 })
     .populate<{ templateId: PopulatedRef | null }>("templateId")
     .populate<{ unitId: PopulatedUnit | null }>({ path: "unitId", populate: { path: "departmentId" } })
     .populate<{ hostId: PopulatedRef | null }>("hostId");
@@ -275,7 +275,7 @@ export async function getClusterableTemplatesForDate(date: string): Promise<Clus
   await Promise.all([import("@/lib/models/org"), import("@/lib/models/member"), import("@/lib/models/template")]);
 
   const docs = await GroupOrder.find({ date })
-    .sort({ createdAt: 1 })
+    .sort({ createdAt: -1 })
     .populate<{ templateId: PopulatedRef | null }>("templateId")
     .populate<{ unitId: PopulatedUnit | null }>({ path: "unitId", populate: { path: "departmentId" } })
     .populate<{ hostId: PopulatedRef | null }>("hostId");
