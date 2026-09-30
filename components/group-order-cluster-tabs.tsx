@@ -8,9 +8,11 @@ import type { ClusterableTemplate } from "@/lib/models/group-order";
 export function GroupOrderClusterTabs({
   templates,
   date,
+  viewerId,
 }: {
   templates: ClusterableTemplate[];
   date: string;
+  viewerId: string;
 }) {
   const [activeId, setActiveId] = useState(templates[0]?.templateId ?? "");
   const active = templates.find((t) => t.templateId === activeId) ?? templates[0];
@@ -31,6 +33,7 @@ export function GroupOrderClusterTabs({
           orders={active.orders}
           templateName={active.templateName}
           date={date}
+          viewerId={viewerId}
         />
       )}
     </div>

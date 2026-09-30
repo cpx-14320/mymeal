@@ -24,10 +24,13 @@ export function GroupOrderClusterView({
   orders,
   templateName,
   date,
+  viewerId,
 }: {
   orders: GroupOrderDetail[];
   templateName: string;
   date: string;
+  /** 目前登入的人——只有某個單位團訂的團主，才能切換「那個單位」團員的付款狀態。 */
+  viewerId: string;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(
@@ -192,7 +195,7 @@ export function GroupOrderClusterView({
           <div className="flex items-center gap-3">
             <p className="text-xs text-muted">
               <span className="text-positive">✓</span> 已付款．
-              <span className="text-muted">○</span> 未付款．點人名前的圖示切換
+              <span className="text-muted">○</span> 未付款．該單位團主可點人名前的圖示切換
             </p>
             <Button variant="secondary" size="sm" disabled={selectedOrders.length === 0} onClick={exportMergedDetail}>
               匯出 CSV
@@ -235,24 +238,33 @@ export function GroupOrderClusterView({
                         )}
                         {li === 0 && (
                           <Td rowSpan={mg.lines.length} className="align-middle">
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() =>
-                                toggleMemberPaid(
-                                  o,
-                                  mg.memberId,
-                                  mg.lines.map((line) => line.id),
-                                  !paid,
-                                )
-                              }
-                              aria-label={paid ? "標記為未付款" : "標記為已付款"}
-                              className={`mr-1.5 disabled:opacity-50 ${
-                                paid ? "text-positive" : "text-muted hover:text-ink"
-                              }`}
-                            >
-                              {paid ? "✓" : "○"}
-                            </button>
+                            {viewerId === o.hostId ? (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() =>
+                                  toggleMemberPaid(
+                                    o,
+                                    mg.memberId,
+                                    mg.lines.map((line) => line.id),
+                                    !paid,
+                                  )
+                                }
+                                aria-label={paid ? "標記為未付款" : "標記為已付款"}
+                                className={`mr-1.5 disabled:opacity-50 ${
+                                  paid ? "text-positive" : "text-muted hover:text-ink"
+                                }`}
+                              >
+                                {paid ? "✓" : "○"}
+                              </button>
+                            ) : (
+                              <span
+                                aria-label={paid ? "已付款" : "未付款"}
+                                className={`mr-1.5 ${paid ? "text-positive" : "text-muted"}`}
+                              >
+                                {paid ? "✓" : "○"}
+                              </span>
+                            )}
                             {mg.memberId === o.hostId ? `${mg.memberName}（團主）` : mg.memberName}
                           </Td>
                         )}

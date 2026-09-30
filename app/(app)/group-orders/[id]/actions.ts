@@ -10,10 +10,11 @@ import {
   refundWalletForGroupOrder,
   cancelMemberLine,
   deleteGroupOrders,
+  previewWalletChargeShortfalls,
   type RiceLevel,
+  type WalletChargeShortfall,
 } from "@/lib/models/group-order";
-import { getSessionMemberId, getCurrentActorName } from "@/lib/session";
-import { createAuditLog } from "@/lib/models/audit-log";
+import { getSessionMemberId } from "@/lib/session";
 import { findMemberById } from "@/lib/models/member";
 
 export interface SubmitOrderLineInput {
@@ -75,14 +76,21 @@ export interface HostActionState {
   success?: boolean;
 }
 
-/** 團主自己的權限檢查：不只前台藏按鈕，action 本身也要確認呼叫的人真的是這團的團主。 */
-async function assertHost(groupOrderId: string) {
+/** 團主自己的權限檢查：不只前台藏按鈕，action 本身也要確認呼叫的人真的是這團的團主。
+ *  匯出給 group-orders/cluster/actions.ts 共用（付款狀態切換也是團主專屬操作）。 */
+export async function assertHost(groupOrderId: string) {
   const memberId = await getSessionMemberId();
   if (!memberId) throw new Error("請先登入。");
   const group = await findGroupOrderById(groupOrderId);
   if (!group) throw new Error("找不到這個團，可能已被刪除。");
   if (group.hostId !== memberId) throw new Error("只有團主可以進行這個操作。");
   return group;
+}
+
+/** 結單前用：給團主看有沒有人結單後錢包會變負的，讓團主自己決定要不要繼續。 */
+export async function previewCloseShortfallsAction(groupOrderId: string): Promise<WalletChargeShortfall[]> {
+  await assertHost(groupOrderId);
+  return previewWalletChargeShortfalls(groupOrderId);
 }
 
 /** 提前結單：開放中 → 已截止，同時把選「錢包扣款」的人實際扣款。 */
@@ -158,20 +166,17 @@ export async function updateGroupOrderSettingsAction(
 }
 
 /** 取消整團：已經扣過錢包款的行先全部退款，再刪除這筆團訂（含所有人已點的品項），
- *  只有團主能操作；刪除後前端要導回列表頁。這是會動到金流的操作，要留稽核紀錄。 */
+ *  只有團主能操作；刪除後前端要導回列表頁。團主取消自己開的團是正常操作，不算高風險的
+ *  管理行為，不寫稽核紀錄（跟後台管理員的操作分開看）。 */
 export async function cancelGroupOrderAction(groupOrderId: string): Promise<HostActionState> {
   try {
-    const order = await assertHost(groupOrderId);
+    await assertHost(groupOrderId);
     await refundWalletForGroupOrder(groupOrderId);
     await deleteGroupOrders([groupOrderId]);
-
-    const actor = await getCurrentActorName();
-    await createAuditLog({ actor, action: "取消團訂", target: order.name, risk: true });
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
   revalidatePath("/group-orders");
   revalidatePath("/wallet");
-  revalidatePath("/admin/audit");
   return { success: true };
 }
