@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Section, Stat, Button, PillTabs } from "@/components/ui/primitives";
+import { Section, Stat, PillTabs } from "@/components/ui/primitives";
 import type { DailyOrderStat } from "@/lib/models/reports";
 
 const RANGE_OPTIONS = [7, 14, 30] as const;
@@ -23,17 +23,14 @@ export function GroupOrderStats({ daily }: { daily: DailyOrderStat[] }) {
       <Section
         title="訂單與金流報表"
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <PillTabs
-              tabs={RANGE_OPTIONS.map((n) => ({
-                key: String(n),
-                label: `近 ${n} 天`,
-              }))}
-              value={String(range)}
-              onChange={(key) => setRange(Number(key) as Range)}
-            />
-            <Button variant="secondary">匯出 CSV</Button>
-          </div>
+          <PillTabs
+            tabs={RANGE_OPTIONS.map((n) => ({
+              key: String(n),
+              label: `近 ${n} 天`,
+            }))}
+            value={String(range)}
+            onChange={(key) => setRange(Number(key) as Range)}
+          />
         }
       >
         <div className="grid gap-4 sm:grid-cols-3">

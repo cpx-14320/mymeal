@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Section, Button, Stat, TableWrap, Th, Td } from "@/components/ui/primitives";
+import { Section, Stat, TableWrap, Th, Td } from "@/components/ui/primitives";
 import type { OrgOption } from "@/lib/models/org";
 import type { DepartmentExportSummary } from "@/lib/models/group-order";
 import { getDepartmentExportSummaryAction } from "@/app/(app)/admin/group-orders/actions";
@@ -88,10 +88,6 @@ export function DepartmentExport({ departments }: { departments: OrgOption[] }) 
               )}
             </tbody>
           </TableWrap>
-
-          <div className="flex justify-end">
-            <Button>匯出「{summary.departmentName}」全部單位資料</Button>
-          </div>
         </>
       )}
     </Section>
