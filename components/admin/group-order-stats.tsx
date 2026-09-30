@@ -4,11 +4,16 @@ import { useState } from "react";
 import { Section, Stat, PillTabs } from "@/components/ui/primitives";
 import type { DailyOrderStat } from "@/lib/models/reports";
 
-const RANGE_OPTIONS = [7, 14, 30] as const;
+const RANGE_OPTIONS = [1, 7, 14, 30] as const;
 type Range = (typeof RANGE_OPTIONS)[number];
 
+/** range=1（今天）跟其他天數的標籤唸法不一樣，這裡統一處理。 */
+const rangeLabel = (n: Range) => (n === 1 ? "今天" : `近 ${n} 天`);
+
 /** 團訂狀況頁最上方的訂單與金流報表——原本是獨立的「報表」頁，併進來當這頁的
- *  摘要區塊，放在清單分頁 tabs 上方。「依頁面統計」區塊沒有人在用，併入時拿掉了。 */
+ *  摘要區塊，放在清單分頁 tabs 上方。「依頁面統計」區塊沒有人在用，併入時拿掉了；
+ *  「今天」這個選項是併掉後台總覽儀表板的 KPI 卡片時加的，取代原本「今日團數／
+ *  今日訂餐份數／今日金額」那排卡片。 */
 export function GroupOrderStats({ daily }: { daily: DailyOrderStat[] }) {
   const [range, setRange] = useState<Range>(7);
 
@@ -26,7 +31,7 @@ export function GroupOrderStats({ daily }: { daily: DailyOrderStat[] }) {
           <PillTabs
             tabs={RANGE_OPTIONS.map((n) => ({
               key: String(n),
-              label: `近 ${n} 天`,
+              label: rangeLabel(n),
             }))}
             value={String(range)}
             onChange={(key) => setRange(Number(key) as Range)}
@@ -34,8 +39,8 @@ export function GroupOrderStats({ daily }: { daily: DailyOrderStat[] }) {
         }
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <Stat label={`近 ${range} 天訂單數`} value={totalOrders} />
-          <Stat label={`近 ${range} 天金額`} value={`NT$ ${totalAmount}`} />
+          <Stat label={`${rangeLabel(range)}訂單數`} value={totalOrders} />
+          <Stat label={`${rangeLabel(range)}金額`} value={`NT$ ${totalAmount}`} />
           <Stat label="平均客單價" value={`NT$ ${avgTicket}`} />
         </div>
       </Section>

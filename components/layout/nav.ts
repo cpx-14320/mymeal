@@ -84,7 +84,6 @@ export const primaryNav: NavItem[] = [
 ];
 
 export type AdminNavKey =
-  | "overview"
   | "pages"
   | "items"
   | "itemClassification"
@@ -121,11 +120,8 @@ export interface AdminNavGroup {
  *  依功能性質分組，各組可個別收合；要增減項目或調整分組只改這裡。 */
 export const adminNav: AdminNavGroup[] = [
   {
-    key: "overview",
-    items: [
-      { key: "overview", label: "總覽", href: "/admin" },
-      { key: "guide", label: "功能說明", href: "/admin/guide" },
-    ],
+    key: "guide",
+    items: [{ key: "guide", label: "功能說明", href: "/admin" }],
   },
   {
     key: "catalog",

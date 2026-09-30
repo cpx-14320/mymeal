@@ -12,9 +12,10 @@ export const metadata: Metadata = {
   title: { default: "後台管理", template: "%s · 後台管理 · MyMeal" },
 };
 
-// 「總覽」「功能說明」是純參考資料，不是可調整資料的功能，只要是任一種後台管理者都能看，
-// 跟 sidebar.tsx 決定要不要顯示這兩個連結的邏輯（alwaysVisibleKeys）保持一致。
-const ALWAYS_VISIBLE_KEYS = new Set<AdminNavKey>(["overview", "guide"]);
+// 「功能說明」（也就是 /admin 本身）是純參考資料，不是可調整資料的功能，只要是任一種
+// 後台管理者都能看，跟 sidebar.tsx 決定要不要顯示這個連結的邏輯（alwaysVisibleKeys）
+// 保持一致——也因為這樣，底下沒有權限時導回 /admin 一定安全，不會變成無限重導。
+const ALWAYS_VISIBLE_KEYS = new Set<AdminNavKey>(["guide"]);
 
 /**
  * 後台安全性第二層：middleware.ts 只確認「有沒有登入」，這裡進一步確認「這個人的組別

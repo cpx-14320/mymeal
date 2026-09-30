@@ -122,10 +122,10 @@ export function Sidebar({
 
   /* ── 後台管理：側欄改顯示後台導覽 ───────────────────── */
   if (inAdmin) {
-    // 完全沒有任何權限就不顯示任何後台項目（含總覽／功能說明）；有權限的話，
-    // 總覽跟功能說明一律顯示（純參考資料，不是可調整資料的功能，不用個別授權），
-    // 其他項目照組別的權限鍵過濾，過濾完整組沒有項目就整組不顯示。
-    const alwaysVisibleKeys = new Set<AdminNavKey>(["overview", "guide"]);
+    // 完全沒有任何權限就不顯示任何後台項目（含功能說明）；有權限的話，
+    // 功能說明一律顯示（純參考資料，不是可調整資料的功能，不用個別授權，也是
+    // /admin 本身的內容），其他項目照組別的權限鍵過濾，過濾完整組沒有項目就整組不顯示。
+    const alwaysVisibleKeys = new Set<AdminNavKey>(["guide"]);
     const visibleAdminNav = isAdmin
       ? adminNav
           .map((group) => ({

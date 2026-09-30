@@ -179,19 +179,6 @@ export async function listGroupOrders(): Promise<GroupOrderListItem[]> {
   return docs.map((d) => toGroupOrderListItem(d as unknown as PopulatedGroupOrderDoc));
 }
 
-/** 給後台總覽儀表板用：只抓某一天（"YYYY/MM/DD"）的團訂。 */
-export async function listGroupOrdersByDate(date: string): Promise<GroupOrderListItem[]> {
-  await connectMongo();
-  await Promise.all([import("@/lib/models/org"), import("@/lib/models/member"), import("@/lib/models/template")]);
-
-  const docs = await GroupOrder.find({ date })
-    .sort({ createdAt: -1 })
-    .populate<{ templateId: PopulatedRef | null }>("templateId")
-    .populate<{ unitId: PopulatedUnit | null }>({ path: "unitId", populate: { path: "departmentId" } })
-    .populate<{ hostId: PopulatedRef | null }>("hostId");
-
-  return docs.map((d) => toGroupOrderListItem(d as unknown as PopulatedGroupOrderDoc));
-}
 
 export interface GroupOrderDetail extends GroupOrderListItem {
   lines: {
