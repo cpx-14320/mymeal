@@ -190,14 +190,6 @@ export const adminNavIcons: Record<
       <path d="M4 19V9M10 19V5M16 19v-7M4 19h16" />
     </Base>
   ),
-  reports: (props) => (
-    <Base {...props}>
-      <path d="M3 21h18" />
-      <rect x="5" y="11" width="4" height="7" />
-      <rect x="11" y="6" width="4" height="12" />
-      <rect x="17" y="14" width="4" height="4" />
-    </Base>
-  ),
   audit: (props) => (
     <Base {...props}>
       <rect x="5" y="4" width="14" height="17" rx="2" />

@@ -48,12 +48,11 @@ const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
       itemClassification: true,
       items: true,
       grouporders: true,
-      reports: true,
     },
   },
   {
     name: "財務管理員",
-    permissions: { topups: true, wallets: true, reports: true, audit: true },
+    permissions: { topups: true, wallets: true, audit: true },
   },
   {
     name: "客服管理員",
@@ -75,7 +74,6 @@ const DEFAULT_ROLES: { name: string; permissions: RolePermissions }[] = [
       orgUnits: true,
       itemStats: true,
       gamification: true,
-      reports: true,
       audit: true,
       promos: true,
       feedback: true,

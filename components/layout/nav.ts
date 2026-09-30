@@ -98,7 +98,6 @@ export type AdminNavKey =
   | "orgUnits"
   | "itemStats"
   | "gamification"
-  | "reports"
   | "audit"
   | "promos"
   | "feedback"
@@ -175,7 +174,6 @@ export const adminNav: AdminNavGroup[] = [
     items: [
       { key: "grouporders", label: "團訂狀況", href: "/admin/group-orders" },
       { key: "itemStats", label: "餐點統計", href: "/admin/item-stats" },
-      { key: "reports", label: "報表", href: "/admin/reports" },
       { key: "audit", label: "稽核紀錄", href: "/admin/audit" },
     ],
   },

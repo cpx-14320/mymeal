@@ -1,12 +1,11 @@
-import { Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
 import { GroupOrder, type OrderLineSubdoc } from "@/lib/models/group-order";
 import { todayTaiwanDateString } from "@/lib/date";
 
 /**
- * 後台「報表」頁用的統計彙總——資料來源是 group_orders 的 lines，現場算，不另外存快取表
- * （跟 getItemOrderStats／getMemberFrequentItems 同樣的考量，量大到查詢變慢再說）。
- * 依頁面統計以「品項」為單位分組（品項自己一定有 pageId，比 template 層級可靠）。
+ * 團訂狀況頁上方「訂單與金流報表」用的每日彙總——資料來源是 group_orders 的 lines，
+ * 現場算，不另外存快取表（跟 getItemOrderStats／getMemberFrequentItems 同樣的考量，
+ * 量大到查詢變慢再說）。
  */
 
 const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -43,63 +42,26 @@ export interface DailyOrderStat {
   orders: number;
   amount: number;
 }
-export interface PageOrderStat {
-  name: string;
-  orders: number;
-  amount: number;
-}
-export interface OrderReportData {
-  daily: DailyOrderStat[]; // 舊到新，長度 = rangeDays
-  byPage: PageOrderStat[];
-}
 
-/** rangeDays 天的每日訂單數/金額 + 同一段期間的依頁面彙總，供報表頁的區塊共用一次查詢。 */
-export async function getOrderReportData(rangeDays: number): Promise<OrderReportData> {
+/** rangeDays 天的每日訂單數/金額，由舊到新排序，長度 = rangeDays。 */
+export async function getDailyOrderStats(rangeDays: number): Promise<DailyOrderStat[]> {
   await connectMongo();
-  const { CatalogItem } = await import("@/lib/models/catalog-item");
 
   const dates = lastNDateStrings(rangeDays);
-
   const docs = await GroupOrder.find({ date: { $in: dates } });
-
-  const itemIds = new Set<string>();
-  for (const d of docs) for (const l of d.lines as OrderLineSubdoc[]) itemIds.add(String(l.itemId));
-  const itemDocs = await CatalogItem.find({
-    _id: { $in: [...itemIds].map((id) => new Types.ObjectId(id)) },
-  }).populate<{ pageId?: { _id: Types.ObjectId; name: string } }>("pageId");
-  const pageNameByItem = new Map(
-    itemDocs.map((it) => [
-      String(it._id),
-      (it.pageId as unknown as { name: string } | undefined)?.name ?? "未標註頁面",
-    ]),
-  );
 
   const dailyMap = new Map<string, { orders: number; amount: number }>(
     dates.map((date) => [date, { orders: 0, amount: 0 }]),
   );
-  const pageMap = new Map<string, PageOrderStat>();
 
   for (const d of docs) {
-    const lines = d.lines as OrderLineSubdoc[];
-    const totals = lineTotals(lines);
-
+    const totals = lineTotals(d.lines as OrderLineSubdoc[]);
     const dayBucket = dailyMap.get(d.date);
     if (dayBucket) {
       dayBucket.orders += totals.qty;
       dayBucket.amount += totals.amount;
     }
-
-    for (const l of lines) {
-      const pageName = pageNameByItem.get(String(l.itemId)) ?? "未標註頁面";
-      const sEntry = pageMap.get(pageName) ?? { name: pageName, orders: 0, amount: 0 };
-      sEntry.orders += l.qty;
-      sEntry.amount += l.price * l.qty;
-      pageMap.set(pageName, sEntry);
-    }
   }
 
-  return {
-    daily: dates.map((date) => ({ date: formatDateLabel(date), ...dailyMap.get(date)! })),
-    byPage: [...pageMap.values()].sort((a, b) => b.amount - a.amount),
-  };
+  return dates.map((date) => ({ date: formatDateLabel(date), ...dailyMap.get(date)! }));
 }

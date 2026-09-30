@@ -115,7 +115,6 @@ export const permissionCategories: PermissionCategory[] = [
     items: [
       { key: "grouporders", label: "團訂狀況" },
       { key: "itemStats", label: "餐點統計" },
-      { key: "reports", label: "報表" },
       { key: "audit", label: "稽核" },
     ],
   },
