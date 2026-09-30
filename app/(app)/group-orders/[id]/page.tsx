@@ -112,7 +112,26 @@ export default async function GroupOrderDetailPage({
     <PageContainer spacingClassName="space-y-4 sm:space-y-8">
       <PageHeader
         title={group.name}
-        actions={<Badge tone={statusMap[group.status].tone}>{statusMap[group.status].label}</Badge>}
+        actions={
+          <>
+            <Badge tone={statusMap[group.status].tone}>{statusMap[group.status].label}</Badge>
+            {isHost && (
+              <GroupOrderSettingsEditor
+                groupOrderId={group.id}
+                current={{
+                  name: group.name,
+                  templateId: group.templateId,
+                  sectionId: group.sectionId,
+                  unitId: group.unitId,
+                  deadline: group.deadline,
+                }}
+                templates={editableTemplates}
+                departments={departments}
+                units={units}
+              />
+            )}
+          </>
+        }
       />
 
       <StatGrid3>
@@ -216,19 +235,6 @@ export default async function GroupOrderDetailPage({
                 lines={group.lines}
                 host={group.hostName}
                 filename={`${group.name}_訂購彙總.csv`}
-              />
-              <GroupOrderSettingsEditor
-                groupOrderId={group.id}
-                current={{
-                  name: group.name,
-                  templateId: group.templateId,
-                  sectionId: group.sectionId,
-                  unitId: group.unitId,
-                  deadline: group.deadline,
-                }}
-                templates={editableTemplates}
-                departments={departments}
-                units={units}
               />
             </>
           }

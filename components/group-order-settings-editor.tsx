@@ -79,8 +79,8 @@ export function GroupOrderSettingsEditor({
 
   return (
     <>
-      <Button type="button" variant="secondary" onClick={openModal}>
-        編輯團訂設定
+      <Button type="button" variant="secondary" size="sm" onClick={openModal}>
+        編輯
       </Button>
 
       {open && (
