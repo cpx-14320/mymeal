@@ -62,12 +62,12 @@ export function MemberEditForm({ member, departments, units, roleNames }: Member
               />
             </Field>
 
-            <Field label="帳號(公司email)">
+            <Field label="帳號">
               <input
                 className={inputClass}
                 type="text"
                 name="email"
-                defaultValue={member.email}
+                defaultValue={member.account}
                 required
               />
             </Field>

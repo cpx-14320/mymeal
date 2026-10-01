@@ -23,7 +23,7 @@ export async function loginAction(
   const password = String(formData.get("password") ?? "");
 
   if (!email || !password) {
-    return { error: "請輸入 Email 與密碼。" };
+    return { error: "請輸入帳號與密碼。" };
   }
 
   const result = await verifyLogin(email, password);

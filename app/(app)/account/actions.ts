@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { MAX_UPLOAD_IMAGE_BYTES, MAX_UPLOAD_IMAGE_LABEL } from "@/lib/upload-limits";
 import { uploadKeyedImage } from "@/lib/blob-upload";
-import { getMemberAvatarUrl, setMemberAvatar } from "@/lib/models/member";
+import { getMemberAvatarUrl, setMemberAvatar, changeMemberPassword } from "@/lib/models/member";
 import { getSessionMemberId } from "@/lib/session";
 
 export interface UploadAvatarState {
@@ -47,4 +47,33 @@ export async function uploadAvatarAction(formData: FormData): Promise<UploadAvat
   } catch (err) {
     return { error: err instanceof Error ? err.message : "上傳失敗，請稍後再試。" };
   }
+}
+
+export interface ChangePasswordState {
+  error?: string;
+  success?: boolean;
+}
+
+/** 會員中心「修改密碼」：驗證目前密碼＋新密碼格式與一致性，通過才呼叫 changeMemberPassword 覆蓋。 */
+export async function changePasswordAction(
+  _prevState: ChangePasswordState,
+  formData: FormData,
+): Promise<ChangePasswordState> {
+  const memberId = await getSessionMemberId();
+  if (!memberId) return { error: "請先登入。" };
+
+  const oldPassword = String(formData.get("oldPassword") ?? "");
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const confirmNewPassword = String(formData.get("confirmNewPassword") ?? "");
+
+  if (!oldPassword || !newPassword || !confirmNewPassword) {
+    return { error: "請填寫所有欄位。" };
+  }
+  if (newPassword !== confirmNewPassword) {
+    return { error: "兩次輸入的新密碼不一致。" };
+  }
+
+  const result = await changeMemberPassword(memberId, oldPassword, newPassword);
+  if (!result.ok) return { error: result.error };
+  return { success: true };
 }

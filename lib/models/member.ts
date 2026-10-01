@@ -17,7 +17,7 @@ export type MemberStatus = "pending" | "active" | "suspended";
 export interface MemberDocument {
   _id: Types.ObjectId;
   account: string; // 登入帳號，目前用 email 的帳號部分
-  email: string; // 公司 Email，登入用
+  email: string; // 登入帳號，4-20 碼英數字、第一碼限英文字母、不分大小寫（欄位名沿用 email，但不要求信箱格式，見 parseMemberForm）
   passwordHash: string; // bcrypt hash，絕不存明文密碼
   name: string;
   employeeId: string; // 員工編號
@@ -37,7 +37,7 @@ export interface MemberDocument {
 
 const memberSchema = new Schema<MemberDocument>(
   {
-    account: { type: String, required: true, unique: true, trim: true },
+    account: { type: String, required: true, unique: true, trim: true, lowercase: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true, select: false },
     name: { type: String, required: true, trim: true },
@@ -107,10 +107,22 @@ export interface ParsedMemberForm {
 
 export type ParsedMemberFormResult = { ok: false; error: string } | { ok: true; fields: ParsedMemberForm };
 
+// 帳號：4-20 碼，第一碼限英文字母，其餘英數混合，不分大小寫（schema 的 lowercase:true 存檔時會轉小寫）。
+const ACCOUNT_RE = /^[A-Za-z][A-Za-z0-9]{3,19}$/;
+// 員工編號：4-20 碼英數混合，不限首碼。
+const EMPLOYEE_ID_RE = /^[A-Za-z0-9]{4,20}$/;
+// 姓名：2-20 碼中英文，字間允許單一空白（複姓/英文名），不允許數字、符號、emoji、連續或前後空白。
+const NAME_RE = /^[A-Za-z一-龥]+(?: [A-Za-z一-龥]+)*$/;
+// 密碼：8-20 碼，只能是英數字加常見符號；英文與數字兩者都要有，大小寫、符號是否使用不強制。
+const PASSWORD_SYMBOLS = "!@#$%^&*()_+=-";
+const PASSWORD_CHARSET_RE = /^[A-Za-z0-9!@#$%^&*()_+=-]{8,20}$/;
+
 /**
- * /register 跟後台新增會員共用的表單解析：必填檢查、密碼長度／兩次輸入一致、部門單位
- * 是否真的存在、邀請碼是否對到某位會員的專屬碼（推薦人）。兩邊欄位順序/名稱刻意做成一致
- * （見 register-form.tsx／member-create-form.tsx），改驗證規則只要改這裡，不用兩邊同步改。
+ * /register 跟後台新增會員共用的表單解析：必填檢查、帳號／員工編號／姓名格式、密碼長度與
+ * 組成／兩次輸入一致、部門單位是否真的存在、邀請碼是否對到某位會員的專屬碼（推薦人）。兩邊
+ * 欄位順序/名稱刻意做成一致（見 register-form.tsx／member-create-form.tsx），改驗證規則只
+ * 要改這裡，不用兩邊同步改。後台「編輯會員」(admin/members/[id]/actions.ts) 刻意不走這個函式，
+ * 舊帳號不受這裡新增的格式規則影響。
  */
 export async function parseMemberForm(formData: FormData): Promise<ParsedMemberFormResult> {
   const email = String(formData.get("email") ?? "").trim();
@@ -125,11 +137,32 @@ export async function parseMemberForm(formData: FormData): Promise<ParsedMemberF
   if (!email || !password || !name || !employeeId || !dept || !unit) {
     return { ok: false, error: "請填寫所有必填欄位。" };
   }
-  if (password.length < 8) {
-    return { ok: false, error: "密碼至少需要 8 碼。" };
+  if (!ACCOUNT_RE.test(email)) {
+    return { ok: false, error: "帳號需為 4-20 碼英數字，且第一碼須為英文字母。" };
+  }
+  if (!EMPLOYEE_ID_RE.test(employeeId)) {
+    return { ok: false, error: "員工編號需為 4-20 碼英數字。" };
+  }
+  if (name.length < 2 || name.length > 20 || !NAME_RE.test(name)) {
+    return { ok: false, error: "姓名需為 2-20 個中文或英文字，不可包含數字或符號。" };
+  }
+  if (!PASSWORD_CHARSET_RE.test(password)) {
+    return {
+      ok: false,
+      error: `密碼需為 8-20 碼，只能包含英文字母、數字與常見符號（${PASSWORD_SYMBOLS}）。`,
+    };
+  }
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    return { ok: false, error: "密碼需同時包含英文字母與數字。" };
+  }
+  if (password.toLowerCase() === email.toLowerCase()) {
+    return { ok: false, error: "密碼不可與帳號相同。" };
   }
   if (password !== confirmPassword) {
     return { ok: false, error: "兩次輸入的密碼不一致。" };
+  }
+  if (inviteCode && (inviteCode.length < 4 || inviteCode.length > 20)) {
+    return { ok: false, error: "邀請碼需為 4-20 碼。" };
   }
 
   const departments = await listDepartments();
@@ -413,7 +446,8 @@ export type LoginResult =
 /** 登入驗證：查 email、比對密碼、檢查帳號狀態，成功的話更新 lastLoginAt。 */
 export async function verifyLogin(email: string, password: string): Promise<LoginResult> {
   await connectMongo();
-  const found = await Member.findOne({ email }).select("+passwordHash");
+  // 帳號不分大小寫，查詢前先轉小寫比對（存檔時 schema 也會自動轉小寫，見 memberSchema 的 email/account 欄位）。
+  const found = await Member.findOne({ email: email.toLowerCase() }).select("+passwordHash");
   if (!found) return { ok: false, reason: "not_found" };
 
   const valid = await bcrypt.compare(password, found.passwordHash);
@@ -436,4 +470,42 @@ export async function verifyLogin(email: string, password: string): Promise<Logi
       status: found.status,
     },
   };
+}
+
+export type ChangePasswordResult = { ok: true } | { ok: false; error: string };
+
+/** 會員登入後自行改密碼：驗證目前密碼正確、新密碼格式符合規則、新密碼不可與帳號或目前密碼相同才覆蓋。 */
+export async function changeMemberPassword(
+  memberId: string,
+  oldPassword: string,
+  newPassword: string,
+): Promise<ChangePasswordResult> {
+  await connectMongo();
+  if (!Types.ObjectId.isValid(memberId)) return { ok: false, error: "無效的會員 id" };
+
+  const found = await Member.findById(memberId).select("+passwordHash");
+  if (!found) return { ok: false, error: "找不到會員資料。" };
+
+  const valid = await bcrypt.compare(oldPassword, found.passwordHash);
+  if (!valid) return { ok: false, error: "目前密碼不正確。" };
+
+  if (!PASSWORD_CHARSET_RE.test(newPassword)) {
+    return {
+      ok: false,
+      error: `新密碼需為 8-20 碼，只能包含英文字母、數字與常見符號（${PASSWORD_SYMBOLS}）。`,
+    };
+  }
+  if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+    return { ok: false, error: "新密碼需同時包含英文字母與數字。" };
+  }
+  if (newPassword.toLowerCase() === found.account.toLowerCase()) {
+    return { ok: false, error: "新密碼不可與帳號相同。" };
+  }
+  if (newPassword === oldPassword) {
+    return { ok: false, error: "新密碼不可與目前密碼相同。" };
+  }
+
+  found.passwordHash = await bcrypt.hash(newPassword, 10);
+  await found.save();
+  return { ok: true };
 }

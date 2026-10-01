@@ -67,7 +67,7 @@ export function LoginModal({
 
   const title = mode === "login" ? "登入 MyMeal" : "申請 MyMeal 帳號";
   const subtitle =
-    mode === "login" ? "請使用公司 Email 登入。" : "填寫以下資料完成申請，送出後直接可用。";
+    mode === "login" ? "請輸入帳號密碼登入。" : "填寫以下資料完成申請，送出後直接可用。";
 
   return (
     <Modal
@@ -108,9 +108,7 @@ export function LoginModal({
               <label className="flex items-center gap-2 text-muted">
                 <input type="checkbox" name="remember" /> 記住我
               </label>
-              <button type="button" className="text-brand hover:underline">
-                忘記密碼？
-              </button>
+              <span className="text-muted">忘記密碼請洽管理員</span>
             </div>
 
             {loginState.error && <p className="text-sm text-danger">{loginState.error}</p>}
@@ -133,12 +131,27 @@ export function LoginModal({
       ) : (
         <div className="space-y-4 overflow-y-auto p-4">
           <form action={registerFormAction} className="space-y-4">
-            <Field label="帳號">
-              <input className={inputClass} type="text" name="email" required />
+            <Field label="帳號" hint="4-20 碼英數字，第一碼須為英文字母，不分大小寫">
+              <input
+                className={inputClass}
+                type="text"
+                name="email"
+                required
+                minLength={4}
+                maxLength={20}
+                pattern="[A-Za-z][A-Za-z0-9]{3,19}"
+              />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="密碼">
-                <input className={inputClass} type="password" name="password" required minLength={8} />
+              <Field label="密碼" hint="8-20 碼，需同時包含英文字母與數字，可加常見符號">
+                <input
+                  className={inputClass}
+                  type="password"
+                  name="password"
+                  required
+                  minLength={8}
+                  maxLength={20}
+                />
               </Field>
               <Field label="確認密碼">
                 <input
@@ -147,13 +160,21 @@ export function LoginModal({
                   name="confirmPassword"
                   required
                   minLength={8}
+                  maxLength={20}
                 />
               </Field>
-              <Field label="姓名">
-                <input className={inputClass} name="name" required />
+              <Field label="姓名" hint="2-20 個中文或英文字">
+                <input className={inputClass} name="name" required minLength={2} maxLength={20} />
               </Field>
-              <Field label="員工編號">
-                <input className={inputClass} name="employeeId" required />
+              <Field label="員工編號" hint="4-20 碼英數字">
+                <input
+                  className={inputClass}
+                  name="employeeId"
+                  required
+                  minLength={4}
+                  maxLength={20}
+                  pattern="[A-Za-z0-9]{4,20}"
+                />
               </Field>
               <Field label="部門">
                 <select
@@ -197,8 +218,8 @@ export function LoginModal({
               </Field>
             </div>
 
-            <Field label="邀請碼（選填）">
-              <input className={inputClass} name="inviteCode" />
+            <Field label="邀請碼（選填）" hint="4-20 碼">
+              <input className={inputClass} name="inviteCode" minLength={4} maxLength={20} />
             </Field>
 
             {registerState.error && <p className="text-sm text-danger">{registerState.error}</p>}

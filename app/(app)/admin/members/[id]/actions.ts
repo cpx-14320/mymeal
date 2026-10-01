@@ -47,7 +47,7 @@ export async function updateMemberAction(
     if (!updated) return { error: "找不到這位會員，可能已被刪除。" };
   } catch (err: unknown) {
     if (err && typeof err === "object" && "code" in err && err.code === 11000) {
-      return { error: "這個 Email、員工編號或帳號已經被其他會員使用。" };
+      return { error: "這個帳號或員工編號已經被其他會員使用。" };
     }
     return { error: "發生錯誤，請稍後再試。" };
   }

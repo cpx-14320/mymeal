@@ -210,7 +210,7 @@ export default async function HomePage() {
         <div className="rounded-2xl border border-line bg-surface p-8 text-center">
           <h2 className="text-xl font-bold tracking-tight">準備好一起訂餐了嗎？</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-            用公司 Email 申請帳號，開通後就能開團、點餐與儲值。
+            申請帳號，開通後就能開團、點餐與儲值。
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <LoginButton

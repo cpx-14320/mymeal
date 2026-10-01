@@ -50,7 +50,7 @@ export async function registerAction(
     return { success: true, memberCode: member.memberCode };
   } catch (err: unknown) {
     if (err && typeof err === "object" && "code" in err && err.code === 11000) {
-      return { error: "這個 Email、員工編號或帳號已經被註冊過了。" };
+      return { error: "這個帳號或員工編號已經被註冊過了。" };
     }
     return { error: "發生錯誤，請稍後再試。" };
   }

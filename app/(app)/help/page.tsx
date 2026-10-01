@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "使用說明" };
 const steps = [
   {
     title: "1. 開通帳號",
-    body: "用公司 Email 申請帳號，完成 Email 驗證或等管理員審核後即可登入。",
+    body: "申請帳號，送出後即可登入。",
   },
   {
     title: "2. 儲值",

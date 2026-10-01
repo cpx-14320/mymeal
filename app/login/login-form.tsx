@@ -35,7 +35,7 @@ export function LoginForm() {
     <div className="mx-auto flex max-w-[600px] flex-col gap-6 px-4 py-16">
       <div className="text-center">
         <h1 className="text-2xl font-bold tracking-tight">登入 MyMeal</h1>
-        <p className="mt-1 text-sm text-muted">請使用公司 Email 登入。</p>
+        <p className="mt-1 text-sm text-muted">請輸入帳號密碼登入。</p>
       </div>
 
       <Card>
@@ -61,9 +61,7 @@ export function LoginForm() {
               <label className="flex items-center gap-2 text-muted">
                 <input type="checkbox" name="remember" /> 記住我
               </label>
-              <Link href="/login" className="text-brand hover:underline">
-                忘記密碼？
-              </Link>
+              <span className="text-muted">忘記密碼請洽管理員</span>
             </div>
 
             {state.error && <p className="text-sm text-danger">{state.error}</p>}

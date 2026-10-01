@@ -12,6 +12,7 @@ import {
 import { memberExp, memberLevelInfo } from "@/lib/mock";
 import { AccountTaskTabs } from "@/components/account-task-tabs";
 import { AccountAvatarUploader } from "@/components/account-avatar-uploader";
+import { AccountChangePasswordModal } from "@/components/account-change-password-modal";
 import { listDailyTasks, listExpRules, listMemberLevels } from "@/lib/models/gamification";
 import {
   getMemberLifetimeCounts,
@@ -46,7 +47,7 @@ export default async function AccountPage() {
 
   const profile = [
     ["姓名", member.name],
-    ["公司 Email", member.email],
+    ["帳號", member.account],
     ["部門", member.dept],
     ["單位", member.unit],
     ["員工編號", member.employeeId],
@@ -85,7 +86,7 @@ export default async function AccountPage() {
               </div>
             ))}
           </dl>
-          <Button variant="secondary">修改密碼</Button>
+          <AccountChangePasswordModal />
         </CardBody>
       </Card>
 

@@ -85,22 +85,26 @@ export function RegisterForm({ departments, units }: RegisterFormProps) {
       <Card>
         <CardBody>
           <form action={formAction} className="space-y-4">
-            <Field label="帳號">
+            <Field label="帳號" hint="4-20 碼英數字，第一碼須為英文字母，不分大小寫">
               <input
                 className={inputClass}
                 type="text"
                 name="email"
                 required
+                minLength={4}
+                maxLength={20}
+                pattern="[A-Za-z][A-Za-z0-9]{3,19}"
               />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="密碼">
+              <Field label="密碼" hint="8-20 碼，需同時包含英文字母與數字，可加常見符號">
                 <input
                   className={inputClass}
                   type="password"
                   name="password"
                   required
                   minLength={8}
+                  maxLength={20}
                 />
               </Field>
               <Field label="確認密碼">
@@ -110,13 +114,21 @@ export function RegisterForm({ departments, units }: RegisterFormProps) {
                   name="confirmPassword"
                   required
                   minLength={8}
+                  maxLength={20}
                 />
               </Field>
-              <Field label="姓名">
-                <input className={inputClass} name="name" required />
+              <Field label="姓名" hint="2-20 個中文或英文字">
+                <input className={inputClass} name="name" required minLength={2} maxLength={20} />
               </Field>
-              <Field label="員工編號">
-                <input className={inputClass} name="employeeId" required />
+              <Field label="員工編號" hint="4-20 碼英數字">
+                <input
+                  className={inputClass}
+                  name="employeeId"
+                  required
+                  minLength={4}
+                  maxLength={20}
+                  pattern="[A-Za-z0-9]{4,20}"
+                />
               </Field>
               <Field label="部門">
                 <select
@@ -160,8 +172,8 @@ export function RegisterForm({ departments, units }: RegisterFormProps) {
               </Field>
             </div>
 
-            <Field label="邀請碼（選填）">
-              <input className={inputClass} name="inviteCode" />
+            <Field label="邀請碼（選填）" hint="4-20 碼">
+              <input className={inputClass} name="inviteCode" minLength={4} maxLength={20} />
             </Field>
 
             {state.error && <p className="text-sm text-danger">{state.error}</p>}
