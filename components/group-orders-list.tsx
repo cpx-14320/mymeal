@@ -11,12 +11,17 @@ import {
   Pagination,
 } from "@/components/ui/primitives";
 import type { GroupOrderListItem, GroupOrderStatus } from "@/lib/models/group-order";
-import { dateToSlug } from "@/lib/date";
+import { dateToSlug, isDeadlinePassed } from "@/lib/date";
 
 const statusMap: Record<GroupOrderStatus, { label: string; tone: "positive" | "warning" | "neutral" }> = {
   open: { label: "開放中", tone: "positive" },
   closed: { label: "已截止", tone: "warning" },
 };
+
+/** status 欄位要靠團主手動結單或後台才會變 closed；這裡用 deadline 即時算「現在看起來是不是已截止」，
+ *  讓畫面不用等那個動作發生就能顯示正確狀態（實際擋止送出訂單是在 replaceMemberLines 做的）。 */
+const effectiveStatus = (g: { status: GroupOrderStatus; deadline: string }): GroupOrderStatus =>
+  g.status === "open" && isDeadlinePassed(g.deadline) ? "closed" : g.status;
 
 const weekdayNames = ["日", "一", "二", "三", "四", "五", "六"];
 
@@ -51,7 +56,7 @@ export function GroupOrdersList({
 
   const matchesFilter = (g: GroupOrderListItem) => {
     if (filter === "all") return true;
-    if (filter === "open") return g.status === "open";
+    if (filter === "open") return effectiveStatus(g) === "open";
     if (filter === "mine") return g.hostId === currentMemberId;
     return categoryOf(g) === filter;
   };
@@ -80,7 +85,7 @@ export function GroupOrdersList({
   const tabs: { key: Filter; label: string; count: number }[] = [
     { key: "all", label: "全部", count: rows.length },
     ...categoryNames.map((c) => ({ key: c, label: c, count: rows.filter((g) => categoryOf(g) === c).length })),
-    { key: "open", label: "開放中", count: rows.filter((g) => g.status === "open").length },
+    { key: "open", label: "開放中", count: rows.filter((g) => effectiveStatus(g) === "open").length },
     { key: "mine", label: "我開的團", count: rows.filter((g) => g.hostId === currentMemberId).length },
   ];
 
@@ -177,7 +182,9 @@ export function GroupOrdersList({
                               </div>
                               <div className="flex shrink-0 gap-1.5">
                                 {categoryOf(g) && <Badge tone="brand">{categoryOf(g)}</Badge>}
-                                <Badge tone={statusMap[g.status].tone}>{statusMap[g.status].label}</Badge>
+                                <Badge tone={statusMap[effectiveStatus(g)].tone}>
+                                  {statusMap[effectiveStatus(g)].label}
+                                </Badge>
                               </div>
                             </div>
 
@@ -195,7 +202,7 @@ export function GroupOrdersList({
                             </dl>
 
                             <ButtonLink href={`/group-orders/${g.id}`} variant="secondary" className="w-full">
-                              {g.status === "open" ? "查看 / 加入" : "查看明細"}
+                              {effectiveStatus(g) === "open" ? "查看 / 加入" : "查看明細"}
                             </ButtonLink>
                           </CardBody>
                         </Card>

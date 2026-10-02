@@ -1,5 +1,6 @@
 import { Schema, model, models, Types } from "mongoose";
 import { connectMongo } from "@/lib/mongoose";
+import { isDeadlinePassed, defaultReopenDeadlineTaiwan } from "@/lib/date";
 
 /**
  * group_orders collection —— 開團訂餐：一個 Template 可以同時被多個單位各自開團（同一天也可以）。
@@ -399,24 +400,37 @@ export async function updateGroupOrderSettings(id: string, input: UpdateGroupOrd
   return { id };
 }
 
-export async function setGroupOrdersStatus(ids: string[], status: GroupOrderStatus): Promise<number> {
+/** 結單的「真正效果」：改成 closed＋幫錢包扣款選項的人實際扣款——前台團主結單
+ *  （closeGroupOrderAction）跟後台管理員批次結單（setGroupOrdersStatusAction）共用這支，
+ *  差別只在誰能呼叫（前台用 assertHost 限定本人的團，後台用 requireAdminPermission）。
+ *  逐團處理、不是一條 updateMany：chargeWalletForGroupOrder 是逐團彙總扣款，沒辦法合併成一次寫入；
+ *  也因此多團一起結單時彼此獨立，某一團扣款失敗不會擋住其他團照常結單（跟這支以外的寫入一樣沒有
+ *  跨文件 transaction）。chargeWalletForGroupOrder 本身只挑 walletCharged=false 的行，
+ *  對已經結過單的團重複呼叫是安全的，不會重複扣款。 */
+export async function closeGroupOrders(ids: string[]): Promise<void> {
   await connectMongo();
-  const objIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
-  if (objIds.length === 0) return 0;
-  const result = await GroupOrder.updateMany({ _id: { $in: objIds } }, { $set: { status } });
-  return result.modifiedCount;
+  for (const id of ids) {
+    if (!Types.ObjectId.isValid(id)) continue;
+    await GroupOrder.findByIdAndUpdate(id, { $set: { status: "closed" } });
+    await chargeWalletForGroupOrder(id);
+  }
 }
 
-/** 團主自己「提前結單／重新開放／調整截止時間」用：一次改狀態＋截止時間（狀態可省略，只改時間）。 */
-export async function setGroupOrderStatusAndDeadline(
-  id: string,
-  patch: { status?: GroupOrderStatus; deadline?: string },
-) {
+/** 重新開放的「真正效果」：改成 open＋退回已扣的錢包款——前台團主重新開放
+ *  （reopenGroupOrderAction）跟後台管理員批次開放（setGroupOrdersStatusAction）共用這支，
+ *  差別只在誰能呼叫，跟 closeGroupOrders 同一個切法。截止時間一定要一併更新成未來的時間：
+ *  若維持舊的（已經過期的）截止時間，狀態雖然變回 open，送出訂單時還是會被
+ *  isDeadlinePassed 擋住，等於重新開放沒有實際效果。前台由團主在表單裡自己指定新時間；
+ *  後台是批次操作、沒有逐團輸入介面，沒給 deadline 時就統一套用「現在台灣時間+1小時」
+ *  （defaultReopenDeadlineTaiwan，跟前台表單的預設值同一個邏輯）。 */
+export async function reopenGroupOrders(ids: string[], deadline?: string): Promise<void> {
   await connectMongo();
-  if (!Types.ObjectId.isValid(id)) throw new Error("無效的 id");
-  const doc = await GroupOrder.findByIdAndUpdate(id, { $set: patch }, { new: true });
-  if (!doc) throw new Error("找不到這個團，可能已被刪除。");
-  return { id, status: doc.status, deadline: doc.deadline };
+  const effectiveDeadline = deadline ?? defaultReopenDeadlineTaiwan();
+  for (const id of ids) {
+    if (!Types.ObjectId.isValid(id)) continue;
+    await GroupOrder.findByIdAndUpdate(id, { $set: { status: "open", deadline: effectiveDeadline } });
+    await refundWalletForGroupOrder(id);
+  }
 }
 
 export interface WalletChargeShortfall {
@@ -566,6 +580,7 @@ export async function replaceMemberLines(
   const doc = await GroupOrder.findById(groupOrderId);
   if (!doc) throw new Error("找不到這個團，可能已被刪除。");
   if (doc.status !== "open") throw new Error("這個團已經截止，無法送出訂單。");
+  if (isDeadlinePassed(doc.deadline)) throw new Error("已超過截止時間，無法送出訂單。");
 
   const { findTemplateById } = await import("@/lib/models/template");
   const tpl = await findTemplateById(String(doc.templateId));

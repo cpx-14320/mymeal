@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import {
   replaceMemberLines,
   findGroupOrderById,
-  setGroupOrderStatusAndDeadline,
   updateGroupOrderSettings,
-  chargeWalletForGroupOrder,
+  closeGroupOrders,
+  reopenGroupOrders,
   refundWalletForGroupOrder,
   cancelMemberLine,
   deleteGroupOrders,
@@ -97,8 +97,7 @@ export async function previewCloseShortfallsAction(groupOrderId: string): Promis
 export async function closeGroupOrderAction(groupOrderId: string): Promise<HostActionState> {
   try {
     await assertHost(groupOrderId);
-    await setGroupOrderStatusAndDeadline(groupOrderId, { status: "closed" });
-    await chargeWalletForGroupOrder(groupOrderId);
+    await closeGroupOrders([groupOrderId]);
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }
@@ -115,11 +114,7 @@ export async function reopenGroupOrderAction(
 ): Promise<HostActionState> {
   try {
     await assertHost(groupOrderId);
-    await setGroupOrderStatusAndDeadline(groupOrderId, {
-      status: "open",
-      deadline: newDeadline.trim().replace("T", " "),
-    });
-    await refundWalletForGroupOrder(groupOrderId);
+    await reopenGroupOrders([groupOrderId], newDeadline.trim().replace("T", " "));
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "發生錯誤，請稍後再試。" };
   }

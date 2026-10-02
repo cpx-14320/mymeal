@@ -24,6 +24,7 @@ import { findMemberById } from "@/lib/models/member";
 import { getMemberBalance } from "@/lib/models/wallet";
 import { getSessionMemberId } from "@/lib/session";
 import { listDepartments, listUnits } from "@/lib/models/org";
+import { isDeadlinePassed } from "@/lib/date";
 
 const statusMap = {
   open: { label: "開放中", tone: "positive" as const },
@@ -55,6 +56,10 @@ export default async function GroupOrderDetailPage({
   if (!memberId) redirect("/login");
   const viewer = await findMemberById(memberId);
   if (!viewer) redirect("/login");
+
+  // status 欄位要靠團主手動結單或後台才會變 closed；這裡用 deadline 即時算「現在看起來是不是已截止」，
+  // 讓畫面不用等那個動作發生就能顯示正確狀態（實際擋止送出訂單是在 replaceMemberLines 做的）。
+  const effectiveStatus = group.status === "open" && isDeadlinePassed(group.deadline) ? "closed" : group.status;
 
   const isHost = memberId === group.hostId;
   const [tpl, walletBalance, editableTemplates, departments, units] = await Promise.all([
@@ -114,7 +119,7 @@ export default async function GroupOrderDetailPage({
         title={group.name}
         actions={
           <>
-            <Badge tone={statusMap[group.status].tone}>{statusMap[group.status].label}</Badge>
+            <Badge tone={statusMap[effectiveStatus].tone}>{statusMap[effectiveStatus].label}</Badge>
             {isHost && (
               <GroupOrderSettingsEditor
                 groupOrderId={group.id}
